@@ -1,0 +1,30 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('relatorio_fotograficos', function (Blueprint $table) {
+
+            // remove campo antigo
+            $table->dropColumn('objetivo');
+
+            // cria novo campo
+            $table->date('data_posse')->nullable()->after('status');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('relatorio_fotograficos', function (Blueprint $table) {
+
+            $table->dropColumn('data_posse');
+
+            $table->text('objetivo')->nullable();
+        });
+    }
+};

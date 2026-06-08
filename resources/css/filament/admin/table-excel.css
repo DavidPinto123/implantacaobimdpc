@@ -1,0 +1,2425 @@
+/* ===========================================================
+ * Table Excel Pattern — visual opt-in para tabelas Filament
+ *
+ * Todas as regras aqui são escopadas por .gs-table-excel (aplicada
+ * pela TableExcelPreset via ->extraAttributes). Nada vaza para
+ * tabelas que não optaram pelo preset.
+ * ========================================================= */
+
+[x-cloak] { display: none !important; }
+
+/* ── Variant: dense ───────────────────────────────────────── */
+
+.gs-table-excel--dense .fi-ta-text:not(.fi-inline) {
+    padding: 0.25rem 0.5rem;
+}
+
+.gs-table-excel--dense .fi-ta-text-item {
+    font-size: 0.7rem;
+    line-height: 1rem;
+}
+
+.gs-table-excel--dense .fi-ta-header-cell {
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    font-size: 0.7rem;
+}
+
+.gs-table-excel--dense .fi-ta-header-group-cell {
+    padding-top: 0.2rem;
+    padding-bottom: 0.2rem;
+    font-size: 0.7rem;
+}
+
+.gs-table-excel--dense .fi-ta-cell:has(.fi-ta-actions) {
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+}
+
+.gs-table-excel--dense .fi-ta-actions .fi-icon-btn {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.gs-table-excel--dense .fi-ta-actions .fi-icon-btn svg {
+    width: 0.85rem;
+    height: 0.85rem;
+}
+
+.gs-table-excel--dense .fi-ta-selection-cell {
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+}
+
+.gs-table-excel--dense .fi-badge {
+    font-size: 0.65rem;
+    padding-top: 0.1rem;
+    padding-bottom: 0.1rem;
+    min-width: theme(spacing.5);
+}
+
+.gs-table-excel--dense .fi-ta-text-input,
+.gs-table-excel--dense .fi-ta-select {
+    padding-top: 0.15rem;
+    padding-bottom: 0.15rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+
+.gs-table-excel--dense .fi-ta-text-input .fi-input-wrp,
+.gs-table-excel--dense .fi-ta-select .fi-input-wrp {
+    min-height: 0;
+    height: auto;
+    border-radius: 4px;
+    font-size: 0.7rem;
+}
+
+.gs-table-excel--dense .fi-ta-text-input .fi-input,
+.gs-table-excel--dense .fi-ta-text-input input {
+    font-size: 0.7rem;
+    line-height: 1rem;
+    padding: 0.15rem 0.35rem;
+    min-height: 0;
+    height: auto;
+}
+
+.gs-table-excel--dense .fi-ta-text-input input[type="date"] {
+    font-size: 0.65rem;
+    padding: 0.15rem 0.2rem;
+    min-width: 7.5rem;
+}
+
+.gs-table-excel--dense .fi-ta-text-input input[type="date"]::-webkit-calendar-picker-indicator {
+    width: 10px;
+    height: 10px;
+    margin-left: 0;
+    padding: 0;
+    cursor: pointer;
+    opacity: 0.6;
+}
+
+.gs-table-excel--dense .fi-ta-select select,
+.gs-table-excel--dense .fi-ta-select .fi-select-input {
+    font-size: 0.7rem;
+    line-height: 1rem;
+    padding: 0.15rem 1.25rem 0.15rem 0.35rem;
+    min-height: 0;
+    height: auto;
+}
+
+/* ── Sticky/frozen columns (via StickyColumns support) ────── */
+
+.gs-table-excel .gs-table-excel__col-sticky {
+    position: sticky;
+    z-index: 3;
+    background: var(--fi-color-bg, #ffffff);
+}
+
+:root.dark .gs-table-excel .gs-table-excel__col-sticky {
+    background: #111113;
+}
+
+.gs-table-excel .gs-table-excel__col-sticky--left {
+    left: var(--gs-sticky-left, 0);
+    box-shadow: 2px 0 4px -1px rgb(0 0 0 / 0.08);
+}
+
+.gs-table-excel .gs-table-excel__col-sticky--right {
+    right: var(--gs-sticky-right, 0);
+    box-shadow: -2px 0 4px -1px rgb(0 0 0 / 0.08);
+}
+
+/* Headers stay above body cells when sticky */
+.gs-table-excel .fi-ta-header-cell.gs-table-excel__col-sticky,
+.gs-table-excel .fi-ta-header-group-cell.gs-table-excel__col-sticky {
+    z-index: 6;
+}
+
+/* ── Grouped column headers ───────────────────────────────── */
+
+.gs-table-excel--grouped .gs-table-excel__group-header,
+.gs-table-excel--grouped .fi-ta-header-group-cell {
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-weight: 700;
+    font-size: 0.68rem;
+}
+
+/* ── Sticky header (opcional — complementa filament-sticky-table-header) */
+
+.gs-table-excel--sticky-header .fi-ta-header-cell {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--fi-color-bg, #ffffff);
+}
+
+:root.dark .gs-table-excel--sticky-header .fi-ta-header-cell {
+    background: #111113;
+}
+
+/* ── Row highlight (click/focus) ──────────────────────────── */
+
+.gs-table-excel .fi-ta-row {
+    transition: background-color 150ms ease;
+}
+
+.gs-table-excel .fi-ta-row.fi-ta-row-highlighted {
+    background-color: rgb(254 249 195);
+}
+
+:root.dark .gs-table-excel .fi-ta-row.fi-ta-row-highlighted {
+    background-color: rgb(63 63 24);
+}
+
+.gs-table-excel .fi-ta-row.fi-ta-row-highlighted .gs-table-excel__col-sticky {
+    background-color: rgb(254 249 195);
+}
+
+:root.dark .gs-table-excel .fi-ta-row.fi-ta-row-highlighted .gs-table-excel__col-sticky {
+    background-color: rgb(63 63 24);
+}
+
+/* ── Column resize handle ─────────────────────────────────── */
+
+.gs-table-excel .fi-ta-header-cell {
+    position: relative;
+}
+
+.gs-table-excel .gs-table-excel__resize-handle {
+    position: absolute;
+    top: 0;
+    right: -3px;
+    width: 7px;
+    height: 100%;
+    cursor: col-resize;
+    z-index: 20;
+    background: transparent;
+    user-select: none;
+}
+
+.gs-table-excel .gs-table-excel__resize-handle:hover {
+    background: rgba(251, 186, 0, 0.35);
+    border-radius: 2px;
+}
+
+:root.dark .gs-table-excel .gs-table-excel__resize-handle:hover {
+    background: rgba(251, 186, 0, 0.25);
+}
+
+/* ── Tokens de cor / layout ──────────────────────────────────
+ * Variáveis consumidas por todos os módulos do preset
+ * (pílulas, quick filters, faixa de grupo, container).
+ * ========================================================== */
+
+.gs-table-excel {
+    --gs-bg: #ffffff;
+    --gs-bg-subtle: #f9fafb;
+    --gs-border: #e5e7eb;
+    --gs-border-light: #f3f4f6;
+    --gs-text: #111827;
+    --gs-text-secondary: #374151;
+    --gs-text-muted: #6b7280;
+    --gs-text-faint: #9ca3af;
+    --gs-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    --gs-accent: #fbba00;
+
+    --gs-pill-success: #22c55e;
+    --gs-pill-danger: #ef4444;
+    --gs-pill-info: #3b82f6;
+    --gs-pill-warning: #eab308;
+    --gs-pill-neutral: #6b7280;
+}
+
+:root.dark .gs-table-excel {
+    --gs-bg: #111113;
+    --gs-bg-subtle: #0a0a0c;
+    --gs-border: #1f2023;
+    --gs-border-light: #1a1a1e;
+    --gs-text: #e5e7eb;
+    --gs-text-secondary: #d1d5db;
+    --gs-text-muted: #9ca3af;
+    --gs-text-faint: #6b7280;
+    --gs-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+
+    --gs-pill-success: #2dd67c;
+    --gs-pill-danger: #ff4d6a;
+    --gs-pill-info: #4a9eff;
+    --gs-pill-warning: #f5ba00;
+    --gs-pill-neutral: #6b7280;
+}
+
+/* ── Barra "Filtros ativos" (entre toolbar e tabela) ────────── */
+
+.gs-table-excel__active-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: var(--gs-bg-subtle);
+    border-bottom: 1px solid var(--gs-border);
+}
+
+.gs-table-excel__active-filters-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--gs-text-muted);
+    margin-right: 4px;
+}
+
+.gs-table-excel__active-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 4px 3px 10px;
+    background: rgba(251, 186, 0, 0.14);
+    border: 1px solid rgba(251, 186, 0, 0.45);
+    border-radius: 9999px;
+    font-size: 0.72rem;
+    color: var(--gs-text);
+    max-width: 100%;
+}
+
+.gs-table-excel__active-filter-chip-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 340px;
+}
+
+.gs-table-excel__active-filter-chip-text strong {
+    color: var(--gs-text-secondary);
+    font-weight: 700;
+}
+
+.gs-table-excel__active-filter-chip-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--gs-text-muted);
+    border-radius: 9999px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background-color 0.12s, color 0.12s;
+}
+
+.gs-table-excel__active-filter-chip-remove:hover {
+    background: rgba(251, 186, 0, 0.35);
+    color: var(--gs-text);
+}
+
+.gs-table-excel__active-filters-clear {
+    margin-left: auto;
+    background: transparent;
+    border: 0;
+    color: var(--gs-text-muted);
+    font-size: 0.7rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-family: inherit;
+    transition: background-color 0.12s, color 0.12s;
+}
+
+.gs-table-excel__active-filters-clear:hover {
+    background: var(--gs-border-light);
+    color: var(--gs-text);
+}
+
+/* ── Actions compactas ao lado da busca ───────────────────────
+ * Os botões de ação (Filament actions) vivem na mesma barra da
+ * busca rápida. Aqui os comprimimos e alinhamos para caber com
+ * o input sem estourar a altura.
+ * ──────────────────────────────────────────────────────────── */
+
+.gs-table-excel__qf-actions {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+}
+
+.gs-table-excel__qf-actions .fi-btn {
+    height: 28px;
+    padding: 0 8px;
+    font-size: 0.72rem;
+    border-radius: 6px;
+}
+
+.gs-table-excel__qf-actions .fi-btn .fi-btn-icon {
+    width: 14px;
+    height: 14px;
+}
+
+.gs-table-excel__qf-actions .fi-btn-label {
+    font-weight: 600;
+}
+
+/* ── Barra de filtros rápidos ───────────────────────────────── */
+
+.gs-table-excel__quick-filters {
+    display: flex;
+    gap: 8px;
+    padding: 8px 14px;
+    background: var(--gs-bg);
+    border-bottom: 1px solid var(--gs-border);
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.gs-table-excel__qf-input,
+.gs-table-excel__qf-select {
+    background: var(--gs-bg-subtle);
+    color: var(--gs-text);
+    border: 1px solid var(--gs-border);
+    border-radius: 0.5rem;
+    padding: 7px 12px;
+    font-size: 0.78rem;
+    min-width: 160px;
+    font-family: inherit;
+    height: auto;
+}
+
+.gs-table-excel__qf-select {
+    color-scheme: light;
+}
+
+:root.dark .gs-table-excel__qf-select {
+    color-scheme: dark;
+}
+
+.gs-table-excel__qf-select option {
+    background: #ffffff;
+    color: #111827;
+}
+
+:root.dark .gs-table-excel__qf-select option {
+    background: #2a2a2a;
+    color: #f3f4f6;
+}
+
+.gs-table-excel__qf-input {
+    min-width: 220px;
+    flex: 1 1 220px;
+    max-width: 320px;
+}
+
+/* Wrapper do input de busca (permite o botão X flutuar dentro) */
+.gs-table-excel__qf-search {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    flex: 1 1 220px;
+    max-width: 320px;
+    min-width: 220px;
+}
+
+.gs-table-excel__qf-search .gs-table-excel__qf-input {
+    flex: 1 1 auto;
+    max-width: none;
+    min-width: 0;
+    padding-right: 28px;
+}
+
+/* Remove o "x" nativo dos <input type="search"> (vamos usar o nosso) */
+.gs-table-excel__qf-search .gs-table-excel__qf-input::-webkit-search-cancel-button {
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.gs-table-excel__qf-search-clear {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: 0;
+    padding: 2px;
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gs-text-muted);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.12s, color 0.12s;
+    font-family: inherit;
+}
+
+.gs-table-excel__qf-search-clear:hover {
+    background: var(--gs-border-light);
+    color: var(--gs-text);
+}
+
+.gs-table-excel__qf-input:focus,
+.gs-table-excel__qf-select:focus {
+    outline: none;
+    border-color: var(--gs-accent);
+    box-shadow: 0 0 0 3px rgba(251, 186, 0, 0.2);
+}
+
+.gs-table-excel__qf-toggle,
+.gs-table-excel__qf-clear {
+    background: var(--gs-bg-subtle);
+    color: var(--gs-text-secondary);
+    border: 1px solid var(--gs-border);
+    border-radius: 0.5rem;
+    padding: 7px 12px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background-color 0.12s, color 0.12s;
+}
+
+.gs-table-excel__qf-toggle:hover,
+.gs-table-excel__qf-clear:hover {
+    background: var(--gs-border-light);
+    color: var(--gs-text);
+}
+
+.gs-table-excel__qf-toggle-count {
+    opacity: 0.6;
+    margin-left: 4px;
+    font-weight: 500;
+}
+
+.gs-table-excel__qf-clear {
+    color: var(--gs-text-muted);
+}
+
+.gs-table-excel__adv-filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 8px 12px;
+    padding: 12px 16px;
+    background: var(--gs-bg-subtle);
+    border-bottom: 1px solid var(--gs-border);
+}
+
+.gs-table-excel__adv-filter {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.gs-table-excel__adv-filter-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--gs-text-faint);
+}
+
+.gs-table-excel__adv-filter .gs-table-excel__qf-select,
+.gs-table-excel__adv-filter .gs-table-excel__qf-input {
+    min-width: 0;
+    max-width: none;
+    width: 100%;
+    flex: none;
+}
+
+.gs-table-excel__qf-daterange {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.gs-table-excel__qf-daterange-input {
+    min-width: 120px;
+    max-width: 140px;
+    padding: 6px 10px;
+    font-size: 0.72rem;
+}
+
+.gs-table-excel__qf-daterange-sep {
+    color: var(--gs-text-faint);
+    font-size: 0.7rem;
+}
+
+.gs-table-excel__qf-toggle--active {
+    border-color: var(--gs-accent);
+    background: rgba(251, 186, 0, 0.12);
+    color: var(--gs-text);
+}
+
+/* --- Modal (teleported — fora do escopo .gs-table-excel) --- */
+
+.gs-te-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.gs-te-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+}
+
+.gs-te-modal__panel {
+    position: relative;
+    background: #ffffff;
+    color: #111827;
+    border-radius: 0.75rem;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    width: min(900px, 100%);
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+:root.dark .gs-te-modal__panel {
+    background: #18181b;
+    color: #e5e7eb;
+}
+
+.gs-te-modal__head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 0.85rem;
+}
+
+:root.dark .gs-te-modal__head {
+    border-bottom-color: #27272a;
+}
+
+.gs-te-modal__head strong { flex: 0 0 auto; }
+
+.gs-te-modal__head-count {
+    flex: 1;
+    font-size: 0.72rem;
+    color: #9ca3af;
+}
+
+.gs-te-modal__close {
+    background: transparent;
+    border: 0;
+    color: #6b7280;
+    font-size: 1.4rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 4px;
+    font-family: inherit;
+}
+
+.gs-te-modal__close:hover {
+    color: #111;
+}
+
+:root.dark .gs-te-modal__close:hover {
+    color: #fff;
+}
+
+.gs-te-modal__body {
+    padding: 16px 18px;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 10px 14px;
+}
+
+.gs-te-modal__foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 12px 18px;
+    border-top: 1px solid #e5e7eb;
+    background: #f9fafb;
+}
+
+:root.dark .gs-te-modal__foot {
+    border-top-color: #27272a;
+    background: #0f0f12;
+}
+
+/* --- Filament actions modals da tabela nova ---------------------------- */
+
+.gs-te-config-modal {
+    position: relative;
+    display: flex;
+    width: min(720px, calc(100vw - 32px));
+    max-width: min(720px, calc(100vw - 32px));
+    max-height: 85vh;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    background: #ffffff;
+    color: #111827;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+}
+
+:root.dark .gs-te-config-modal {
+    border-color: #1f2023;
+    background: #111113;
+    color: #e5e7eb;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+.gs-te-config-modal .fi-modal-header {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid #e5e7eb;
+    background: #ffffff;
+}
+
+:root.dark .gs-te-config-modal .fi-modal-header {
+    border-bottom-color: #1f2023;
+    background: #111113;
+}
+
+.gs-te-config-modal .fi-modal-heading {
+    color: #111827;
+    font-size: 0.875rem;
+    font-weight: 700;
+    line-height: 1.25rem;
+}
+
+:root.dark .gs-te-config-modal .fi-modal-heading {
+    color: #e5e7eb;
+}
+
+.gs-te-config-modal .fi-modal-content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 0;
+    background: #ffffff;
+}
+
+:root.dark .gs-te-config-modal .fi-modal-content {
+    background: #111113;
+}
+
+.gs-te-config-modal .fi-modal-content > .fi-sc {
+    gap: 0;
+}
+
+.gs-te-config-modal .fi-modal-footer {
+    flex-shrink: 0;
+    padding: 10px 20px;
+    border-top: 1px solid #e5e7eb;
+    background: #ffffff;
+}
+
+:root.dark .gs-te-config-modal .fi-modal-footer {
+    border-top-color: #1f2023;
+    background: #111113;
+}
+
+.gs-te-config-modal .fi-modal-footer-actions {
+    width: 100%;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.gs-te-config-modal .fi-modal-close-btn {
+    top: 12px;
+    width: 1.75rem;
+    height: 1.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    color: #6b7280;
+    background: transparent;
+    inset-inline-end: 20px;
+}
+
+.gs-te-config-modal .fi-modal-close-btn:hover {
+    background: #f3f4f6;
+}
+
+:root.dark .gs-te-config-modal .fi-modal-close-btn {
+    border-color: #374151;
+    color: #9ca3af;
+}
+
+:root.dark .gs-te-config-modal .fi-modal-close-btn:hover {
+    background: #1f2937;
+}
+
+.gs-te-config-modal--filters .fi-modal-description {
+    margin: 0;
+}
+
+.gs-te-config-modal--filters .gs-te-filter-reset-action {
+    position: absolute;
+    top: 14px;
+    right: 58px;
+    z-index: 4;
+    padding: 2px 6px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: #dc2626;
+    box-shadow: none;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.gs-te-config-modal--filters .gs-te-filter-reset-action:hover {
+    background: rgba(220, 38, 38, 0.08);
+}
+
+:root.dark .gs-te-config-modal--filters .gs-te-filter-reset-action {
+    color: #fca5a5;
+}
+
+.gs-te-config-modal .gs-te-config-tabs.fi-sc-tabs {
+    gap: 0;
+}
+
+.gs-te-config-modal .gs-te-config-tabs .fi-tabs {
+    gap: 1rem;
+    padding: 8px 20px;
+    border: 0;
+    border-bottom: 1px solid #f3f4f6;
+    border-radius: 0;
+    background: #ffffff;
+}
+
+:root.dark .gs-te-config-modal .gs-te-config-tabs .fi-tabs {
+    border-bottom-color: #1f2023;
+    background: #111113;
+}
+
+.gs-te-config-modal .gs-te-config-tabs .fi-tabs-item {
+    min-height: auto;
+    padding: 0;
+    border-radius: 0;
+    color: #9ca3af;
+    font-size: 0.675rem;
+    font-weight: 500;
+}
+
+.gs-te-config-modal .gs-te-config-tabs .fi-tabs-item.fi-active {
+    background: transparent;
+    color: #a16207;
+    box-shadow: none;
+}
+
+:root.dark .gs-te-config-modal .gs-te-config-tabs .fi-tabs-item.fi-active {
+    color: #fbbf24;
+}
+
+.gs-te-config-modal .fi-sc-fieldset,
+.gs-te-config-modal .gs-te-columns-checklist,
+.gs-te-config-modal .gs-te-column-order {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    padding: 0;
+    box-shadow: none;
+}
+
+.gs-te-config-modal .gs-te-config-tabs .fi-sc-tabs-tab {
+    padding: 0;
+}
+
+.gs-te-config-modal .gs-te-columns-group.fi-sc-fieldset,
+.gs-te-config-modal .gs-te-filters-group.fi-sc-fieldset {
+    border-bottom: 1px solid #f3f4f6;
+}
+
+:root.dark .gs-te-config-modal .gs-te-columns-group.fi-sc-fieldset,
+:root.dark .gs-te-config-modal .gs-te-filters-group.fi-sc-fieldset {
+    border-bottom-color: #1f2023;
+}
+
+.gs-te-config-modal .gs-te-columns-group > legend,
+.gs-te-config-modal .gs-te-filters-group > legend {
+    width: 100%;
+    padding: 6px 20px;
+    background: #f9fafb;
+    color: #6b7280;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+:root.dark .gs-te-config-modal .gs-te-columns-group > legend,
+:root.dark .gs-te-config-modal .gs-te-filters-group > legend {
+    background: #0a0a0c;
+    color: #a1a1aa;
+}
+
+.gs-te-config-modal .gs-te-filters-group > .fi-sc {
+    display: block;
+    padding: 0;
+}
+
+.gs-te-config-modal--filters .gs-te-filter-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 20px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+:root.dark .gs-te-config-modal--filters .gs-te-filter-row {
+    border-bottom-color: #1f2023;
+}
+
+.gs-te-config-modal--filters .gs-te-filter-row > .fi-fo-field-label-col {
+    flex: 0 0 140px;
+    min-width: 0;
+}
+
+.gs-te-config-modal--filters .gs-te-filter-row > .fi-fo-field-content-col {
+    flex: 1;
+    min-width: 0;
+}
+
+.gs-te-config-modal--filters .fi-fo-field-label-content,
+.gs-te-config-modal--filters .gs-te-filter-date-range > legend {
+    color: #374151;
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.2;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+:root.dark .gs-te-config-modal--filters .fi-fo-field-label-content,
+:root.dark .gs-te-config-modal--filters .gs-te-filter-date-range > legend {
+    color: #d1d5db;
+}
+
+.gs-te-config-modal--filters .fi-fo-select,
+.gs-te-config-modal--filters .fi-input-wrp {
+    min-height: 31px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: none;
+}
+
+:root.dark .gs-te-config-modal--filters .fi-fo-select,
+:root.dark .gs-te-config-modal--filters .fi-input-wrp {
+    border-color: #374151;
+    background: #18181b;
+}
+
+.gs-te-config-modal--filters .fi-select-input,
+.gs-te-config-modal--filters .fi-input {
+    min-height: 31px;
+    font-size: 0.78rem;
+}
+
+.gs-te-config-modal--filters .fi-fo-select:focus-within,
+.gs-te-config-modal--filters .fi-input-wrp:focus-within {
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 1px #f59e0b;
+}
+
+.gs-te-config-modal--filters .gs-te-filter-date-range.fi-sc-fieldset {
+    position: relative;
+    display: block;
+    min-height: 43px;
+    padding: 6px 20px 6px 172px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+:root.dark .gs-te-config-modal--filters .gs-te-filter-date-range.fi-sc-fieldset {
+    border-bottom-color: #1f2023;
+}
+
+.gs-te-config-modal--filters .gs-te-filter-date-range > legend {
+    position: absolute;
+    top: 50%;
+    left: 20px;
+    width: 140px;
+    padding: 0;
+    background: transparent;
+    transform: translateY(-50%);
+}
+
+.gs-te-config-modal--filters .gs-te-filter-date-range > .fi-sc {
+    display: grid;
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 18px;
+}
+
+.gs-te-config-modal--filters .gs-te-filter-date-range > .fi-sc > div:first-child {
+    position: relative;
+}
+
+.gs-te-config-modal--filters .gs-te-filter-date-range > .fi-sc > div:first-child::after {
+    position: absolute;
+    top: 50%;
+    right: -12px;
+    color: #9ca3af;
+    content: "-";
+    transform: translateY(-50%);
+}
+
+.gs-te-config-modal .fi-fo-checkbox-list-search-input-wrp {
+    margin-bottom: 10px;
+}
+
+.gs-te-config-modal .fi-fo-checkbox-list-options {
+    gap: 0;
+    padding: 0;
+}
+
+.gs-te-config-modal .fi-fo-checkbox-list-actions {
+    display: none;
+}
+
+.gs-te-config-modal .fi-fo-checkbox-list-option-ctn {
+    border-bottom: 1px solid #f9fafb;
+}
+
+:root.dark .gs-te-config-modal .fi-fo-checkbox-list-option-ctn {
+    border-bottom-color: #111113;
+}
+
+.gs-te-config-modal .fi-fo-checkbox-list-option {
+    min-height: 31px;
+    border-bottom: 0;
+    border-radius: 0;
+    padding: 5px 20px;
+    transition: background-color 0.12s, box-shadow 0.12s;
+}
+
+.gs-te-config-modal .fi-fo-checkbox-list-option:hover {
+    background: #f9fafb;
+    box-shadow: none;
+}
+
+:root.dark .gs-te-config-modal .fi-fo-checkbox-list-option:hover {
+    background: #18181b;
+}
+
+.gs-te-config-modal .fi-fo-checkbox-list-option-label {
+    color: #374151;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+}
+
+:root.dark .gs-te-config-modal .fi-fo-checkbox-list-option-label {
+    color: #d1d5db;
+}
+
+.gs-te-config-modal .fi-checkbox-input {
+    accent-color: #b77900;
+}
+
+.gs-te-config-modal .gs-te-column-order .fi-fo-repeater-items {
+    gap: 6px;
+    padding: 8px 20px;
+}
+
+.gs-te-config-modal .gs-te-column-order .fi-fo-repeater-item {
+    overflow: hidden;
+    border-color: #f3f4f6;
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: none;
+}
+
+:root.dark .gs-te-config-modal .gs-te-column-order .fi-fo-repeater-item {
+    border-color: #1f2023;
+    background: #18181b;
+}
+
+.gs-te-config-modal .gs-te-column-order .fi-fo-repeater-item-header {
+    min-height: 34px;
+    background: transparent;
+}
+
+.gs-te-config-modal .gs-te-column-order .fi-fo-repeater-item-header-label {
+    color: #374151;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+:root.dark .gs-te-config-modal .gs-te-column-order .fi-fo-repeater-item-header-label {
+    color: #d1d5db;
+}
+
+.gs-te-config-modal .gs-te-column-order .fi-fo-repeater-item-content {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .gs-te-config-modal--filters .gs-te-filter-row,
+    .gs-te-config-modal--filters .gs-te-filter-date-range.fi-sc-fieldset {
+        align-items: stretch;
+        gap: 6px;
+    }
+
+    .gs-te-config-modal--filters .gs-te-filter-row {
+        flex-direction: column;
+    }
+
+    .gs-te-config-modal--filters .gs-te-filter-date-range.fi-sc-fieldset {
+        padding-left: 20px;
+    }
+
+    .gs-te-config-modal--filters .gs-te-filter-row > .fi-fo-field-label-col {
+        flex-basis: auto;
+        width: auto;
+    }
+
+    .gs-te-config-modal--filters .gs-te-filter-date-range > legend {
+        position: static;
+        width: auto;
+        transform: none;
+    }
+}
+
+.gs-table-excel__col-manager {
+    background: var(--gs-bg-subtle);
+    border-bottom: 1px solid var(--gs-border);
+    padding: 12px 16px;
+    max-height: 340px;
+    overflow-y: auto;
+}
+
+.gs-table-excel__col-manager-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    font-size: 0.78rem;
+    color: var(--gs-text);
+}
+
+.gs-table-excel__col-manager-head strong {
+    flex: 1;
+}
+
+.gs-table-excel__col-manager-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 4px 12px;
+}
+
+.gs-table-excel__col-manager-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 0;
+}
+
+.gs-table-excel__col-manager-arrow {
+    background: transparent;
+    border: 1px solid var(--gs-border);
+    border-radius: 3px;
+    padding: 1px 4px;
+    font-size: 0.58rem;
+    color: var(--gs-text-muted);
+    cursor: pointer;
+    font-family: inherit;
+    line-height: 1;
+    height: 18px;
+    width: 20px;
+}
+
+.gs-table-excel__col-manager-arrow:hover {
+    background: var(--gs-border-light);
+    color: var(--gs-text);
+}
+
+.gs-table-excel__col-manager-arrow-spacer {
+    display: inline-block;
+    width: 20px;
+    height: 18px;
+}
+
+.gs-table-excel__col-manager-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.74rem;
+    color: var(--gs-text-secondary);
+    padding: 2px 4px;
+    cursor: pointer;
+    flex: 1;
+    min-width: 0;
+}
+
+.gs-table-excel__col-manager-item input[type="checkbox"] {
+    cursor: pointer;
+    accent-color: var(--gs-accent);
+}
+
+.gs-table-excel__col-manager-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.gs-table-excel__col-manager-group-tag {
+    font-size: 0.58rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--gs-text-faint);
+    background: var(--gs-border-light);
+    padding: 1px 5px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.gs-table-excel__bulk-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: var(--gs-accent);
+    color: #111;
+    font-size: 0.78rem;
+    font-weight: 600;
+    border-bottom: 1px solid var(--gs-border);
+}
+
+.gs-table-excel__bulk-count { flex: 1; }
+
+.gs-table-excel__bulk-danger {
+    background: #dc2626;
+    color: #fff;
+    border: 0;
+    border-radius: 0.5rem;
+    padding: 6px 12px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.gs-table-excel__bulk-danger:hover { background: #b91c1c; }
+
+.gs-table-excel-page__row--selected {
+    background: rgba(251, 186, 0, 0.14);
+}
+
+:root.dark .gs-table-excel-page__row--selected {
+    background: rgba(251, 186, 0, 0.12);
+}
+
+/* ── Destaque linha × coluna (clique em célula, estilo Excel) ─
+ * Ativado via JS em scripts.blade.php: classe gs-te-focus-row no
+ * <tr> clicado e gs-te-focus-col em todos os <td>/<th> da mesma
+ * coluna. Cruzamento (célula focada) ganha tom mais forte.
+ *
+ * Usa cor sólida via color-mix para que as sticky columns não
+ * deixem o conteúdo de trás vazar durante o scroll horizontal.
+ * Cor: laranja saturado (#f97316) — distinto do amarelo accent.
+ * ──────────────────────────────────────────────────────────── */
+
+.gs-table-excel {
+    --gs-focus: #f97316;
+}
+
+.gs-table-excel--page .gs-te-focus-row > td,
+.gs-table-excel--page .gs-te-focus-col {
+    background-color: color-mix(in srgb, var(--gs-focus) 22%, var(--gs-bg));
+}
+
+.gs-table-excel--page .gs-te-focus-row > td.gs-te-focus-col {
+    background-color: color-mix(in srgb, var(--gs-focus) 45%, var(--gs-bg));
+}
+
+/* Sobrescreve o background sólido das colunas fixas quando elas ganham
+ * o destaque. Precisa matchar a especificidade da regra sticky do
+ * header (page__th.col-sticky) e das células do body (.col-sticky). */
+.gs-table-excel--page .gs-te-focus-row > td.gs-table-excel__col-sticky,
+.gs-table-excel--page td.gs-te-focus-col.gs-table-excel__col-sticky,
+.gs-table-excel--page .gs-table-excel-page__th.gs-te-focus-col.gs-table-excel__col-sticky {
+    background-color: color-mix(in srgb, var(--gs-focus) 22%, var(--gs-bg));
+}
+
+.gs-table-excel--page .gs-te-focus-row > td.gs-te-focus-col.gs-table-excel__col-sticky {
+    background-color: color-mix(in srgb, var(--gs-focus) 45%, var(--gs-bg));
+}
+
+/* --- Sticky header ------------------------------------------- */
+.gs-table-excel--page.gs-table-excel--sticky-header .gs-table-excel-page__scroll {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.gs-table-excel--page.gs-table-excel--sticky-header thead th {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+}
+
+/* Sticky left nos <th> (tanto row de grupo quanto row principal do header)
+ * do modo Page. Regra com especificidade suficiente para vencer
+ * `.sticky-header thead th` acima, garantindo que a coluna congelada
+ * leve o cabeçalho junto durante o scroll horizontal. */
+.gs-table-excel--page .gs-table-excel-page__th.gs-table-excel__col-sticky,
+.gs-table-excel--page .gs-table-excel-page__group-th.gs-table-excel__col-sticky {
+    position: sticky;
+    background: var(--gs-bg-subtle);
+    z-index: 6;
+}
+
+.gs-table-excel--page .gs-table-excel-page__th.gs-table-excel__col-sticky--left,
+.gs-table-excel--page .gs-table-excel-page__group-th.gs-table-excel__col-sticky--left {
+    left: var(--gs-sticky-left, 0);
+    box-shadow: 2px 0 4px -1px rgb(0 0 0 / 0.08);
+}
+
+/* Quando a row de grupo também está sticky-top (via sticky-header),
+ * o z-index da célula de grupo congelada precisa superar a principal. */
+.gs-table-excel--page.gs-table-excel--sticky-header thead .gs-table-excel-page__group-th.gs-table-excel__col-sticky {
+    z-index: 7;
+}
+
+/* --- Sticky actions (primeira coluna fixa) ------------------ */
+.gs-table-excel--page.gs-table-excel--sticky-actions tbody td:first-child,
+.gs-table-excel--page.gs-table-excel--sticky-actions thead th:first-child,
+.gs-table-excel--page.gs-table-excel--sticky-actions .gs-table-excel-page__group-th:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 3;
+    background: var(--gs-bg);
+    border-right: 1px solid var(--gs-border);
+}
+
+:root.dark .gs-table-excel--page.gs-table-excel--sticky-actions tbody td:first-child,
+:root.dark .gs-table-excel--page.gs-table-excel--sticky-actions thead th:first-child {
+    background: var(--gs-bg);
+}
+
+.gs-table-excel--page.gs-table-excel--sticky-actions thead th:first-child {
+    z-index: 6; /* acima do sticky header */
+    background: var(--gs-bg-subtle);
+}
+
+/* --- Striped (zebra) ----------------------------------------- */
+.gs-table-excel--page.gs-table-excel--striped tbody tr:nth-child(even) {
+    background: var(--gs-border-light);
+}
+
+/* --- Dense (modo Page) --------------------------------------- */
+.gs-table-excel--page.gs-table-excel--dense .gs-table-excel-page__td,
+.gs-table-excel--page.gs-table-excel--dense .gs-table-excel-page__th,
+.gs-table-excel--page.gs-table-excel--dense .gs-table-excel-page__group-th {
+    padding: 0.28rem 0.55rem;
+    font-size: 0.72rem;
+}
+
+/* ============================================================
+ * Table Excel — modo Page (.gs-table-excel--page)
+ *
+ * Variante Page-based do Table Excel (Filament\Pages\Page +
+ * Blade custom). Renderiza <table> HTML puro (sem fi-ta).
+ * ========================================================== */
+
+.gs-table-excel--page {
+    /* Quebra o border-radius do card outermost para a filter bar fluir */
+    border: 1px solid var(--gs-border);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    background: var(--gs-bg);
+    box-shadow: var(--gs-shadow);
+}
+
+.gs-table-excel-page__scroll {
+    overflow-x: auto;
+}
+
+.gs-table-excel-page__table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.78rem;
+    color: var(--gs-text-secondary);
+}
+
+.gs-table-excel-page__th {
+    background: var(--gs-bg-subtle);
+    color: var(--gs-text-faint);
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.55rem 0.75rem;
+    border-bottom: 1px solid var(--gs-border);
+    white-space: nowrap;
+    text-align: left;
+}
+
+.gs-table-excel-page__th--align-center { text-align: center; }
+.gs-table-excel-page__th--align-end { text-align: right; }
+
+.gs-table-excel-page__th--sortable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.gs-table-excel-page__th--sortable:hover {
+    background: var(--gs-border-light);
+}
+
+.gs-table-excel--page .gs-table-excel-page__th--sort-active {
+    background: color-mix(in srgb, var(--gs-accent) 8%, var(--gs-bg-subtle));
+    color: var(--gs-text);
+    border-bottom-color: color-mix(in srgb, var(--gs-accent) 46%, var(--gs-border));
+    box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--gs-accent) 82%, #d97706);
+}
+
+.gs-table-excel--page .gs-table-excel-page__th--sortable.gs-table-excel-page__th--sort-active:hover {
+    background: color-mix(in srgb, var(--gs-accent) 11%, var(--gs-bg-subtle));
+}
+
+.gs-table-excel--page .gs-table-excel-page__th--sort-active.gs-table-excel__col-sticky {
+    background: color-mix(in srgb, var(--gs-accent) 8%, var(--gs-bg-subtle));
+}
+
+.gs-table-excel-page__sort-ico {
+    margin-left: 4px;
+    opacity: 0.45;
+    font-size: 0.7em;
+}
+
+.gs-table-excel-page__th--sort-active .gs-table-excel-page__sort-ico {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.05rem;
+    height: 1.05rem;
+    margin-left: 6px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--gs-accent) 22%, transparent);
+    color: color-mix(in srgb, var(--gs-accent) 72%, #92400e);
+    opacity: 1;
+    font-size: 0.62rem;
+    line-height: 1;
+}
+
+.gs-table-excel-page__th--sortable:hover .gs-table-excel-page__sort-ico {
+    opacity: 0.8;
+}
+
+.gs-table-excel-page__th--sortable.gs-table-excel-page__th--sort-active:hover .gs-table-excel-page__sort-ico {
+    opacity: 1;
+}
+
+.gs-table-excel-page__group-row {
+    background: var(--gs-bg-subtle);
+}
+
+.gs-table-excel-page__group-th {
+    background: var(--gs-bg-subtle);
+    color: var(--gs-text-secondary);
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.4rem 0.75rem;
+    border-bottom: 1px solid var(--gs-border);
+    border-right: 1px solid var(--gs-border-light);
+    text-align: center;
+    white-space: nowrap;
+}
+
+.gs-table-excel-page__group-th--empty {
+    background: transparent;
+    border-right: 0;
+    border-bottom: 0;
+}
+
+.gs-table-excel-page__td {
+    padding: 0.45rem 0.75rem;
+    border-bottom: 1px solid var(--gs-border-light);
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.gs-table-excel--page .gs-table-excel-page__td--editable {
+    background: color-mix(in srgb, var(--gs-accent) 0.6%, var(--gs-bg));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gs-accent) 1.5%, transparent);
+}
+
+.gs-table-excel--page .gs-table-excel-page__td--editable:hover {
+    background: color-mix(in srgb, var(--gs-accent) 1.2%, var(--gs-bg));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gs-accent) 3%, transparent);
+}
+
+:root.dark .gs-table-excel--page .gs-table-excel-page__td--editable {
+    background: color-mix(in srgb, var(--gs-accent) 0.9%, var(--gs-bg));
+    box-shadow: inset 0 0 0 1px rgba(251, 186, 0, 0.018);
+}
+
+:root.dark .gs-table-excel--page .gs-table-excel-page__td--editable:hover {
+    background: color-mix(in srgb, var(--gs-accent) 1.6%, var(--gs-bg));
+    box-shadow: inset 0 0 0 1px rgba(251, 186, 0, 0.035);
+}
+
+.gs-table-excel-page__td--align-center { text-align: center; }
+.gs-table-excel-page__td--align-end { text-align: right; }
+
+.gs-table-excel-page__row {
+    transition: background-color 0.12s ease;
+}
+
+.gs-table-excel-page__row:hover {
+    background: var(--gs-bg-subtle);
+}
+
+.gs-table-excel-page__row--clickable {
+    cursor: pointer;
+}
+
+.gs-table-excel-page__row--pendente > td {
+    font-weight: 600;
+    background: var(--gs-border-light);
+}
+
+:root.dark .gs-table-excel-page__row--pendente > td {
+    background: var(--gs-border-light);
+}
+
+.gs-table-excel-page__row--baixada > td {
+    background: color-mix(in srgb, var(--gs-pill-success) 10%, var(--gs-bg));
+}
+
+:root.dark .gs-table-excel-page__row--baixada > td {
+    background: color-mix(in srgb, var(--gs-pill-success) 14%, var(--gs-bg));
+}
+
+.gs-table-excel-page__empty {
+    padding: 2.5rem 1rem;
+    text-align: center;
+    color: var(--gs-text-muted);
+}
+
+.gs-table-excel-page__empty-heading {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--gs-text-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.gs-table-excel-page__empty-desc {
+    font-size: 0.75rem;
+    color: var(--gs-text-faint);
+}
+
+/* --- Tipos de célula -------------------------------------- */
+
+.gs-table-excel-page__text--compact {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 8px;
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--gs-text-faint) 14%, transparent);
+    color: var(--gs-text-secondary);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.gs-table-excel-page__text--mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.72rem;
+}
+
+.gs-table-excel-page__text--muted {
+    color: var(--gs-text-muted);
+}
+
+.gs-table-excel-page__date,
+.gs-table-excel-page__duration {
+    font-variant-numeric: tabular-nums;
+}
+
+/* Progress */
+.gs-table-excel-page__progress {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 120px;
+}
+
+.gs-table-excel-page__progress-track {
+    flex: 1 1 80px;
+    height: 6px;
+    background: var(--gs-border-light);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.gs-table-excel-page__progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--gs-pill-info);
+    transition: width 0.25s ease;
+}
+
+.gs-table-excel-page__progress[data-color="success"] .gs-table-excel-page__progress-fill { background: var(--gs-pill-success); }
+.gs-table-excel-page__progress[data-color="danger"]  .gs-table-excel-page__progress-fill { background: var(--gs-pill-danger); }
+.gs-table-excel-page__progress[data-color="info"]    .gs-table-excel-page__progress-fill { background: var(--gs-pill-info); }
+.gs-table-excel-page__progress[data-color="warning"] .gs-table-excel-page__progress-fill { background: var(--gs-pill-warning); }
+.gs-table-excel-page__progress[data-color="neutral"] .gs-table-excel-page__progress-fill { background: var(--gs-pill-neutral); }
+
+.gs-table-excel-page__progress-pct {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--gs-text-secondary);
+    min-width: 34px;
+    text-align: right;
+}
+
+/* Badge count (círculo vermelho) */
+.gs-table-excel-page__badge-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    border-radius: 9999px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #fff;
+    background: var(--gs-pill-danger);
+    line-height: 1;
+}
+
+.gs-table-excel-page__badge-count[data-color="success"] { background: var(--gs-pill-success); }
+.gs-table-excel-page__badge-count[data-color="info"]    { background: var(--gs-pill-info); }
+.gs-table-excel-page__badge-count[data-color="warning"] { background: var(--gs-pill-warning); color: #422; }
+.gs-table-excel-page__badge-count[data-color="neutral"] { background: var(--gs-pill-neutral); }
+
+.gs-table-excel-page__badge-count--hidden {
+    color: var(--gs-text-faint);
+    background: transparent;
+    font-weight: 500;
+}
+
+/* --- Pílulas + dropdown --------------------------------------
+ * .gs-pill já existe no modo Preset (.gs-pill--success etc.).
+ * Aqui adicionamos variantes "solidas" com cor viva para o modo Page.
+ * ========================================================= */
+
+.gs-table-excel--page .gs-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    line-height: 1.2;
+    color: #fff;
+    cursor: default;
+    border: 0;
+    font-family: inherit;
+}
+
+.gs-table-excel--page .gs-pill--success { background: var(--gs-pill-success); }
+.gs-table-excel--page .gs-pill--danger  { background: var(--gs-pill-danger); }
+.gs-table-excel--page .gs-pill--info    { background: var(--gs-pill-info); }
+.gs-table-excel--page .gs-pill--warning { background: var(--gs-pill-warning); color: #3b2900; }
+.gs-table-excel--page .gs-pill--neutral { background: var(--gs-pill-neutral); }
+
+.gs-table-excel--page .gs-pill__chevron {
+    width: 12px;
+    height: 12px;
+    opacity: 0.8;
+}
+
+.gs-table-excel--page .gs-pill-dropdown {
+    display: inline-block;
+}
+
+.gs-table-excel--page .gs-pill-dropdown .gs-pill {
+    cursor: pointer;
+    transition: filter 0.15s;
+}
+
+.gs-table-excel--page .gs-pill-dropdown .gs-pill:hover {
+    filter: brightness(1.06);
+}
+
+.gs-table-excel--page .gs-pill-dropdown .gs-pill:focus-visible {
+    outline: 2px solid var(--gs-accent);
+    outline-offset: 2px;
+}
+
+/* Menu teleported para <body> — precisa de estilos globais (fora do escopo .gs-table-excel) */
+.gs-pill-menu {
+    position: absolute;
+    z-index: 1000;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    padding: 4px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+    min-width: 160px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+:root.dark .gs-pill-menu {
+    background: #18181b;
+    border-color: #27272a;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.gs-pill-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 6px 8px;
+    background: transparent;
+    border: 0;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    font-size: 0.75rem;
+    color: #374151;
+    text-align: left;
+    font-family: inherit;
+    transition: background-color 0.1s;
+}
+
+:root.dark .gs-pill-option {
+    color: #d4d4d8;
+}
+
+.gs-pill-option:hover {
+    background: #f4f4f5;
+}
+
+:root.dark .gs-pill-option:hover {
+    background: #27272a;
+}
+
+.gs-pill-option--selected {
+    font-weight: 600;
+}
+
+.gs-pill-option__dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 9999px;
+    flex-shrink: 0;
+    background: #6b7280;
+}
+
+.gs-pill-option__dot[data-color="success"] { background: #22c55e; }
+.gs-pill-option__dot[data-color="danger"]  { background: #ef4444; }
+.gs-pill-option__dot[data-color="info"]    { background: #3b82f6; }
+.gs-pill-option__dot[data-color="warning"] { background: #eab308; }
+.gs-pill-option__dot[data-color="neutral"] { background: #6b7280; }
+
+/* --- Paginação -------------------------------------------- */
+
+.gs-table-excel-page__pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 10px 16px;
+    border-top: 1px solid var(--gs-border);
+    background: var(--gs-bg);
+}
+
+.gs-table-excel-page__pag-btn {
+    background: var(--gs-bg);
+    color: var(--gs-text-secondary);
+    border: 1px solid var(--gs-border);
+    border-radius: 0.5rem;
+    padding: 5px 14px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: border-color 0.15s, opacity 0.15s;
+}
+
+.gs-table-excel-page__pag-btn:hover:not(:disabled) {
+    border-color: var(--gs-text-muted);
+}
+
+.gs-table-excel-page__pag-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.gs-table-excel-page__pag-status {
+    font-size: 0.75rem;
+    color: var(--gs-text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.gs-table-excel-page__pag-total {
+    color: var(--gs-text-faint);
+    font-size: 0.7rem;
+    margin-left: 4px;
+}
+
+.gs-table-excel-page__pag-perpage {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    color: var(--gs-text-muted);
+}
+
+.gs-table-excel-page__pag-perpage .gs-table-excel__qf-select {
+    min-width: 70px;
+    padding: 4px 8px;
+    font-size: 0.72rem;
+}
+
+.gs-table-excel-page__pag-goto {
+    width: 54px;
+    padding: 3px 6px;
+    border: 1px solid var(--gs-border);
+    border-radius: 4px;
+    background: var(--gs-bg);
+    color: var(--gs-text);
+    font-size: 0.75rem;
+    font-family: inherit;
+    text-align: center;
+}
+
+/* --- TextInputColumn (edição inline) ------------------- */
+
+.gs-table-excel-page__ti {
+    width: 100%;
+    min-width: 80px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 3px 6px;
+    color: inherit;
+    font: inherit;
+    font-size: 0.78rem;
+    outline: none;
+}
+
+.gs-table-excel-page__ti:hover {
+    border-color: var(--gs-border-light);
+}
+
+.gs-table-excel-page__ti:focus {
+    background: var(--gs-bg);
+    border-color: var(--gs-accent);
+    box-shadow: 0 0 0 2px rgba(251, 186, 0, 0.18);
+}
+
+.gs-table-excel--page .gs-table-excel-page__ti--date {
+    min-width: 8.75rem;
+    padding: 4px 7px 4px 9px;
+    border-color: color-mix(in srgb, var(--gs-border) 72%, transparent);
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--gs-accent) 12%, transparent), transparent 46%),
+        color-mix(in srgb, var(--gs-bg-subtle) 76%, var(--gs-bg));
+    color: var(--gs-text-secondary);
+    color-scheme: light;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.01em;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+.gs-table-excel--page .gs-table-excel-page__ti--date:hover {
+    border-color: color-mix(in srgb, var(--gs-accent) 46%, var(--gs-border));
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--gs-accent) 16%, transparent), transparent 48%),
+        var(--gs-bg);
+}
+
+.gs-table-excel--page .gs-table-excel-page__ti--date:focus {
+    color: var(--gs-text);
+}
+
+.gs-table-excel--page .gs-table-excel-page__ti--date::-webkit-datetime-edit {
+    padding: 0;
+}
+
+.gs-table-excel--page .gs-table-excel-page__ti--date::-webkit-calendar-picker-indicator {
+    width: 14px;
+    height: 14px;
+    padding: 2px;
+    margin-left: 4px;
+    border-radius: 999px;
+    background-color: color-mix(in srgb, var(--gs-accent) 20%, transparent);
+    cursor: pointer;
+    opacity: 0.72;
+    transition: background-color 0.15s, opacity 0.15s, transform 0.15s;
+}
+
+.gs-table-excel--page .gs-table-excel-page__ti--date::-webkit-calendar-picker-indicator:hover {
+    background-color: color-mix(in srgb, var(--gs-accent) 34%, transparent);
+    opacity: 1;
+    transform: translateY(-1px);
+}
+
+:root.dark .gs-table-excel--page .gs-table-excel-page__ti--date {
+    background:
+        linear-gradient(135deg, rgba(251, 186, 0, 0.13), transparent 46%),
+        color-mix(in srgb, var(--gs-bg-subtle) 62%, var(--gs-bg));
+    color-scheme: dark;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+:root.dark .gs-table-excel--page .gs-table-excel-page__ti--date::-webkit-calendar-picker-indicator {
+    filter: invert(1) brightness(1.25);
+}
+
+.gs-table-excel-page__ti--readonly {
+    cursor: default;
+    background: transparent;
+}
+
+/* --- Actions column (ícones View/Edit/Delete por linha) -------------- */
+
+.gs-table-excel-page__actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.gs-table-excel--page .gs-te-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border-radius: 4px;
+    border: 0;
+    background: transparent;
+    color: var(--gs-text-muted);
+    cursor: pointer;
+    transition: background-color 0.12s, color 0.12s;
+    line-height: 0;
+    text-decoration: none;
+}
+
+.gs-table-excel--page .gs-te-action:hover {
+    background: var(--gs-border-light);
+    color: var(--gs-text);
+}
+
+.gs-table-excel--page .gs-te-action--danger:hover {
+    background: rgba(239, 68, 68, 0.12);
+    color: #dc2626;
+}
+
+:root.dark .gs-table-excel--page .gs-te-action--danger:hover {
+    background: rgba(239, 68, 68, 0.18);
+    color: #f87171;
+}
+
+.gs-table-excel--page .gs-te-action svg,
+.gs-table-excel--page .gs-te-action .gs-te-action__icon {
+    width: 12px !important;
+    height: 12px !important;
+}
+
+/* ── Column Preset Tabs ── */
+.gs-te-preset-tabs {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 14px;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f9fafb;
+    overflow-x: auto;
+    flex-shrink: 0;
+}
+
+:root.dark .gs-te-preset-tabs {
+    background: #111113;
+    border-bottom-color: #2d2d2f;
+}
+
+.gs-te-preset-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+    border: 1px solid transparent;
+    background: var(--gs-bg-subtle, #f3f4f6);
+    color: var(--gs-text-muted, #6b7280);
+    transition: background 120ms, color 120ms;
+}
+
+:root.dark .gs-te-preset-tab {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.gs-te-preset-tab:hover {
+    background: var(--gs-bg-hover, #e5e7eb);
+    color: var(--gs-text, #111827);
+}
+
+:root.dark .gs-te-preset-tab:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.gs-te-preset-tab--active {
+    background: var(--color-primary-600, #4f46e5);
+    color: #fff;
+    border-color: transparent;
+}
+
+.gs-te-preset-tab--active:hover {
+    background: var(--color-primary-700, #4338ca);
+    color: #fff;
+}
+
+:root.dark .gs-te-preset-tab--active {
+    background: var(--color-primary-500, #facc15);
+    color: #18181b;
+    border-color: var(--color-primary-400, #fde047);
+    box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.35), 0 2px 8px rgba(250, 204, 21, 0.2);
+    font-weight: 600;
+}
+
+:root.dark .gs-te-preset-tab--active:hover {
+    background: var(--color-primary-400, #fde047);
+    color: #18181b;
+}
+
+:root.dark .gs-te-preset-tab--active .gs-te-preset-tab__del {
+    color: #18181b;
+    opacity: 0.75;
+}
+
+:root.dark .gs-te-preset-tab--active .gs-te-preset-tab__del:hover {
+    opacity: 1;
+}
+
+.gs-te-preset-tab--custom {
+    padding: 0;
+}
+
+.gs-te-preset-tab--custom > button:first-child {
+    padding: 3px 6px 3px 10px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font-size: 0.72rem;
+    font-weight: 500;
+    border: none;
+    transition: color 120ms;
+}
+
+.gs-te-preset-tab--custom > button:first-child:hover {
+    color: var(--gs-text, #111827);
+}
+
+.gs-te-preset-tab__del {
+    padding: 3px 8px 3px 2px;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.6;
+    font-size: 0.85rem;
+    line-height: 1;
+    background: transparent;
+    border: none;
+    transition: opacity 120ms;
+}
+
+.gs-te-preset-tab__del:hover {
+    opacity: 1;
+}
+
+.gs-te-preset-tab--add {
+    border-style: dashed;
+    border-color: var(--gs-border, #e5e7eb);
+    background: transparent;
+    color: var(--gs-text-muted, #6b7280);
+}
+
+:root.dark .gs-te-preset-tab--add {
+    border-color: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.gs-te-preset-tab--add:hover {
+    background: transparent;
+    border-color: var(--gs-text-muted, #6b7280);
+}
+
+:root.dark .gs-te-preset-tab--add:hover {
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Modal backdrop e container */
+.gs-te-new-tab-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.gs-te-new-tab-modal {
+    position: relative;
+    z-index: 41;
+    background: white;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    min-width: 350px;
+    width: 90%;
+    max-width: 450px;
+    padding: 0;
+    overflow: hidden;
+}
+
+:root.dark .gs-te-new-tab-modal {
+    background: #111113;
+    border-color: #2d2d2f;
+}
+
+.gs-te-new-tab-modal__header {
+    padding: 16px 20px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--gs-text, #111827);
+    border-bottom: 1px solid var(--gs-border, #e5e7eb);
+}
+
+:root.dark .gs-te-new-tab-modal__header {
+    color: #f3f4f6;
+    border-bottom-color: #2d2d2f;
+}
+
+.gs-te-new-tab-modal__input {
+    display: block;
+    width: 100%;
+    padding: 12px 20px;
+    font-size: 0.95rem;
+    border: none;
+    border-bottom: 1px solid var(--gs-border, #e5e7eb);
+    background: transparent;
+    color: var(--gs-text, #111827);
+    box-sizing: border-box;
+}
+
+:root.dark .gs-te-new-tab-modal__input {
+    color: #f3f4f6;
+    border-bottom-color: #2d2d2f;
+}
+
+.gs-te-new-tab-modal__input:focus {
+    outline: none;
+    background: var(--gs-bg-subtle, #f3f4f6);
+}
+
+:root.dark .gs-te-new-tab-modal__input:focus {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.gs-te-new-tab-modal__input::placeholder {
+    color: var(--gs-text-muted, #9ca3af);
+}
+
+:root.dark .gs-te-new-tab-modal__input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.gs-te-new-tab-modal__actions {
+    display: flex;
+    gap: 8px;
+    padding: 12px 20px;
+    justify-content: flex-end;
+}
+
+.gs-te-new-tab-modal__btn {
+    padding: 8px 16px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    transition: background 120ms, color 120ms;
+}
+
+.gs-te-new-tab-modal__btn--primary {
+    background: var(--color-primary-600, #4f46e5);
+    color: white;
+}
+
+.gs-te-new-tab-modal__btn--primary:hover:not(:disabled) {
+    background: var(--color-primary-700, #4338ca);
+}
+
+.gs-te-new-tab-modal__btn--primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.gs-te-new-tab-modal__btn--secondary {
+    background: var(--gs-bg-subtle, #f3f4f6);
+    color: var(--gs-text, #111827);
+    border: 1px solid var(--gs-border, #e5e7eb);
+}
+
+:root.dark .gs-te-new-tab-modal__btn--secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: #f3f4f6;
+    border-color: #2d2d2f;
+}
+
+.gs-te-new-tab-modal__btn--secondary:hover {
+    background: var(--gs-bg-hover, #e5e7eb);
+}
+
+:root.dark .gs-te-new-tab-modal__btn--secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.gs-te-new-tab-modal__checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.gs-te-new-tab-modal__checkbox input[type="checkbox"] {
+    cursor: pointer;
+    accent-color: var(--color-primary-600, #4f46e5);
+}
+
+.gs-te-new-tab-modal__checkbox span {
+    color: var(--gs-text, #111827);
+    font-weight: 500;
+}
+
+:root.dark .gs-te-new-tab-modal__checkbox span {
+    color: #f3f4f6;
+}
+
+/* Modal de confirmação (remoção de vista global) */
+.gs-te-confirm-modal {
+    padding: 24px 24px 20px 24px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+        "icon body"
+        "actions actions";
+    column-gap: 16px;
+    row-gap: 18px;
+    max-width: 480px;
+}
+
+.gs-te-confirm-modal__icon {
+    grid-area: icon;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(220, 38, 38, 0.12);
+    color: #dc2626;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+:root.dark .gs-te-confirm-modal__icon {
+    background: rgba(248, 113, 113, 0.18);
+    color: #f87171;
+}
+
+.gs-te-confirm-modal__body {
+    grid-area: body;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.gs-te-confirm-modal__title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--gs-text, #111827);
+}
+
+:root.dark .gs-te-confirm-modal__title {
+    color: #f3f4f6;
+}
+
+.gs-te-confirm-modal__text {
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--gs-text-muted, #4b5563);
+}
+
+:root.dark .gs-te-confirm-modal__text {
+    color: #d1d5db;
+}
+
+.gs-te-confirm-modal__text strong {
+    color: var(--gs-text, #111827);
+    font-weight: 600;
+}
+
+:root.dark .gs-te-confirm-modal__text strong {
+    color: #f3f4f6;
+}
+
+.gs-te-confirm-modal__actions {
+    grid-area: actions;
+    border-top: 1px solid var(--gs-border, #e5e7eb);
+    padding-top: 14px;
+    margin-top: 4px;
+}
+
+:root.dark .gs-te-confirm-modal__actions {
+    border-top-color: #2d2d2f;
+}
+
+.gs-te-confirm-modal__btn-danger {
+    background: #dc2626;
+    color: #ffffff;
+    border: 1px solid #dc2626;
+}
+
+.gs-te-confirm-modal__btn-danger:hover {
+    background: #b91c1c;
+    border-color: #b91c1c;
+}
+
+.gs-te-confirm-modal__btn-danger:focus-visible {
+    outline: 2px solid #fca5a5;
+    outline-offset: 2px;
+}
+
+/* Overlay exibido durante o salvamento/aplicação de uma vista global */
+[x-cloak] {
+    display: none !important;
+}
+
+.gs-te-saving-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.gs-te-saving-overlay__card {
+    background: #ffffff;
+    border: 1px solid var(--gs-border, #e5e7eb);
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+    padding: 28px 32px;
+    min-width: 320px;
+    max-width: 440px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+:root.dark .gs-te-saving-overlay__card {
+    background: #18181b;
+    border-color: #2d2d2f;
+}
+
+.gs-te-saving-overlay__spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid rgba(99, 102, 241, 0.2);
+    border-top-color: var(--color-primary-600, #4f46e5);
+    border-radius: 50%;
+    animation: gs-te-saving-spin 0.8s linear infinite;
+    margin-bottom: 4px;
+}
+
+@keyframes gs-te-saving-spin {
+    to { transform: rotate(360deg); }
+}
+
+.gs-te-saving-overlay__title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--gs-text, #111827);
+}
+
+:root.dark .gs-te-saving-overlay__title {
+    color: #f3f4f6;
+}
+
+.gs-te-saving-overlay__subtitle {
+    font-size: 0.875rem;
+    color: var(--gs-text-muted, #4b5563);
+    line-height: 1.4;
+}
+
+:root.dark .gs-te-saving-overlay__subtitle {
+    color: #d1d5db;
+}
+
+.gs-te-saving-overlay__hint {
+    margin-top: 6px;
+    font-size: 0.75rem;
+    color: var(--gs-text-muted, #6b7280);
+    font-style: italic;
+}
+
+:root.dark .gs-te-saving-overlay__hint {
+    color: #9ca3af;
+}
