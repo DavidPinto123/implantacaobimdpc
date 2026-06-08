@@ -35,7 +35,7 @@ class MatterportResource extends Resource
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-camera';
 
-    protected static ?string $navigationLabel = 'Tour 360°';
+    protected static ?string $navigationLabel = 'Tour 3600°';
 
     protected static ?string $modelLabel = 'Matterport';
 
