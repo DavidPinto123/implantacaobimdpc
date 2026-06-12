@@ -68,6 +68,7 @@ class CronogramaFase extends Model
         'regra_elastica' => 'boolean',
         'visivel' => 'boolean',
         'bloqueada_pos_contrato' => 'boolean',
+        'valor' => 'decimal:2',
     ];
 
     public function projeto(): BelongsTo

@@ -15,7 +15,11 @@ use App\Models\CronogramaFaseItem;
 use App\Models\CronogramaFaseItemDependencia;
 use App\Models\CronogramaTemplate;
 use App\Models\Estado;
+use App\Models\GrupoAtividades;
+use App\Models\GrupoAtividadesItem;
 use App\Models\Projeto;
+use App\Models\Task;
+use App\Models\TaskCategory;
 use App\Services\CronogramaService;
 use App\Services\CronogramaTemplateService;
 use App\Support\CronogramaLimites;
@@ -189,6 +193,11 @@ class Cronograma extends Page
 
     public bool $mostrarModalConflitoDep = false;
 
+    // Grupos de atividades
+    public bool $modalSelecionarGrupo = false;
+    public ?int $faseAlvoGrupo = null;
+    public array $gruposDisponiveis = [];
+
     public string $acaoPendenteFase = 'ocultar';
 
     public ?int $faseParaNaoAplicarId = null;
@@ -344,7 +353,9 @@ class Cronograma extends Page
             'cronogramaFases.templateFase.dependencias.dependeDeItem.templateFase',
             'cronogramaFases.comentarios.usuario',
             'cronogramaFases.itens.children.responsaveis',
+            'cronogramaFases.itens.children.revisor',
             'cronogramaFases.itens.responsaveis',
+            'cronogramaFases.itens.revisor',
             'cronogramaFases.itens.dependeDeFase',
             'cronogramaFases.itens.dependeDeItem',
             'cronogramaFases.itens.dependencias.dependeDeFase',
@@ -366,7 +377,7 @@ class Cronograma extends Page
 
         if ($projeto->cronogramaFases->isEmpty()) {
             (new CronogramaService)->criarFasesParaProjeto($projeto);
-            $projeto->load(['cronogramaFases.template', 'cronogramaFases.templateFase', 'cronogramaFases.dependencias.dependeDeItem.fase', 'cronogramaFases.templateFase.dependencias.dependeDeItem.templateFase', 'cronogramaFases.itens.children.responsaveis', 'cronogramaFases.itens.responsaveis', 'cronogramaFases.itens.dependeDeFase', 'cronogramaFases.itens.dependeDeItem', 'cronogramaFases.itens.dependencias.dependeDeFase', 'cronogramaFases.itens.dependencias.dependeDeItem']);
+            $projeto->load(['cronogramaFases.template', 'cronogramaFases.templateFase', 'cronogramaFases.dependencias.dependeDeItem.fase', 'cronogramaFases.templateFase.dependencias.dependeDeItem.templateFase', 'cronogramaFases.itens.children.responsaveis', 'cronogramaFases.itens.children.revisor', 'cronogramaFases.itens.responsaveis', 'cronogramaFases.itens.revisor', 'cronogramaFases.itens.dependeDeFase', 'cronogramaFases.itens.dependeDeItem', 'cronogramaFases.itens.dependencias.dependeDeFase', 'cronogramaFases.itens.dependencias.dependeDeItem']);
         }
 
         $fases = $this->mostrarOcultas
@@ -3602,6 +3613,7 @@ class Cronograma extends Page
         }
 
         $item->responsaveis()->syncWithoutDetaching([$userId]);
+        $this->criarTarefaDeSubitem($item, $userId, ehRevisor: false);
         $this->renderKey++;
     }
 
@@ -3627,6 +3639,316 @@ class Cronograma extends Page
         $item->save();
 
         $this->renderKey++;
+    }
+
+    // ─── Valor da fase + distribuição por subitem ────────────────────────────
+
+    public function salvarValorFase(int $faseId, mixed $valorRaw): void
+    {
+        $fase = CronogramaFase::find($faseId);
+        if (! $fase) {
+            return;
+        }
+
+        $valor = ($valorRaw !== null && $valorRaw !== '') ? round((float) $valorRaw, 2) : null;
+        $fase->valor = $valor;
+        $fase->save();
+
+        // Distribui igualmente entre os subitens diretos (parent_id = null)
+        $subitens = CronogramaFaseItem::where('cronograma_fase_id', $faseId)
+            ->whereNull('parent_id')
+            ->get();
+
+        $count = $subitens->count();
+        $valorPorItem = ($valor !== null && $count > 0) ? round($valor / $count, 2) : null;
+
+        foreach ($subitens as $item) {
+            $item->valor = $valorPorItem;
+            $item->save();
+        }
+
+        $this->renderKey++;
+    }
+
+    // ─── Revisor de subitem ───────────────────────────────────────────────────
+
+    public function salvarRevisorSubitem(int $itemId, ?int $userId): void
+    {
+        $item = CronogramaFaseItem::find($itemId);
+        if (! $item) {
+            return;
+        }
+
+        $item->revisor_id = $userId;
+        $item->save();
+
+        if ($userId) {
+            $this->criarTarefaDeSubitem($item, $userId, ehRevisor: true);
+        }
+
+        $this->renderKey++;
+    }
+
+    // ─── Helper: cria tarefa ao atribuir responsável ou revisor ─────────────
+
+    private function criarTarefaDeSubitem(CronogramaFaseItem $item, int $userId, bool $ehRevisor = false): void
+    {
+        $categoria = TaskCategory::firstOrCreate(
+            ['name' => 'Planejamento BIM'],
+            ['name' => 'Planejamento BIM']
+        );
+
+        $titulo = $ehRevisor ? '[Revisão] ' . $item->titulo : $item->titulo;
+
+        $inicio = $item->data_prevista_inicio?->toDateString() ?? today()->toDateString();
+
+        $prazo = $item->duracao_dias;
+        if (! $prazo && $item->data_prevista_inicio && $item->data_prevista_fim) {
+            $prazo = $item->data_prevista_inicio->diffInDays($item->data_prevista_fim) + 1;
+        }
+        $prazo = $prazo ?: 1;
+
+        try {
+            Task::create([
+                'title'            => $titulo,
+                'task_category_id' => $categoria->id,
+                'assigned_to'      => $userId,
+                'created_by'       => auth()->id() ?? $userId,
+                'inicio'           => $inicio,
+                'prazo'            => $prazo,
+                'status'           => 'pendente',
+                'projeto_id'       => $this->projetoSelecionadoId,
+            ]);
+        } catch (\Throwable) {
+            // Não bloqueia a atribuição se a criação da tarefa falhar
+        }
+    }
+
+    // ─── Ações em lote sobre subitens ────────────────────────────────────────
+
+    public function excluirSubitemsEmLote(array $ids): void
+    {
+        CronogramaFaseItem::whereIn('id', $ids)->get()->each->delete();
+        $this->renderKey++;
+    }
+
+    public function marcarConcluidsEmLote(array $ids): void
+    {
+        CronogramaFaseItem::whereIn('id', $ids)->update(['recebido' => true]);
+        $this->renderKey++;
+    }
+
+    public function alterarDatasSubitemsEmLote(array $ids, ?string $inicio, ?string $fim): void
+    {
+        $dados = [];
+        if ($inicio) {
+            $dados['data_prevista_inicio'] = $inicio;
+        }
+        if ($fim) {
+            $dados['data_prevista_fim'] = $fim;
+        }
+        if (! empty($dados)) {
+            CronogramaFaseItem::whereIn('id', $ids)->update($dados);
+            $this->renderKey++;
+        }
+    }
+
+    public function atribuirResponsavelSubitemsEmLote(array $ids, int $userId): void
+    {
+        foreach ($ids as $itemId) {
+            $item = CronogramaFaseItem::find($itemId);
+            if ($item && ! $item->responsaveis->contains('id', $userId)) {
+                $item->responsaveis()->attach($userId);
+            }
+        }
+        $this->renderKey++;
+    }
+
+    // ─── Drag-drop de subitens (reordenar / mover entre fases) ───────────────
+
+    public function moverSubitem(int $itemId, int $faseOrigemId, int $faseDestinoId, int $novaOrdem): void
+    {
+        $item = CronogramaFaseItem::find($itemId);
+        if (! $item) {
+            return;
+        }
+
+        $mesmaFase = ($faseOrigemId === $faseDestinoId);
+        $oldOrdem  = $item->ordem;
+
+        if ($mesmaFase) {
+            // Reordenação dentro da mesma fase
+            if ($novaOrdem === $oldOrdem) {
+                return;
+            }
+            if ($novaOrdem > $oldOrdem) {
+                CronogramaFaseItem::where('cronograma_fase_id', $faseOrigemId)
+                    ->whereNull('parent_id')
+                    ->where('id', '!=', $itemId)
+                    ->whereBetween('ordem', [$oldOrdem + 1, $novaOrdem])
+                    ->decrement('ordem');
+            } else {
+                CronogramaFaseItem::where('cronograma_fase_id', $faseOrigemId)
+                    ->whereNull('parent_id')
+                    ->where('id', '!=', $itemId)
+                    ->whereBetween('ordem', [$novaOrdem, $oldOrdem - 1])
+                    ->increment('ordem');
+            }
+        } else {
+            // Mover para outra fase: fechar gap na fase de origem
+            CronogramaFaseItem::where('cronograma_fase_id', $faseOrigemId)
+                ->whereNull('parent_id')
+                ->where('id', '!=', $itemId)
+                ->where('ordem', '>', $oldOrdem)
+                ->decrement('ordem');
+
+            if ($novaOrdem === 9999) {
+                // Append ao final da fase destino
+                $novaOrdem = (CronogramaFaseItem::where('cronograma_fase_id', $faseDestinoId)
+                    ->whereNull('parent_id')
+                    ->max('ordem') ?? -1) + 1;
+            } else {
+                // Inserir antes do item alvo: abrir espaço
+                CronogramaFaseItem::where('cronograma_fase_id', $faseDestinoId)
+                    ->whereNull('parent_id')
+                    ->where('id', '!=', $itemId)
+                    ->where('ordem', '>=', $novaOrdem)
+                    ->increment('ordem');
+            }
+
+            $item->cronograma_fase_id = $faseDestinoId;
+            $item->parent_id          = null;
+        }
+
+        $item->ordem = $novaOrdem;
+        $item->save();
+
+        $this->renderKey++;
+    }
+
+    // ─── Grupos de atividades ─────────────────────────────────────────────────
+
+    public function criarGrupoAtividades(string $nome, array $ids): void
+    {
+        $nome = trim($nome);
+        if (! $nome || empty($ids)) {
+            return;
+        }
+
+        $grupo = GrupoAtividades::create([
+            'nome'      => $nome,
+            'criado_por' => auth()->id(),
+        ]);
+
+        $itens = CronogramaFaseItem::whereIn('id', $ids)
+            ->whereNull('parent_id')
+            ->orderBy('ordem')
+            ->get();
+
+        foreach ($itens as $ordem => $item) {
+            $grupoItem = GrupoAtividadesItem::create([
+                'grupo_id'    => $grupo->id,
+                'titulo'      => $item->titulo,
+                'descricao'   => $item->descricao,
+                'ordem'       => $ordem,
+                'duracao_dias' => $item->duracao_dias,
+            ]);
+
+            foreach ($item->children->sortBy('ordem') as $childOrdem => $filho) {
+                GrupoAtividadesItem::create([
+                    'grupo_id'    => $grupo->id,
+                    'parent_id'   => $grupoItem->id,
+                    'titulo'      => $filho->titulo,
+                    'descricao'   => $filho->descricao,
+                    'ordem'       => $childOrdem,
+                    'duracao_dias' => $filho->duracao_dias,
+                ]);
+            }
+        }
+
+        Notification::make()->title("Grupo \"{$nome}\" criado com " . $itens->count() . ' atividade(s)')->success()->send();
+    }
+
+    public function abrirSelecionarGrupo(int $faseId): void
+    {
+        $this->faseAlvoGrupo = $faseId;
+        $this->gruposDisponiveis = GrupoAtividades::with('itensRaiz.children')
+            ->orderBy('nome')
+            ->get()
+            ->map(fn ($g) => [
+                'id'          => $g->id,
+                'nome'        => $g->nome,
+                'descricao'   => $g->descricao,
+                'total_itens' => $g->todosItens()->count(),
+                'itens'       => $g->itensRaiz->map(fn ($i) => [
+                    'titulo' => $i->titulo,
+                    'filhos' => $i->children->pluck('titulo')->toArray(),
+                ])->toArray(),
+            ])
+            ->toArray();
+        $this->modalSelecionarGrupo = true;
+    }
+
+    public function fecharSelecionarGrupo(): void
+    {
+        $this->modalSelecionarGrupo = false;
+        $this->faseAlvoGrupo        = null;
+        $this->gruposDisponiveis    = [];
+    }
+
+    public function inserirGrupoNaFase(int $grupoId): void
+    {
+        if (! $this->faseAlvoGrupo) {
+            return;
+        }
+
+        $grupo = GrupoAtividades::with('itensRaiz.children')->find($grupoId);
+        if (! $grupo) {
+            return;
+        }
+
+        $maxOrdem = CronogramaFaseItem::where('cronograma_fase_id', $this->faseAlvoGrupo)
+            ->whereNull('parent_id')
+            ->max('ordem') ?? -1;
+
+        foreach ($grupo->itensRaiz as $i => $gItem) {
+            $item = CronogramaFaseItem::create([
+                'cronograma_fase_id' => $this->faseAlvoGrupo,
+                'titulo'             => $gItem->titulo,
+                'descricao'          => $gItem->descricao,
+                'ordem'              => $maxOrdem + 1 + $i,
+                'duracao_dias'       => $gItem->duracao_dias,
+                'origem'             => 'grupo',
+            ]);
+
+            foreach ($gItem->children->sortBy('ordem') as $j => $gFilho) {
+                CronogramaFaseItem::create([
+                    'cronograma_fase_id' => $this->faseAlvoGrupo,
+                    'parent_id'          => $item->id,
+                    'titulo'             => $gFilho->titulo,
+                    'descricao'          => $gFilho->descricao,
+                    'ordem'              => $j,
+                    'duracao_dias'       => $gFilho->duracao_dias,
+                    'origem'             => 'grupo',
+                ]);
+            }
+        }
+
+        // Garante que a fase fique expandida
+        if (! in_array($this->faseAlvoGrupo, $this->fasesExpandidas, true)) {
+            $this->fasesExpandidas[] = $this->faseAlvoGrupo;
+        }
+
+        $this->fecharSelecionarGrupo();
+        $this->renderKey++;
+    }
+
+    public function excluirGrupoAtividades(int $grupoId): void
+    {
+        GrupoAtividades::find($grupoId)?->delete();
+        $this->gruposDisponiveis = array_values(
+            array_filter($this->gruposDisponiveis, fn ($g) => $g['id'] !== $grupoId)
+        );
     }
 
     public static function canAccess(): bool

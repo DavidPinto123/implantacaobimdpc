@@ -824,6 +824,102 @@
             max-width: 130px;
         }
 
+        /* ─── Multi-seleção e batch ──────────────────────────────────── */
+        .cr-sel-check {
+            width: 14px; height: 14px; cursor: pointer; flex-shrink: 0; accent-color: var(--vo-accent);
+        }
+        .cr-subitem-tr.cr-selected,
+        .cr-table-row.cr-selected {
+            background: color-mix(in srgb, var(--vo-accent) 10%, transparent) !important;
+        }
+        .cr-batch-toolbar {
+            position: sticky;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 30;
+            background: var(--vo-bg);
+            border-top: 2px solid var(--vo-accent);
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            box-shadow: 0 -4px 16px rgba(0,0,0,.15);
+        }
+        .cr-batch-label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--vo-text);
+            margin-right: 4px;
+        }
+        .cr-batch-btn {
+            padding: 4px 12px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            border-radius: .3rem;
+            border: 1px solid var(--vo-border);
+            background: var(--vo-bg-subtle);
+            color: var(--vo-text);
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .cr-batch-btn:hover { background: var(--vo-bg-hover, var(--vo-bg-subtle)); }
+        .cr-batch-btn--danger { border-color: #ef4444; color: #ef4444; }
+        .cr-batch-btn--danger:hover { background: rgba(239,68,68,.1); }
+        .cr-batch-btn--primary { border-color: var(--vo-accent); color: var(--vo-accent); }
+        .cr-batch-btn--cancel { color: var(--vo-text-faint); }
+        .cr-batch-sep { width: 1px; height: 20px; background: var(--vo-border); margin: 0 4px; }
+
+        /* Drag-drop subitens */
+        .cr-subitem-tr[draggable="true"] { cursor: grab; }
+        .cr-subitem-tr[draggable="true"]:active { cursor: grabbing; }
+        .cr-item-dragging { opacity: 0.4; }
+        .cr-item-dragover td:first-child { border-top: 2px solid var(--vo-accent) !important; }
+        .cr-fase-dragover-target td { background: color-mix(in srgb, var(--vo-accent) 8%, transparent) !important; }
+        .cr-drag-handle {
+            cursor: grab;
+            color: var(--vo-text-faint);
+            padding: 0 3px;
+            flex-shrink: 0;
+            font-size: 0.7rem;
+            line-height: 1;
+            user-select: none;
+        }
+        .cr-drag-handle:active { cursor: grabbing; }
+
+        /* Modal overlay genérico para batch */
+        .cr-modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: rgba(0,0,0,.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .cr-modal-box {
+            background: var(--vo-bg);
+            border: 1px solid var(--vo-border);
+            border-radius: .6rem;
+            padding: 20px 24px;
+            min-width: 300px;
+            max-width: 480px;
+            box-shadow: 0 8px 32px rgba(0,0,0,.25);
+        }
+        .cr-modal-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--vo-text);
+            margin-bottom: 14px;
+        }
+        .cr-modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
         .cr-fase-resize-handle {
             position: absolute;
             right: -7px;
@@ -857,28 +953,24 @@
         .cr-fase-resizing,
         .cr-fase-resizing * { cursor: col-resize !important; user-select: none !important; }
 
-        @media (min-width: 900px) {
-            .cr-col-status {
-                position: sticky;
-                left: var(--cr-fase-col-width, 220px);
-                z-index: 2;
-                background: var(--vo-bg);
-                box-shadow: 1px 0 0 var(--vo-border);
-            }
+        /* STATUS: apenas sticky vertical (top) no cabeçalho; dados scrollam normalmente */
+        th.cr-col-status {
+            left: auto;
+        }
+        td.cr-col-status {
+            position: static;
+            z-index: auto;
+            background: inherit;
+            box-shadow: none;
+        }
 
+        @media (min-width: 900px) {
             thead .cr-col-status {
                 z-index: 6;
                 background: var(--vo-bg-subtle);
             }
 
             .cr-table-row:hover .cr-col-status { background: var(--vo-bg-subtle); }
-        }
-
-        @media (max-width: 899px) {
-            th.cr-col-status,
-            td.cr-col-status {
-                position: static !important;
-            }
         }
 
         .cr-td-unidade {
@@ -3346,7 +3438,7 @@
             </div>
             @else
             {{-- VISAO INDIVIDUAL: Tabela detalhada --}}
-            <div class="cr-table-wrap"
+            <div
                  x-data="{
                      faseW:         parseInt(localStorage.getItem('cr:col:fase')          || '220'),
                      statusW:       parseInt(localStorage.getItem('cr:col:status')        || '155'),
@@ -3356,12 +3448,67 @@
                      pctW:          parseInt(localStorage.getItem('cr:col:pct')           || '130'),
                      valorW:        parseInt(localStorage.getItem('cr:col:valor')         || '160'),
                      responsaveisW: parseInt(localStorage.getItem('cr:col:responsaveis')  || '180'),
+                     revisorW:      parseInt(localStorage.getItem('cr:col:revisor')        || '160'),
                      depsW:         parseInt(localStorage.getItem('cr:col:deps')          || '260'),
                      comentariosW:  parseInt(localStorage.getItem('cr:col:comentarios')   || '200'),
-                     cols: (function() { var d={planejado:true,durplan:true,realizado:true,pct:true,valor:true,responsaveis:true,deps:false,comentarios:true}; try { return JSON.parse(localStorage.getItem('cr:cols:vis')) || d; } catch(e) { return d; } })(),
+                     cols: (function() { var d={planejado:true,durplan:true,realizado:true,pct:true,valor:true,responsaveis:true,revisor:true,deps:false,comentarios:true}; try { return JSON.parse(localStorage.getItem('cr:cols:vis')) || d; } catch(e) { return d; } })(),
                      mostrarColPanel: false,
                      resizing: false,
-                     init() { this.aplicarLarguras(); },
+                     // ─── Multi-seleção ─────────────────────────────────────
+                     selItemIds: [],
+                     toggleSelItem(id) {
+                         const idx = this.selItemIds.indexOf(id);
+                         if (idx === -1) this.selItemIds.push(id); else this.selItemIds.splice(idx, 1);
+                     },
+                     isSelItem(id) { return this.selItemIds.includes(id); },
+                     limparSelecao() { this.selItemIds = []; },
+                     // Batch modal de datas
+                     batchModalDatas: false,
+                     batchInicio: '', batchFim: '',
+                     abrirBatchDatas() { this.batchModalDatas = true; this.batchInicio = ''; this.batchFim = ''; },
+                     confirmarBatchDatas() {
+                         if (!this.batchInicio && !this.batchFim) { this.batchModalDatas = false; return; }
+                         $wire.alterarDatasSubitemsEmLote([...this.selItemIds], this.batchInicio || null, this.batchFim || null);
+                         this.batchModalDatas = false; this.limparSelecao();
+                     },
+                     // Batch modal de responsável
+                     batchModalResp: false,
+                     batchUserId: '',
+                     abrirBatchResp() { this.batchModalResp = true; this.batchUserId = ''; },
+                     confirmarBatchResp() {
+                         if (!this.batchUserId) { this.batchModalResp = false; return; }
+                         $wire.atribuirResponsavelSubitemsEmLote([...this.selItemIds], parseInt(this.batchUserId));
+                         this.batchModalResp = false; this.limparSelecao();
+                     },
+                     // Batch modal criar grupo
+                     batchModalGrupo: false,
+                     batchGrupoNome: '',
+                     abrirBatchGrupo() { this.batchModalGrupo = true; this.batchGrupoNome = ''; },
+                     confirmarBatchGrupo() {
+                         if (!this.batchGrupoNome.trim()) { this.batchModalGrupo = false; return; }
+                         $wire.criarGrupoAtividades(this.batchGrupoNome.trim(), [...this.selItemIds]);
+                         this.batchModalGrupo = false; this.limparSelecao();
+                     },
+                     // ─── Drag-drop de subitens ─────────────────────────────
+                     dragItemSrc: null, dragFaseItemSrc: null,
+                     dragItemTarget: null, dragFaseTarget: null,
+                     onDropSubitem(targetItemId, targetFaseId, targetOrdem) {
+                         if (this.dragItemSrc !== null && this.dragItemSrc !== targetItemId) {
+                             $wire.moverSubitem(this.dragItemSrc, this.dragFaseItemSrc, targetFaseId, targetOrdem);
+                         }
+                         this.dragItemSrc = null; this.dragFaseItemSrc = null;
+                         this.dragItemTarget = null; this.dragFaseTarget = null;
+                     },
+                     onDropFase(targetFaseId) {
+                         if (this.dragItemSrc !== null) {
+                             $wire.moverSubitem(this.dragItemSrc, this.dragFaseItemSrc, targetFaseId, 9999);
+                         }
+                         this.dragItemSrc = null; this.dragFaseItemSrc = null;
+                         this.dragItemTarget = null; this.dragFaseTarget = null;
+                     },
+                     init() {
+                         this.aplicarLarguras();
+                     },
                      aplicarLarguras() {
                          const el = this.$el;
                          el.style.setProperty('--cr-fase-col-width',     this.faseW         + 'px');
@@ -3372,6 +3519,7 @@
                          el.style.setProperty('--cr-col-pct-w',          this.pctW          + 'px');
                          el.style.setProperty('--cr-col-valor-w',        this.valorW        + 'px');
                          el.style.setProperty('--cr-col-responsaveis-w', this.responsaveisW + 'px');
+                         el.style.setProperty('--cr-col-revisor-w',      this.revisorW      + 'px');
                          el.style.setProperty('--cr-col-deps-w',         this.depsW         + 'px');
                          el.style.setProperty('--cr-col-comentarios-w',  this.comentariosW  + 'px');
                      },
@@ -3386,6 +3534,7 @@
                              pct:          '--cr-col-pct-w',
                              valor:        '--cr-col-valor-w',
                              responsaveis: '--cr-col-responsaveis-w',
+                             revisor:      '--cr-col-revisor-w',
                              deps:         '--cr-col-deps-w',
                              comentarios:  '--cr-col-comentarios-w',
                          };
@@ -3410,7 +3559,7 @@
                      },
                      salvarCols() { localStorage.setItem('cr:cols:vis', JSON.stringify(this.cols)); },
                  }"
-                 :class="{ 'cr-fase-resizing': resizing }">
+                 >
                 {{-- Toolbar: busca, filtro, colunas --}}
                 <div class="cr-tbl-toolbar">
                     <div class="cr-tbl-search-wrap">
@@ -3437,11 +3586,13 @@
                             <label class="cr-tbl-cols-item"><input type="checkbox" x-model="cols.valor"        @change="salvarCols()"> Valor</label>
                             @endcan
                             <label class="cr-tbl-cols-item"><input type="checkbox" x-model="cols.responsaveis" @change="salvarCols()"> Responsáveis</label>
+                            <label class="cr-tbl-cols-item"><input type="checkbox" x-model="cols.revisor"      @change="salvarCols()"> Revisor</label>
                             <label class="cr-tbl-cols-item"><input type="checkbox" x-model="cols.deps"         @change="salvarCols()"> Dependência</label>
                             <label class="cr-tbl-cols-item"><input type="checkbox" x-model="cols.comentarios"  @change="salvarCols()"> Comentários</label>
                         </div>
                     </div>
                 </div>
+                <div class="cr-table-wrap" :class="{ 'cr-fase-resizing': resizing }">
                 <table class="cr-table cr-table-detalhada">
                     <colgroup>
                         <col class="cr-col-fase">
@@ -3454,6 +3605,7 @@
                         <col x-show="cols.valor"        :style="`width:${valorW}px`">
                         @endcan
                         <col x-show="cols.responsaveis" :style="`width:${responsaveisW}px`">
+                        <col x-show="cols.revisor"      :style="`width:${revisorW}px`">
                         <col x-show="cols.deps"         :style="`width:${depsW}px`">
                         <col x-show="cols.comentarios"  :style="`width:${comentariosW}px`">
                         <col style="width:48px;">
@@ -3496,6 +3648,10 @@
                                 Responsáveis
                                 <span class="cr-th-rhandle" @mousedown.prevent="startResize($event, 'responsaveis', 100, 320)"></span>
                             </th>
+                            <th x-show="cols.revisor" class="cr-th-resizable" style="white-space:nowrap;">
+                                Revisor
+                                <span class="cr-th-rhandle" @mousedown.prevent="startResize($event, 'revisor', 100, 320)"></span>
+                            </th>
                             <th x-show="cols.deps" class="cr-th-resizable">
                                 Dependência
                                 <span class="cr-th-rhandle" @mousedown.prevent="startResize($event, 'deps', 150, 420)"></span>
@@ -3525,7 +3681,11 @@
                                     || ($concluidoTbl && $realFStr && $prevFStr && $realFStr > $prevFStr);
                             @endphp
                             @php $farolTblRow = $fase->farol; $qtdItensTblRow = $fase->itens->count(); @endphp
-                            <tr class="cr-table-row {{ $farolTblRow !== 'neutro' ? 'cr-fase-linha-'.$farolTblRow : '' }}">
+                            <tr class="cr-table-row {{ $farolTblRow !== 'neutro' ? 'cr-fase-linha-'.$farolTblRow : '' }}"
+                                @dragover.prevent="if (dragItemSrc !== null) dragFaseTarget = {{ $fase->id }}"
+                                @dragleave="if (dragFaseTarget === {{ $fase->id }}) dragFaseTarget = null"
+                                @drop.prevent="onDropFase({{ $fase->id }})"
+                                :class="{ 'cr-fase-dragover-target': dragItemSrc !== null && dragFaseTarget === {{ $fase->id }} }">
                                 <td class="cr-td-sticky cr-col-fase" style="font-weight:500;{{ $qtdItensTblRow > 0 ? 'cursor:pointer;' : '' }}"
                                     @if($qtdItensTblRow > 0) wire:click="alternarExpansaoFase({{ $fase->id }})" @endif>
                                     <span style="display:flex;align-items:center;gap:6px;">
@@ -3651,16 +3811,18 @@
                                     </div>
                                 </td>
                                 @can('ver_valores_planejamento')
-                                <td x-show="cols.valor" style="text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;font-size:0.78rem;">
-                                    @if($fase->valor)
-                                        <span style="color:var(--vo-text-secondary);">R$</span>
-                                        <span style="font-weight:600;color:var(--vo-text);">{{ number_format($fase->valor, 2, ',', '.') }}</span>
-                                    @else
-                                        <span style="color:var(--vo-text-faint);">—</span>
-                                    @endif
+                                <td x-show="cols.valor" style="text-align:right;white-space:nowrap;padding:2px 4px;">
+                                    <input type="text"
+                                           value="{{ $fase->valor ? number_format($fase->valor, 2, ',', '.') : '' }}"
+                                           placeholder="—"
+                                           title="Valor total da fase (será distribuído igualmente entre as atividades)"
+                                           style="width:100%;text-align:right;font-size:0.78rem;font-variant-numeric:tabular-nums;background:transparent;border:1px solid transparent;border-radius:4px;padding:2px 4px;color:var(--vo-text);"
+                                           @focus="$event.target.style.borderColor='var(--primary-500)'"
+                                           @blur="$event.target.style.borderColor='transparent'; $wire.salvarValorFase({{ $fase->id }}, $event.target.value)">
                                 </td>
                                 @endcan
                                 <td x-show="cols.responsaveis" style="color:var(--vo-text-faint);font-size:0.72rem;">—</td>
+                                <td x-show="cols.revisor" style="color:var(--vo-text-faint);font-size:0.72rem;">—</td>
                                 <td x-show="cols.deps">
                                     @php
                                         $regra = $fase->regraEfetiva();
@@ -3745,7 +3907,7 @@
                                 @endforeach
                                 <tr class="cr-subitem-add-tr">
                                     <td class="cr-td-sticky cr-col-fase" colspan="2">
-                                        <div style="display:flex;gap:6px;padding-left:18px;align-items:center;">
+                                        <div style="display:flex;gap:6px;padding-left:18px;align-items:center;flex-wrap:wrap;">
                                             <span class="cr-subitem-tree">+</span>
                                             <input type="text"
                                                    wire:model="novoSubitemTitulos.{{ $fase->id }}"
@@ -3755,6 +3917,12 @@
                                             <button type="button" wire:click="adicionarSubitem({{ $fase->id }})" class="cr-subitem-add-btn">
                                                 Adicionar
                                             </button>
+                                            <button type="button"
+                                                    wire:click="abrirSelecionarGrupo({{ $fase->id }})"
+                                                    title="Inserir grupo de atividades"
+                                                    style="padding:3px 8px;font-size:0.68rem;border:1px dashed var(--vo-accent);border-radius:.25rem;background:transparent;cursor:pointer;color:var(--vo-accent);white-space:nowrap;">
+                                                ⊞ Inserir grupo
+                                            </button>
                                         </div>
                                     </td>
                                     <td colspan="20"></td>
@@ -3763,7 +3931,128 @@
                         @endforeach
                     </tbody>
                 </table>
+                </div>
+
+                {{-- Barra de ações em lote (aparece quando há seleção) --}}
+                <div x-show="selItemIds.length > 0" x-cloak class="cr-batch-toolbar">
+                    <span class="cr-batch-label" x-text="selItemIds.length + ' selecionadas'"></span>
+                    <div class="cr-batch-sep"></div>
+                    <button type="button" class="cr-batch-btn cr-batch-btn--primary" @click="abrirBatchDatas()">📅 Alterar datas</button>
+                    <button type="button" class="cr-batch-btn cr-batch-btn--primary" @click="abrirBatchResp()">👤 Responsável</button>
+                    <button type="button" class="cr-batch-btn" @click="$wire.marcarConcluidsEmLote([...selItemIds]); limparSelecao()">✔ Concluir</button>
+                    <button type="button" class="cr-batch-btn cr-batch-btn--primary" @click="abrirBatchGrupo()">⊞ Salvar como grupo</button>
+                    <div class="cr-batch-sep"></div>
+                    <button type="button" class="cr-batch-btn cr-batch-btn--danger"
+                            @click="if (confirm('Excluir ' + selItemIds.length + ' itens selecionados?')) { $wire.excluirSubitemsEmLote([...selItemIds]); limparSelecao(); }">
+                        🗑 Excluir
+                    </button>
+                    <button type="button" class="cr-batch-btn cr-batch-btn--cancel" @click="limparSelecao()">✕ Cancelar</button>
+                </div>
+
+                {{-- Modal: alterar datas em lote --}}
+                <div x-show="batchModalDatas" x-cloak class="cr-modal-overlay" @click.self="batchModalDatas = false">
+                    <div class="cr-modal-box">
+                        <div class="cr-modal-title">Alterar datas das atividades selecionadas</div>
+                        <div style="display:flex;flex-direction:column;gap:10px;">
+                            <label style="font-size:0.78rem;color:var(--vo-text-secondary);">
+                                Data início prevista
+                                <input type="date" x-model="batchInicio" style="display:block;width:100%;margin-top:4px;border:1px solid var(--vo-border);border-radius:.3rem;background:var(--vo-bg);color:var(--vo-text);padding:5px 8px;font-size:0.78rem;">
+                            </label>
+                            <label style="font-size:0.78rem;color:var(--vo-text-secondary);">
+                                Data fim prevista
+                                <input type="date" x-model="batchFim" style="display:block;width:100%;margin-top:4px;border:1px solid var(--vo-border);border-radius:.3rem;background:var(--vo-bg);color:var(--vo-text);padding:5px 8px;font-size:0.78rem;">
+                            </label>
+                        </div>
+                        <div class="cr-modal-actions">
+                            <button type="button" class="cr-batch-btn cr-batch-btn--cancel" @click="batchModalDatas = false">Cancelar</button>
+                            <button type="button" class="cr-batch-btn cr-batch-btn--primary" @click="confirmarBatchDatas()">Aplicar</button>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Modal: atribuir responsável em lote --}}
+                <div x-show="batchModalResp" x-cloak class="cr-modal-overlay" @click.self="batchModalResp = false">
+                    <div class="cr-modal-box">
+                        <div class="cr-modal-title">Atribuir responsável às atividades selecionadas</div>
+                        <select x-model="batchUserId" style="width:100%;border:1px solid var(--vo-border);border-radius:.3rem;background:var(--vo-bg);color:var(--vo-text);padding:6px 8px;font-size:0.8rem;">
+                            <option value="">— selecione um usuário —</option>
+                            @foreach($usuarios ?? [] as $u)
+                                <option value="{{ $u->id }}">{{ $u->name }}</option>
+                            @endforeach
+                        </select>
+                        <div class="cr-modal-actions">
+                            <button type="button" class="cr-batch-btn cr-batch-btn--cancel" @click="batchModalResp = false">Cancelar</button>
+                            <button type="button" class="cr-batch-btn cr-batch-btn--primary" @click="confirmarBatchResp()">Atribuir</button>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Modal: criar grupo de atividades --}}
+                <div x-show="batchModalGrupo" x-cloak class="cr-modal-overlay" @click.self="batchModalGrupo = false">
+                    <div class="cr-modal-box">
+                        <div class="cr-modal-title">Salvar como grupo de atividades</div>
+                        <p style="font-size:0.75rem;color:var(--vo-text-secondary);margin-bottom:12px;">
+                            Grupos podem ser inseridos em qualquer fase de qualquer projeto.
+                        </p>
+                        <label style="font-size:0.78rem;color:var(--vo-text-secondary);">
+                            Nome do grupo
+                            <input type="text" x-model="batchGrupoNome" placeholder="Ex.: Vistoria padrão, Kit mudança…"
+                                   @keydown.enter.prevent="confirmarBatchGrupo()"
+                                   style="display:block;width:100%;margin-top:4px;border:1px solid var(--vo-border);border-radius:.3rem;background:var(--vo-bg);color:var(--vo-text);padding:5px 8px;font-size:0.8rem;">
+                        </label>
+                        <div class="cr-modal-actions">
+                            <button type="button" class="cr-batch-btn cr-batch-btn--cancel" @click="batchModalGrupo = false">Cancelar</button>
+                            <button type="button" class="cr-batch-btn cr-batch-btn--primary" @click="confirmarBatchGrupo()">Criar grupo</button>
+                        </div>
+                    </div>
+                </div>
+
             </div>
+            @endif
+
+            {{-- Modal: selecionar grupo para inserir na fase --}}
+            @if($modalSelecionarGrupo)
+                <div class="cr-modal-overlay" style="z-index:200;" wire:click.self="fecharSelecionarGrupo">
+                    <div class="cr-modal-box" style="max-width:520px;max-height:80vh;overflow-y:auto;">
+                        <div class="cr-modal-title">Inserir grupo de atividades</div>
+                        @if(empty($gruposDisponiveis))
+                            <p style="font-size:0.8rem;color:var(--vo-text-faint);">Nenhum grupo criado ainda. Selecione atividades na tabela e use "Salvar como grupo".</p>
+                        @else
+                            <div style="display:flex;flex-direction:column;gap:10px;">
+                                @foreach($gruposDisponiveis as $g)
+                                    <div style="border:1px solid var(--vo-border);border-radius:.4rem;padding:10px 12px;">
+                                        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;">
+                                            <span style="font-weight:600;font-size:0.82rem;color:var(--vo-text);">{{ $g['nome'] }}</span>
+                                            <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
+                                                <span style="font-size:0.65rem;color:var(--vo-text-faint);">{{ $g['total_itens'] }} atividade(s)</span>
+                                                <button type="button" wire:click="inserirGrupoNaFase({{ $g['id'] }})"
+                                                        class="cr-batch-btn cr-batch-btn--primary" style="padding:3px 10px;font-size:0.68rem;">
+                                                    Inserir
+                                                </button>
+                                                <button type="button" wire:click="excluirGrupoAtividades({{ $g['id'] }})"
+                                                        class="cr-batch-btn cr-batch-btn--danger" style="padding:3px 8px;font-size:0.68rem;"
+                                                        onclick="return confirm('Excluir o grupo \'{{ $g['nome'] }}\'?')">
+                                                    ×
+                                                </button>
+                                            </div>
+                                        </div>
+                                        @foreach($g['itens'] as $gi)
+                                            <div style="font-size:0.72rem;color:var(--vo-text-secondary);padding-left:8px;">
+                                                • {{ $gi['titulo'] }}
+                                                @foreach($gi['filhos'] as $gf)
+                                                    <div style="padding-left:16px;color:var(--vo-text-faint);">└ {{ $gf }}</div>
+                                                @endforeach
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+                        <div class="cr-modal-actions">
+                            <button type="button" wire:click="fecharSelecionarGrupo" class="cr-batch-btn cr-batch-btn--cancel">Fechar</button>
+                        </div>
+                    </div>
+                </div>
             @endif
         @endif
     </div>
@@ -5212,7 +5501,10 @@
                             };
                             calcTableH();
                             setTimeout(() => calcTableH(), 150);
+                            setTimeout(() => calcTableH(), 500);
+                            setTimeout(() => calcTableH(), 1000);
                             window.addEventListener('resize', calcTableH, { passive: true });
+                            window.addEventListener('scroll', calcTableH, { passive: true, capture: true });
                             new ResizeObserver(calcTableH).observe(this.$el);
                         }
                     });

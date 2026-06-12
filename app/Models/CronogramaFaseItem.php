@@ -24,6 +24,7 @@ class CronogramaFaseItem extends Model
         'depende_de_fase_id',
         'titulo',
         'valor',
+        'revisor_id',
         'descricao',
         'recebido',
         'status_liberacao',
@@ -41,10 +42,12 @@ class CronogramaFaseItem extends Model
         'parent_id' => 'integer',
         'depende_de_item_id' => 'integer',
         'depende_de_fase_id' => 'integer',
+        'revisor_id' => 'integer',
         'recebido' => 'boolean',
         'status_liberacao' => StatusLiberacaoPosse::class,
         'ordem' => 'integer',
         'duracao_dias' => 'integer',
+        'valor' => 'decimal:2',
         'data_prevista_inicio' => 'date',
         'data_prevista_fim' => 'date',
         'data_realizada_inicio' => 'date',
@@ -89,6 +92,11 @@ class CronogramaFaseItem extends Model
     public function responsaveis(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'cronograma_fase_item_responsaveis');
+    }
+
+    public function revisor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'revisor_id');
     }
 
     public function scopeRoots(Builder $query): Builder

@@ -56,10 +56,28 @@
     // Responsáveis já carregados via eager load
     $responsaveis = $item->relationLoaded('responsaveis') ? $item->responsaveis : collect();
 @endphp
-<tr class="cr-subitem-tr" wire:key="st-{{ $item->id }}">
+<tr class="cr-subitem-tr" wire:key="st-{{ $item->id }}"
+    draggable="true"
+    @dragstart.stop="dragItemSrc = {{ $item->id }}; dragFaseItemSrc = {{ $item->cronograma_fase_id }}"
+    @dragover.prevent.stop="dragItemTarget = {{ $item->id }}; dragFaseTarget = {{ $item->cronograma_fase_id }}"
+    @dragleave.stop="if (dragItemTarget === {{ $item->id }}) dragItemTarget = null"
+    @drop.prevent.stop="onDropSubitem({{ $item->id }}, {{ $item->cronograma_fase_id }}, {{ $item->ordem }})"
+    @dragend="dragItemSrc = null; dragFaseItemSrc = null; dragItemTarget = null; dragFaseTarget = null"
+    :class="{ 'cr-item-dragging': dragItemSrc === {{ $item->id }}, 'cr-item-dragover': dragItemTarget === {{ $item->id }} && dragItemSrc !== {{ $item->id }}, 'cr-selected': isSelItem({{ $item->id }}) }">
     {{-- Fase / Título --}}
     <td class="cr-td-sticky cr-col-fase">
         <span style="display:flex;align-items:flex-start;gap:6px;padding-left:{{ $indentPx }}px;">
+            {{-- Drag handle (só nível raiz) --}}
+            @if($depth === 0)
+            <span class="cr-drag-handle" title="Arrastar para reordenar" @mousedown.stop>⠿</span>
+            @endif
+            {{-- Checkbox de seleção (só nível raiz) --}}
+            @if($depth === 0)
+            <input type="checkbox" class="cr-sel-check" style="margin-top:3px;"
+                   :checked="isSelItem({{ $item->id }})"
+                   @click.stop="toggleSelItem({{ $item->id }})"
+                   title="Selecionar esta atividade">
+            @endif
             <span class="cr-subitem-tree" style="margin-top:2px;">└</span>
             @if($numPrefix)
                 <span style="color:var(--vo-text-faint);font-size:0.68rem;font-weight:700;flex-shrink:0;white-space:nowrap;margin-top:3px;">{{ $numPrefix }}</span>
@@ -203,6 +221,38 @@
                             @if(! $responsaveis->contains('id', $u->id))
                                 <option value="{{ $u->id }}">{{ $u->name }}</option>
                             @endif
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+        </div>
+    </td>
+
+    {{-- Revisor --}}
+    <td x-show="cols.revisor" style="min-width:120px;">
+        <div x-data="{ aberto: false }" style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">
+            @if($item->revisor)
+                <span style="display:inline-flex;align-items:center;gap:3px;padding:2px 6px;background:var(--vo-bg-subtle);border:1px solid var(--vo-border);border-radius:99px;font-size:0.65rem;white-space:nowrap;">
+                    <span style="font-weight:600;">{{ \Illuminate\Support\Str::limit($item->revisor->name, 18) }}</span>
+                    <button type="button"
+                            wire:click="salvarRevisorSubitem({{ $item->id }}, null)"
+                            title="Remover revisor"
+                            style="background:none;border:none;cursor:pointer;color:var(--vo-text-faint);padding:0 1px;line-height:1;font-size:0.75rem;">×</button>
+                </span>
+            @endif
+            <div style="position:relative;">
+                <button type="button" @click="aberto = !aberto"
+                        title="{{ $item->revisor ? 'Trocar revisor' : 'Definir revisor' }}"
+                        style="padding:2px 6px;font-size:0.65rem;border:1px dashed var(--vo-border);border-radius:99px;background:transparent;cursor:pointer;color:var(--vo-text-secondary);">
+                    {{ $item->revisor ? '↻' : '+ rev.' }}
+                </button>
+                <div x-show="aberto" x-cloak @click.outside="aberto = false"
+                     style="position:absolute;z-index:50;top:100%;left:0;margin-top:4px;background:var(--vo-bg);border:1px solid var(--vo-border);border-radius:.4rem;padding:6px;min-width:180px;box-shadow:0 4px 12px rgba(0,0,0,.15);">
+                    <select @change="$wire.salvarRevisorSubitem({{ $item->id }}, parseInt($event.target.value) || null); aberto = false; $event.target.value = ''"
+                            style="width:100%;border:1px solid var(--vo-border);border-radius:.25rem;background:var(--vo-bg);color:var(--vo-text);font-size:0.75rem;padding:4px;">
+                        <option value="">— selecione —</option>
+                        @foreach($usuarios ?? [] as $u)
+                            <option value="{{ $u->id }}" @selected($item->revisor_id === $u->id)>{{ $u->name }}</option>
                         @endforeach
                     </select>
                 </div>
