@@ -3811,14 +3811,13 @@
                                     </div>
                                 </td>
                                 @can('ver_valores_planejamento')
-                                <td x-show="cols.valor" style="text-align:right;white-space:nowrap;padding:2px 4px;">
-                                    <input type="text"
-                                           value="{{ $fase->valor ? number_format($fase->valor, 2, ',', '.') : '' }}"
-                                           placeholder="—"
-                                           title="Valor total da fase (será distribuído igualmente entre as atividades)"
-                                           style="width:100%;text-align:right;font-size:0.78rem;font-variant-numeric:tabular-nums;background:transparent;border:1px solid transparent;border-radius:4px;padding:2px 4px;color:var(--vo-text);"
-                                           @focus="$event.target.style.borderColor='var(--primary-500)'"
-                                           @blur="$event.target.style.borderColor='transparent'; $wire.salvarValorFase({{ $fase->id }}, $event.target.value)">
+                                <td x-show="cols.valor" style="text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;font-size:0.78rem;padding:4px 8px;" title="Soma dos valores das atividades">
+                                    @if($fase->valor)
+                                        <span style="color:var(--vo-text-secondary);font-size:0.7rem;">R$</span>
+                                        <span style="font-weight:600;color:var(--vo-text);">{{ number_format($fase->valor, 2, ',', '.') }}</span>
+                                    @else
+                                        <span style="color:var(--vo-text-faint);">—</span>
+                                    @endif
                                 </td>
                                 @endcan
                                 <td x-show="cols.responsaveis" style="color:var(--vo-text-faint);font-size:0.72rem;">—</td>

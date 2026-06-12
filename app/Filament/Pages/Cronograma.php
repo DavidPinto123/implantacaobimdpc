@@ -3641,45 +3641,51 @@ class Cronograma extends Page
         $this->renderKey++;
     }
 
-    // ─── Valor da fase + distribuição por subitem ────────────────────────────
+    // ─── Valor por subitem → soma na fase ───────────────────────────────────
 
-    public function salvarValorFase(int $faseId, mixed $valorRaw): void
+    private function parseBrFloat(mixed $raw): ?float
+    {
+        if ($raw === null || $raw === '') {
+            return null;
+        }
+        $s = (string) $raw;
+        if (str_contains($s, ',')) {
+            $s = str_replace(['.', ' '], '', $s);
+            $s = str_replace(',', '.', $s);
+        }
+        $v = round((float) trim($s), 2);
+
+        return $v > 0 ? $v : null;
+    }
+
+    public function salvarValorSubitem(int $itemId, mixed $valorRaw): void
+    {
+        $item = CronogramaFaseItem::find($itemId);
+        if (! $item) {
+            return;
+        }
+
+        $item->valor = $this->parseBrFloat($valorRaw);
+        $item->save();
+
+        $this->recalcularValorFase($item->cronograma_fase_id);
+        $this->renderKey++;
+    }
+
+    private function recalcularValorFase(int $faseId): void
     {
         $fase = CronogramaFase::find($faseId);
         if (! $fase) {
             return;
         }
 
-        // Suporta formato brasileiro "1.234,56" → 1234.56 e americano "1234.56"
-        if (is_string($valorRaw) && str_contains($valorRaw, ',')) {
-            // PT-BR: remove pontos de milhar, troca vírgula decimal por ponto
-            $valorStr = str_replace(['.', ' '], '', $valorRaw);
-            $valorStr = str_replace(',', '.', $valorStr);
-        } else {
-            $valorStr = (string) $valorRaw;
-        }
-        $valorStr = trim($valorStr);
-        $valor = ($valorStr !== '') ? round((float) $valorStr, 2) : null;
-        if ($valor !== null && $valor <= 0) {
-            $valor = null;
-        }
-        $fase->valor = $valor;
-        $fase->save();
-
-        // Distribui igualmente entre os subitens diretos (parent_id = null)
-        $subitens = CronogramaFaseItem::where('cronograma_fase_id', $faseId)
+        $soma = CronogramaFaseItem::where('cronograma_fase_id', $faseId)
             ->whereNull('parent_id')
-            ->get();
+            ->whereNotNull('valor')
+            ->sum('valor');
 
-        $count = $subitens->count();
-        $valorPorItem = ($valor !== null && $count > 0) ? round($valor / $count, 2) : null;
-
-        foreach ($subitens as $item) {
-            $item->valor = $valorPorItem;
-            $item->save();
-        }
-
-        $this->renderKey++;
+        $fase->valor = $soma > 0 ? round($soma, 2) : null;
+        $fase->save();
     }
 
     // ─── Revisor de subitem ───────────────────────────────────────────────────

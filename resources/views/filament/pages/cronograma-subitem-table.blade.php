@@ -182,14 +182,24 @@
         <span style="font-weight:600;font-size:0.7rem;color:{{ $statusItemCor }}">{{ $pctItem }}%</span>
     </td>
 
-    {{-- Valor (apenas quem tem permissão) --}}
+    {{-- Valor (apenas quem tem permissão; editável só no nível raiz) --}}
     @can('ver_valores_planejamento')
-    <td x-show="cols.valor" style="text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;font-size:0.78rem;">
-        @if($item->valor)
-            <span style="color:var(--vo-text-secondary);font-size:0.7rem;">R$</span>
-            <span style="font-weight:600;">{{ number_format($item->valor, 2, ',', '.') }}</span>
+    <td x-show="cols.valor" style="text-align:right;white-space:nowrap;padding:2px 4px;">
+        @if($depth === 0)
+            <input type="text"
+                   value="{{ $item->valor ? number_format($item->valor, 2, ',', '.') : '' }}"
+                   placeholder="—"
+                   title="Valor desta atividade (a soma aparece na fase)"
+                   style="width:100%;text-align:right;font-size:0.78rem;font-variant-numeric:tabular-nums;background:transparent;border:1px solid transparent;border-radius:4px;padding:2px 4px;color:var(--vo-text);"
+                   @focus="$event.target.style.borderColor='var(--primary-500,#6366f1)'"
+                   @blur="$event.target.style.borderColor='transparent'; $wire.salvarValorSubitem({{ $item->id }}, $event.target.value)">
         @else
-            <span style="color:var(--vo-text-faint);">—</span>
+            @if($item->valor)
+                <span style="color:var(--vo-text-secondary);font-size:0.7rem;">R$</span>
+                <span style="font-weight:600;font-size:0.78rem;">{{ number_format($item->valor, 2, ',', '.') }}</span>
+            @else
+                <span style="color:var(--vo-text-faint);">—</span>
+            @endif
         @endif
     </td>
     @endcan

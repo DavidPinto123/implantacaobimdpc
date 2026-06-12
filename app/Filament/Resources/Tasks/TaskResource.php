@@ -102,17 +102,31 @@ class TaskResource extends Resource
             return $query->whereRaw('1 = 0');
         }
 
+        // super_admin e admin veem tudo
+        if ($user->hasAnyRole(['super_admin', 'admin'])) {
+            return $query;
+        }
+
         $setorIds = $user->setores()->pluck('setores.id')->toArray();
 
         if ($user->hasAnyRole(['Coordenador', 'Gestor', 'Diretor'])) {
-            return $query->whereIn('setor_id', $setorIds);
+            // Vê tarefas do seu setor + tarefas sem setor atribuídas a si
+            return $query->where(function (Builder $q) use ($setorIds, $user) {
+                $q->whereIn('setor_id', $setorIds)
+                  ->orWhere(fn ($s) => $s->whereNull('setor_id')->where('assigned_to', $user->id));
+            });
         }
 
         if ($user->hasRole('Colaborador')) {
             return $query->where('assigned_to', $user->id);
         }
-        
-        return $query->whereRaw('1 = 0');
+
+        // PMO, Planejamento Estratégico e outros roles com acesso ao planejamento
+        if ($user->hasAnyRole(['PMO', 'Planejamento Estratégico'])) {
+            return $query;
+        }
+
+        return $query->where('assigned_to', $user->id);
     }
 
     public static function getPages(): array
