@@ -3650,7 +3650,19 @@ class Cronograma extends Page
             return;
         }
 
-        $valor = ($valorRaw !== null && $valorRaw !== '') ? round((float) $valorRaw, 2) : null;
+        // Suporta formato brasileiro "1.234,56" → 1234.56 e americano "1234.56"
+        if (is_string($valorRaw) && str_contains($valorRaw, ',')) {
+            // PT-BR: remove pontos de milhar, troca vírgula decimal por ponto
+            $valorStr = str_replace(['.', ' '], '', $valorRaw);
+            $valorStr = str_replace(',', '.', $valorStr);
+        } else {
+            $valorStr = (string) $valorRaw;
+        }
+        $valorStr = trim($valorStr);
+        $valor = ($valorStr !== '') ? round((float) $valorStr, 2) : null;
+        if ($valor !== null && $valor <= 0) {
+            $valor = null;
+        }
         $fase->valor = $valor;
         $fase->save();
 
@@ -3717,10 +3729,10 @@ class Cronograma extends Page
                 'inicio'           => $inicio,
                 'prazo'            => $prazo,
                 'status'           => 'pendente',
-                'projeto_id'       => $this->projetoSelecionadoId,
+                'projeto_id'       => $this->projetoSelecionado,
             ]);
-        } catch (\Throwable) {
-            // Não bloqueia a atribuição se a criação da tarefa falhar
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('criarTarefaDeSubitem falhou: ' . $e->getMessage());
         }
     }
 

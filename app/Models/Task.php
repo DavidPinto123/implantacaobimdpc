@@ -70,7 +70,7 @@ class Task extends Model
         static::creating(function (self $task) {
             $user = auth()->user();
 
-            $task->created_by = $user?->id;
+            $task->created_by ??= $user?->id;
             $task->assigned_to ??= $user?->id;
 
             $task->termino_programado = self::calcularTerminoProgramadoData(
