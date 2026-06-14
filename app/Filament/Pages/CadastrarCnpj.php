@@ -34,9 +34,7 @@ class CadastrarCnpj extends Page implements HasTable
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-identification';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Outros';
-
-    protected static ?string $navigationParentItem = 'Cadastros';
+    protected static UnitEnum|string|null $navigationGroup = 'Cadastros';
 
     protected static ?string $navigationLabel = 'Cadastro de CNPJ';
 

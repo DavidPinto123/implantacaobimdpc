@@ -22,7 +22,7 @@ class CentralNotificacoes extends Page
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-bell-alert';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Outros';
+    protected static UnitEnum|string|null $navigationGroup = 'Central de Notificações';
 
     protected static ?string $navigationLabel = 'Central de notificações';
 

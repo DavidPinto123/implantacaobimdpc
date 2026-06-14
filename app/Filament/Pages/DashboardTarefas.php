@@ -33,9 +33,7 @@ class DashboardTarefas extends Page implements HasTable
 
     protected static ?string $title = 'Dashboard de Tarefas';
 
-    protected static string|null|\UnitEnum $navigationGroup = 'Implantação BIM';
-
-    protected static ?string $navigationParentItem = 'Dashboard';
+    protected static string|null|\UnitEnum $navigationGroup = 'Tarefas';
 
     protected static ?int $navigationSort = 1;
 

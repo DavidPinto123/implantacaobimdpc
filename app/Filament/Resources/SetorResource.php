@@ -19,9 +19,7 @@ class SetorResource extends Resource
 {
     protected static ?string $model = Setor::class;
 
-    protected static UnitEnum|string|null $navigationGroup = 'Outros';
-
-    protected static ?string $navigationParentItem = 'Cadastros';
+    protected static UnitEnum|string|null $navigationGroup = 'Cadastros';
 
     protected static ?string $navigationLabel = 'Cadastro de Setores';
 

@@ -22,9 +22,7 @@ class DadosResource extends Resource
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-cube-transparent';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Outros';
-
-    protected static ?string $navigationParentItem = 'Gestão Predial e Ativos';
+    protected static UnitEnum|string|null $navigationGroup = 'Gestão Predial e Ativos';
 
     protected static ?string $navigationLabel = 'Mobiliários/ Equipamentos';
 

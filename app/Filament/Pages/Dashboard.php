@@ -20,12 +20,12 @@ class Dashboard extends BaseDashboard
 
     public static function getNavigationLabel(): string
     {
-        return 'Home';
+        return 'Painel Central';
     }
 
     public function getTitle(): string
     {
-        return 'Home';
+        return 'Painel Central';
     }
 
     public static function getNavigationIcon(): string

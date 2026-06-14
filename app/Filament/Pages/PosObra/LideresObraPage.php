@@ -18,9 +18,7 @@ class LideresObraPage extends Page
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-user-group';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Outros';
-
-    protected static ?string $navigationParentItem = 'Cadastros';
+    protected static UnitEnum|string|null $navigationGroup = 'Cadastros';
 
     protected static ?string $navigationLabel = 'Líderes de Obra';
 

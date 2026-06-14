@@ -22,9 +22,7 @@ class AmbientesResource extends Resource
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-cube';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Outros';
-
-    protected static ?string $navigationParentItem = 'Gestão Predial e Ativos';
+    protected static UnitEnum|string|null $navigationGroup = 'Gestão Predial e Ativos';
 
     public static function form(Schema $schema): Schema
     {

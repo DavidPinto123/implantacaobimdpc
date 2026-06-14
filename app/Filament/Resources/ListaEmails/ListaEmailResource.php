@@ -23,9 +23,7 @@ class ListaEmailResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'nome';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Outros';
-
-    protected static ?string $navigationParentItem = 'Cadastros';
+    protected static UnitEnum|string|null $navigationGroup = 'Cadastros';
 
     protected static ?string $navigationLabel = 'Cadastro de Emails';
 

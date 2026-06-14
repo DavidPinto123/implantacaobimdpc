@@ -26,9 +26,7 @@ class RelatorioFotograficoResource extends Resource
 
     protected static ?int $navigationSort = 3;
 
-    protected static UnitEnum|string|null $navigationGroup = 'Implantação BIM';
-
-    protected static ?string $navigationParentItem = 'Engenharia';
+    protected static UnitEnum|string|null $navigationGroup = 'Registro fotográfico';
 
     protected static ?string $navigationLabel = 'Relatório Fotográfico de Posse do imóvel';
 

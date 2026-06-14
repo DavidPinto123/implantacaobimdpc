@@ -15,9 +15,7 @@ class MapaStatus extends Page
 
     protected string $view = 'filament.pages.mapa-status';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Outros';
-
-    protected static ?string $navigationParentItem = 'Mapas';
+    protected static UnitEnum|string|null $navigationGroup = 'Mapas';
 
     public function getTitle(): string
     {

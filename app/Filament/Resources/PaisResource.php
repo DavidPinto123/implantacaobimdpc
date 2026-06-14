@@ -26,9 +26,7 @@ class PaisResource extends Resource
 
     protected static ?string $modelLabel = 'País';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Outros';
-
-    protected static ?string $navigationParentItem = 'Cadastros';
+    protected static UnitEnum|string|null $navigationGroup = 'Cadastros';
 
     protected static ?string $slug = 'paises';
 

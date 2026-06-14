@@ -72,9 +72,7 @@ class RelatorioVisitaTecnicaResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Relatório das Visitas Técnicas';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Implantação BIM';
-
-    protected static ?string $navigationParentItem = 'Engenharia';
+    protected static UnitEnum|string|null $navigationGroup = 'Registro fotográfico';
 
     protected static ?string $slug = 'relatorio-visita-tecnicas';
 

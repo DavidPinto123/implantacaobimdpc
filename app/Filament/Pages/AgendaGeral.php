@@ -28,9 +28,7 @@ class AgendaGeral extends Page
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-calendar-days';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Implantação BIM';
-
-    protected static ?string $navigationParentItem = 'Dashboard';
+    protected static UnitEnum|string|null $navigationGroup = 'Agenda Geral';
 
     protected static ?string $navigationLabel = 'Agenda Geral';
 

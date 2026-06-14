@@ -14,9 +14,7 @@ class ProjetosMapa extends Page
 
     protected string $view = 'filament.pages.projetos-mapa';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Outros';
-
-    protected static ?string $navigationParentItem = 'Mapas';
+    protected static UnitEnum|string|null $navigationGroup = 'Mapas';
 
     public static function canAccess(): bool
     {

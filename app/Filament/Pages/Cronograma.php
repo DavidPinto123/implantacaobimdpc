@@ -38,7 +38,7 @@ class Cronograma extends Page
 
     protected string $view = 'filament.pages.cronograma';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Implantação BIM';
+    protected static UnitEnum|string|null $navigationGroup = 'Planejamento';
 
     protected static ?int $navigationSort = 3;
 

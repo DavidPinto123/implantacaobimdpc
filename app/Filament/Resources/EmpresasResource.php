@@ -31,9 +31,7 @@ class EmpresasResource extends Resource
 
     protected static ?string $navigationLabel = 'Cadastro de Empresas';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Outros';
-
-    protected static ?string $navigationParentItem = 'Cadastros';
+    protected static UnitEnum|string|null $navigationGroup = 'Cadastros';
 
     protected static ?string $modelLabel = 'Empresa';
 

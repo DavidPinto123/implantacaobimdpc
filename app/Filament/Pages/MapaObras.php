@@ -15,9 +15,7 @@ class MapaObras extends Page
 
     protected string $view = 'filament.pages.mapa-obras';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Outros';
-
-    protected static ?string $navigationParentItem = 'Mapas';
+    protected static UnitEnum|string|null $navigationGroup = 'Mapas';
 
     public function getTitle(): string
     {

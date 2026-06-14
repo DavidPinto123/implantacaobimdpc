@@ -29,9 +29,7 @@ class DashboardOI extends Page implements Tables\Contracts\HasTable
 
     protected static ?int $navigationSort = 2;
 
-    protected static string|null|UnitEnum $navigationGroup = 'Implantação BIM';
-
-    protected static ?string $navigationParentItem = 'Orçamentos';
+    protected static string|null|UnitEnum $navigationGroup = 'Orçamentos';
     // URL: /admin/minha-pagina
     // protected static ?string $slug = 'dashboard-coordenador-orcamento';
 

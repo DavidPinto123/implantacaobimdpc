@@ -31,9 +31,7 @@ class TaskResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static string|null|UnitEnum $navigationGroup = 'Implantação BIM';
-
-    protected static ?string $navigationParentItem = 'Dashboard';
+    protected static string|null|UnitEnum $navigationGroup = 'Tarefas';
 
     protected static ?string $recordTitleAttribute = 'title';
 

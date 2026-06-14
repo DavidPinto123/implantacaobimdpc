@@ -22,7 +22,7 @@ class Viewer3D extends Page
 
     protected static ?string $title = 'Visualizador 3D';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Outros';
+    protected static UnitEnum|string|null $navigationGroup = 'Visualizador 3D';
 
     public Projeto $projeto;
 

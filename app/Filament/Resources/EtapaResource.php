@@ -22,9 +22,7 @@ class EtapaResource extends Resource
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-flag';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Outros';
-
-    protected static ?string $navigationParentItem = 'Cadastros';
+    protected static UnitEnum|string|null $navigationGroup = 'Cadastros';
 
     protected static ?string $navigationLabel = 'Cadastro de Etapas';
 

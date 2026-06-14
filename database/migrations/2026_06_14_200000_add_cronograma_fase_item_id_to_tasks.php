@@ -1,0 +1,28 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('tasks', function (Blueprint $table) {
+            $table->foreignId('cronograma_fase_item_id')
+                ->nullable()
+                ->after('projeto_id')
+                ->constrained('cronograma_fase_itens')
+                ->nullOnDelete();
+            $table->boolean('eh_revisor')->default(false)->after('cronograma_fase_item_id');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('tasks', function (Blueprint $table) {
+            $table->dropForeign(['cronograma_fase_item_id']);
+            $table->dropColumn(['cronograma_fase_item_id', 'eh_revisor']);
+        });
+    }
+};

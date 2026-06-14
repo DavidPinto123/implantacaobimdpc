@@ -27,9 +27,7 @@ class GrupoOiResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Grupos OI';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Outros';
-
-    protected static ?string $navigationParentItem = 'Cadastros';
+    protected static UnitEnum|string|null $navigationGroup = 'Cadastros';
 
     protected static ?string $recordTitleAttribute = 'nome';
 

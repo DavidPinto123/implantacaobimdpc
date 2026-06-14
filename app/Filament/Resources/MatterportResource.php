@@ -41,9 +41,7 @@ class MatterportResource extends Resource
 
     protected static ?int $navigationSort = 5;
 
-    protected static string|null|UnitEnum $navigationGroup = 'Implantação BIM';
-
-    protected static ?string $navigationParentItem = 'Dashboard';
+    protected static string|null|UnitEnum $navigationGroup = 'Tour 360°';
 
     protected static ?string $pluralModelLabel = 'Tour 360°';
 
