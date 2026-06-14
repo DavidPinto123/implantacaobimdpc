@@ -2524,6 +2524,13 @@
                     Adicionar fase
                 </button>
 
+                <button class="vo-btn-outline" wire:click="$set('mostrarModalExcluirPlanejamento', true)"
+                        title="Excluir este planejamento"
+                        style="padding:5px 10px;display:inline-flex;align-items:center;gap:6px;font-size:0.75rem;border-color:#dc2626;color:#dc2626;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                    Excluir planejamento
+                </button>
+
             @else
                 <input type="text" placeholder="Buscar projeto..." wire:model.live.debounce.300ms="busca">
 
@@ -4334,6 +4341,28 @@
                             wire:click="$set('mostrarModalNovaFase', false)">Cancelar</button>
                     <button type="button" class="cr-batch-btn cr-batch-btn--primary"
                             wire:click="adicionarFasePersonalizadaEFecharModal">Inserir</button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if($mostrarModalExcluirPlanejamento)
+        <div class="cr-modal-overlay" style="z-index:300;" wire:click.self="$set('mostrarModalExcluirPlanejamento', false)">
+            <div class="cr-modal" style="max-width:420px;">
+                <div class="cr-modal-header">
+                    <span class="cr-modal-title" style="color:#dc2626;">Excluir planejamento</span>
+                    <button type="button" class="cr-modal-close" wire:click="$set('mostrarModalExcluirPlanejamento', false)">×</button>
+                </div>
+                <div class="cr-modal-body" style="padding:16px 20px;">
+                    <p style="margin:0 0 8px;font-size:0.875rem;">Tem certeza que deseja excluir este planejamento?</p>
+                    <p style="margin:0;font-size:0.8rem;color:#dc2626;"><strong>Esta ação é irreversível.</strong> Todas as fases, atividades e dados associados serão permanentemente removidos.</p>
+                </div>
+                <div class="cr-modal-footer" style="display:flex;justify-content:flex-end;gap:8px;padding:12px 20px;">
+                    <button type="button" class="cr-batch-btn cr-batch-btn--cancel"
+                            wire:click="$set('mostrarModalExcluirPlanejamento', false)">Cancelar</button>
+                    <button type="button" class="cr-batch-btn cr-batch-btn--primary"
+                            style="background:#dc2626;border-color:#dc2626;"
+                            wire:click="excluirPlanejamento">Confirmar exclusão</button>
                 </div>
             </div>
         </div>

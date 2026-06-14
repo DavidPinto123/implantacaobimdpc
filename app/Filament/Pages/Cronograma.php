@@ -248,6 +248,8 @@ class Cronograma extends Page
 
     public bool $mostrarModalNovaFase = false;
 
+    public bool $mostrarModalExcluirPlanejamento = false;
+
     /**
      * Edição em lote das datas de todas as fases da obra selecionada.
      * Indexado por id da fase: ['prev_i','prev_f','real_i','real_f'].
@@ -2751,6 +2753,30 @@ class Cronograma extends Page
         $this->mostrarModalNovaFase = false;
     }
 
+    public function excluirPlanejamento(): void
+    {
+        $projeto = \App\Models\Projeto::find($this->projetoSelecionado);
+        if (! $projeto) {
+            $this->mostrarModalExcluirPlanejamento = false;
+
+            return;
+        }
+
+        // Exclui fases e seus itens (cascade via FK ou manualmente)
+        foreach ($projeto->cronogramaFases as $fase) {
+            $fase->itens()->delete();
+            $fase->delete();
+        }
+
+        $projeto->delete();
+
+        $this->mostrarModalExcluirPlanejamento = false;
+        $this->projetoSelecionado = null;
+        $this->modoIndividual = false;
+
+        $this->dispatch('notify', type: 'success', message: 'Planejamento excluído com sucesso.');
+    }
+
     public function alternarVisibilidadeFase(int $faseId): void
     {
         $fase = CronogramaFase::find($faseId);
@@ -3944,6 +3970,14 @@ class Cronograma extends Page
         }
         $prazo = $prazo ?: 1;
 
+        $projeto = \App\Models\Projeto::find($this->projetoSelecionado);
+        $faseLbl = $item->fase?->label_exibicao;
+        $descricao = implode(' | ', array_filter([
+            $projeto?->nome ? 'Projeto: ' . $projeto->nome : null,
+            $faseLbl        ? 'Fase: '    . $faseLbl        : null,
+            'Atividade: '   . $item->titulo,
+        ]));
+
         try {
             Task::create([
                 'title'                   => $titulo,
@@ -3956,6 +3990,7 @@ class Cronograma extends Page
                 'projeto_id'              => $this->projetoSelecionado,
                 'cronograma_fase_item_id' => $item->id,
                 'eh_revisor'              => $ehRevisor,
+                'description'             => $descricao,
             ]);
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('criarTarefaDeSubitem falhou: ' . $e->getMessage());
