@@ -2675,11 +2675,6 @@
                                 <span style="font-size:0.75rem;font-weight:500;color:var(--vo-text-faint);font-style:italic;">Sem template aplicado</span>
                             @endif
                         </div>
-                        <div class="cr-obra-meta">
-                            {{ $projeto->codigo ?? '' }}
-                            @if($projeto->estado) &bull; {{ $projeto->estado->uf }}@endif
-                            @if($projeto->marca) &bull; {{ $projeto->marca }}@endif
-                        </div>
                         @php
                             $planInicio = $fases->whereNotNull('data_prevista_inicio')->min('data_prevista_inicio');
                             $planFim    = $fases->whereNotNull('data_prevista_fim')->max('data_prevista_fim');
@@ -2687,28 +2682,26 @@
                                 ? \Carbon\Carbon::parse($planInicio)->diffInDays(\Carbon\Carbon::parse($planFim)) + 1
                                 : null;
                         @endphp
-                        @if($planInicio || $planFim)
-                            <div style="display:flex;align-items:center;gap:14px;margin-top:6px;font-size:0.75rem;color:#333;flex-wrap:wrap;">
+                        <div class="cr-obra-meta" style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;">
+                            @if($projeto->codigo)<span>{{ $projeto->codigo }}</span>@endif
+                            @if($projeto->estado)<span>&bull; {{ $projeto->estado->uf }}</span>@endif
+                            @if($projeto->marca)<span>&bull; {{ $projeto->marca }}</span>@endif
+                            @if($planInicio || $planFim)
+                                @if($projeto->codigo || $projeto->estado || $projeto->marca)
+                                    <span style="opacity:.4;">|</span>
+                                @endif
                                 @if($planInicio)
-                                    <span>
-                                        <span style="opacity:.65;font-size:0.68rem;text-transform:uppercase;letter-spacing:.04em;">Início</span>
-                                        &nbsp;{{ \Carbon\Carbon::parse($planInicio)->format('d/m/Y') }}
-                                    </span>
+                                    <span style="font-size:0.7rem;">{{ \Carbon\Carbon::parse($planInicio)->format('d/m/Y') }}</span>
                                 @endif
                                 @if($planFim)
-                                    <span style="opacity:.5;">—</span>
-                                    <span>
-                                        <span style="opacity:.65;font-size:0.68rem;text-transform:uppercase;letter-spacing:.04em;">Fim</span>
-                                        &nbsp;{{ \Carbon\Carbon::parse($planFim)->format('d/m/Y') }}
-                                    </span>
+                                    <span style="opacity:.5;font-size:0.7rem;">—</span>
+                                    <span style="font-size:0.7rem;">{{ \Carbon\Carbon::parse($planFim)->format('d/m/Y') }}</span>
                                 @endif
                                 @if($planDias)
-                                    <span style="padding:1px 8px;background:rgba(0,0,0,.12);border-radius:99px;font-size:0.7rem;font-weight:600;">
-                                        {{ $planDias }} dias
-                                    </span>
+                                    <span style="padding:1px 7px;background:rgba(0,0,0,.15);border-radius:99px;font-size:0.67rem;font-weight:700;">{{ $planDias }} dias</span>
                                 @endif
-                            </div>
-                        @endif
+                            @endif
+                        </div>
                         @if($projeto->suframaPendente())
                             @php $diasInaug = $projeto->diasParaInauguracao(); @endphp
                             <div class="cr-suframa-pisca"
