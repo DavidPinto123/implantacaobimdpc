@@ -888,6 +888,22 @@
         }
         .cr-drag-handle:active { cursor: grabbing; }
 
+        /* Drag-drop de fases */
+        .cr-drag-handle-fase {
+            cursor: grab;
+            color: var(--vo-text-faint);
+            padding: 0 3px;
+            font-size: 1rem;
+            flex-shrink: 0;
+            line-height: 1;
+            user-select: none;
+            opacity: 0.5;
+        }
+        .cr-drag-handle-fase:hover { opacity: 1; color: var(--vo-text); }
+        .cr-drag-handle-fase:active { cursor: grabbing; }
+        .cr-table-row.cr-fase-dragging td { opacity: 0.35; }
+        .cr-table-row.cr-fase-reorder-target td { border-top: 2px solid var(--vo-accent) !important; }
+
         /* Modal overlay genérico para batch */
         .cr-modal-overlay {
             position: fixed;
@@ -3599,6 +3615,16 @@
                          this.dragItemSrc = null; this.dragFaseItemSrc = null;
                          this.dragItemTarget = null; this.dragFaseTarget = null;
                      },
+                     // ─── Drag-drop de fases (reordenação) ──────────────────
+                     dragFaseSrc: null,
+                     dragFaseReorderTarget: null,
+                     onDropReordenarFase(targetFaseId, targetOrdem) {
+                         if (this.dragFaseSrc !== null && this.dragFaseSrc !== targetFaseId) {
+                             $wire.moverFase(this.dragFaseSrc, targetOrdem);
+                         }
+                         this.dragFaseSrc = null;
+                         this.dragFaseReorderTarget = null;
+                     },
                      init() {
                          this.aplicarLarguras();
                      },
@@ -3775,13 +3801,32 @@
                             @endphp
                             @php $farolTblRow = $fase->farol; $qtdItensTblRow = $fase->itens->count(); @endphp
                             <tr class="cr-table-row {{ $farolTblRow !== 'neutro' ? 'cr-fase-linha-'.$farolTblRow : '' }}"
-                                @dragover.prevent="if (dragItemSrc !== null) dragFaseTarget = {{ $fase->id }}"
-                                @dragleave="if (dragFaseTarget === {{ $fase->id }}) dragFaseTarget = null"
-                                @drop.prevent="onDropFase({{ $fase->id }})"
-                                :class="{ 'cr-fase-dragover-target': dragItemSrc !== null && dragFaseTarget === {{ $fase->id }} }">
+                                @dragover.prevent="
+                                    if (dragItemSrc !== null) dragFaseTarget = {{ $fase->id }};
+                                    else if (dragFaseSrc !== null && dragFaseSrc !== {{ $fase->id }}) dragFaseReorderTarget = {{ $fase->id }};
+                                "
+                                @dragleave="
+                                    if (dragFaseTarget === {{ $fase->id }}) dragFaseTarget = null;
+                                    if (dragFaseReorderTarget === {{ $fase->id }}) dragFaseReorderTarget = null;
+                                "
+                                @drop.prevent="
+                                    if (dragItemSrc !== null) onDropFase({{ $fase->id }});
+                                    else if (dragFaseSrc !== null) onDropReordenarFase({{ $fase->id }}, {{ $fase->ordem }});
+                                "
+                                :class="{
+                                    'cr-fase-dragover-target': dragItemSrc !== null && dragFaseTarget === {{ $fase->id }},
+                                    'cr-fase-dragging': dragFaseSrc === {{ $fase->id }},
+                                    'cr-fase-reorder-target': dragFaseSrc !== null && dragFaseSrc !== {{ $fase->id }} && dragFaseReorderTarget === {{ $fase->id }}
+                                }">
                                 <td class="cr-td-sticky cr-col-fase" style="font-weight:500;{{ $qtdItensTblRow > 0 ? 'cursor:pointer;' : '' }}"
                                     @if($qtdItensTblRow > 0) wire:click="alternarExpansaoFase({{ $fase->id }})" @endif>
                                     <span style="display:flex;align-items:center;gap:6px;">
+                                        <span class="cr-drag-handle-fase"
+                                              draggable="true"
+                                              title="Arrastar para reordenar"
+                                              @dragstart.stop="dragFaseSrc = {{ $fase->id }}"
+                                              @dragend.stop="dragFaseSrc = null; dragFaseReorderTarget = null"
+                                              @click.stop>⠿</span>
                                         @php
                                             $farolTbl = $fase->farol;
                                             $farolCorTbl = match ($farolTbl) {

@@ -4308,6 +4308,42 @@ class Cronograma extends Page
         $this->renderKey++;
     }
 
+    // ─── Drag-drop de fases (reordenar) ──────────────────────────────────────
+
+    public function moverFase(int $faseId, int $novaOrdem): void
+    {
+        $fase = CronogramaFase::find($faseId);
+        if (! $fase) {
+            return;
+        }
+
+        $projetoId = $fase->projeto_id;
+        $oldOrdem  = (int) $fase->ordem;
+
+        if ($oldOrdem === $novaOrdem) {
+            return;
+        }
+
+        if ($novaOrdem > $oldOrdem) {
+            // Movendo para baixo: itens intermediários sobem
+            CronogramaFase::where('projeto_id', $projetoId)
+                ->where('id', '!=', $faseId)
+                ->whereBetween('ordem', [$oldOrdem + 1, $novaOrdem])
+                ->decrement('ordem');
+        } else {
+            // Movendo para cima: itens intermediários descem
+            CronogramaFase::where('projeto_id', $projetoId)
+                ->where('id', '!=', $faseId)
+                ->whereBetween('ordem', [$novaOrdem, $oldOrdem - 1])
+                ->increment('ordem');
+        }
+
+        $fase->ordem = $novaOrdem;
+        $fase->save();
+
+        $this->renderKey++;
+    }
+
     // ─── Drag-drop de subitens (reordenar / mover entre fases) ───────────────
 
     public function moverSubitem(int $itemId, int $faseOrigemId, int $faseDestinoId, int $novaOrdem): void
