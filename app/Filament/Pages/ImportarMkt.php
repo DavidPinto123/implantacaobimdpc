@@ -21,7 +21,7 @@ class ImportarMkt extends Page implements HasForms
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-arrow-up-tray';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Implantação BIM';
+    protected static UnitEnum|string|null $navigationGroup = 'Outros';
 
     protected static ?string $navigationParentItem = 'PMO';
 

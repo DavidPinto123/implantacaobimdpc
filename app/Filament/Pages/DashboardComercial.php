@@ -37,7 +37,7 @@ class DashboardComercial extends Page implements HasTable
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-chart-bar-square';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Implantação BIM';
+    protected static UnitEnum|string|null $navigationGroup = 'Outros';
 
     protected static ?string $navigationParentItem = 'Comercial';
 

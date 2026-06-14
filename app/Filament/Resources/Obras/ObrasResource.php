@@ -27,7 +27,7 @@ class ObrasResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedWrenchScrewdriver;
 
-    protected static UnitEnum|string|null $navigationGroup = 'Implantação BIM';
+    protected static UnitEnum|string|null $navigationGroup = 'Outros';
 
     protected static ?string $navigationParentItem = 'Engenharia';
 

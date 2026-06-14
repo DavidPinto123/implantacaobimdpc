@@ -32,7 +32,7 @@ class CapexSimulacaoResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Simulação OI';
 
-    protected static string|null|UnitEnum $navigationGroup = 'Implantação BIM';
+    protected static string|null|UnitEnum $navigationGroup = 'Outros';
 
     protected static ?string $navigationParentItem = 'Orçamentos';
 

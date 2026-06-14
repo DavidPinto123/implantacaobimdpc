@@ -20,7 +20,7 @@ class VisualizarPipe extends Page
 
     protected static ?int $navigationSort = 2;
 
-    protected static string|null|UnitEnum $navigationGroup = 'Implantação BIM';
+    protected static string|null|UnitEnum $navigationGroup = 'Outros';
 
     protected static ?string $navigationParentItem = 'Dashboard';
 

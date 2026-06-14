@@ -17,7 +17,7 @@ class LandBank extends Page
 
     protected static ?int $navigationSort = 3; // muda a ordem se precisar
 
-    protected static string|null|UnitEnum $navigationGroup = 'Implantação BIM';
+    protected static string|null|UnitEnum $navigationGroup = 'Outros';
 
     protected static ?string $navigationParentItem = 'Dashboard';
 

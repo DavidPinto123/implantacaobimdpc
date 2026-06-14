@@ -51,7 +51,7 @@ class ListaObrasNova extends Page
 
     protected string $view = 'filament.pages.lista-obras-nova';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Implantação BIM';
+    protected static UnitEnum|string|null $navigationGroup = 'Outros';
 
     protected static ?string $navigationParentItem = 'Engenharia';
 

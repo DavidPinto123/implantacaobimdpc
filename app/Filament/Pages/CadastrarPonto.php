@@ -60,7 +60,7 @@ class CadastrarPonto extends Page implements HasForms
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-map-pin';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Implantação BIM';
+    protected static UnitEnum|string|null $navigationGroup = 'Outros';
 
     protected static ?string $navigationParentItem = 'Comercial';
 

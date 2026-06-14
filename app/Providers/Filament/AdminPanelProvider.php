@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Providers\Filament;
 
@@ -83,35 +83,30 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make()->label('Atas')->collapsed(),
                 NavigationGroup::make()->label('Configurações')->collapsed(),
                 NavigationGroup::make()->label('Outros')->collapsed(),
-                // ── Grupos legados (itens não movidos permanecem aqui) ───────────
-                NavigationGroup::make()->label('Implantação BIM')->collapsed(),
-                NavigationGroup::make()->label('Retrofit / Ampliação')->collapsed(),
-                NavigationGroup::make()->label('Telão')->collapsed(),
-                NavigationGroup::make()->label('Painel Global')->collapsed(),
-                NavigationGroup::make()->label('Comercial')->collapsed(),
-                NavigationGroup::make()->label('Orçamento')->collapsed(),
-                NavigationGroup::make()->label('Contratos')->collapsed(),
-                NavigationGroup::make()->label('Fornecedor')->collapsed(),
-                NavigationGroup::make()->label('Pós Obra')->collapsed(),
+
             ])
             ->navigationItems([
-                // ── Subgrupos de Implantação BIM (itens legados) ─────────────────
+                // ── Subgrupos de Outros ──────────────────────────────────────────
                 NavigationItem::make('Dashboard')
-                    ->group('Implantação BIM')->icon('heroicon-o-squares-2x2')->sort(1)->url(null),
+                    ->group('Outros')->icon('heroicon-o-squares-2x2')->sort(2)->url(null),
                 NavigationItem::make('PMO')
-                    ->group('Implantação BIM')->icon('heroicon-o-presentation-chart-line')->sort(2)->url(null),
+                    ->group('Outros')->icon('heroicon-o-presentation-chart-line')->sort(3)->url(null),
                 NavigationItem::make('Comercial')
-                    ->group('Implantação BIM')->icon('heroicon-o-briefcase')->sort(3)->url(null),
+                    ->group('Outros')->icon('heroicon-o-briefcase')->sort(4)->url(null),
                 NavigationItem::make('Arquitetura')
-                    ->group('Implantação BIM')->icon('heroicon-o-building-library')->sort(4)->url(null),
+                    ->group('Outros')->icon('heroicon-o-building-library')->sort(5)->url(null),
                 NavigationItem::make('Legalização')
-                    ->group('Implantação BIM')->icon('heroicon-o-scale')->sort(5)->url(null),
+                    ->group('Outros')->icon('heroicon-o-scale')->sort(6)->url(null),
                 NavigationItem::make('Engenharia')
-                    ->group('Implantação BIM')->icon('heroicon-o-building-office-2')->sort(6)->url(null),
+                    ->group('Outros')->icon('heroicon-o-building-office-2')->sort(7)->url(null),
                 NavigationItem::make('Orçamentos')
-                    ->group('Implantação BIM')->icon('heroicon-o-banknotes')->sort(7)->url(null),
+                    ->group('Outros')->icon('heroicon-o-banknotes')->sort(8)->url(null),
                 NavigationItem::make('Financeiro')
-                    ->group('Implantação BIM')->icon('heroicon-o-currency-dollar')->sort(8)->url(null),
+                    ->group('Outros')->icon('heroicon-o-currency-dollar')->sort(9)->url(null),
+                NavigationItem::make('Pós Obra')
+                    ->group('Outros')->icon('heroicon-o-building-office')->sort(10)->url(null),
+                NavigationItem::make('Retrofit / Ampliação')
+                    ->group('Outros')->icon('heroicon-o-wrench-screwdriver')->sort(11)->url(null),
                 ...FilamentDemoNavigation::items(),
                 // ── Configurações ────────────────────────────────────────────────
                 NavigationItem::make('Segurança')

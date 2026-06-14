@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Filament\Pages\PosObra;
 
@@ -20,7 +20,8 @@ class DashboardPosObra extends Page
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-chart-bar-square';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Pós Obra';
+    protected static UnitEnum|string|null $navigationGroup = 'Outros';
+    protected static ?string $navigationParentItem = 'Pós Obra';
 
     protected static ?string $navigationLabel = 'Dashboard';
 

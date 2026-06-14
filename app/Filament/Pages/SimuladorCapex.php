@@ -42,7 +42,7 @@ class SimuladorCapex extends Page implements HasForms
 
     protected static ?int $navigationSort = 1;
 
-    protected static string|null|UnitEnum $navigationGroup = 'Implantação BIM';
+    protected static string|null|UnitEnum $navigationGroup = 'Outros';
 
     protected static ?string $navigationParentItem = 'Orçamentos';
 

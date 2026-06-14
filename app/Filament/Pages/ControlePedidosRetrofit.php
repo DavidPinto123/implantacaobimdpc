@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Filament\Pages;
 
@@ -37,7 +37,8 @@ class ControlePedidosRetrofit extends Page
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-table-cells';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Retrofit / Ampliação';
+    protected static UnitEnum|string|null $navigationGroup = 'Outros';
+    protected static ?string $navigationParentItem = 'Retrofit / Ampliação';
 
     protected static ?string $navigationLabel = 'Controle de Pedidos';
 

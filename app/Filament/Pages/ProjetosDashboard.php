@@ -23,7 +23,7 @@ class ProjetosDashboard extends Page implements HasForms
 
     protected static ?string $navigationLabel = 'Dashboard de Projetos';
 
-    protected static null|string|UnitEnum $navigationGroup = 'Implantação BIM';
+    protected static null|string|UnitEnum $navigationGroup = 'Outros';
 
     protected static ?string $navigationParentItem = 'Dashboard';
 

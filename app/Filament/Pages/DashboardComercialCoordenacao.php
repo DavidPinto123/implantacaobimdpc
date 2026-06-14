@@ -23,7 +23,7 @@ class DashboardComercialCoordenacao extends Page
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-presentation-chart-line';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Implantação BIM';
+    protected static UnitEnum|string|null $navigationGroup = 'Outros';
 
     protected static ?string $navigationParentItem = 'Comercial';
 

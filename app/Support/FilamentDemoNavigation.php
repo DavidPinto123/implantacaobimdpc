@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Support;
 
@@ -21,9 +21,10 @@ final class FilamentDemoNavigation
         $items = [];
 
         foreach (self::structure() as $group => $config) {
+            $resolvedGroup = $config['navigationGroup'] ?? $group;
             $items[] = self::makeItem(
                 label: $config['label'] ?? $group,
-                group: $group,
+                group: $resolvedGroup,
                 icon: $config['icon'] ?? self::defaultGroupIcon($group),
                 sort: $config['sort'] ?? 1,
                 url: $config['url'] ?? null,
@@ -32,7 +33,7 @@ final class FilamentDemoNavigation
             foreach ($config['children'] ?? [] as $index => $child) {
                 $items[] = self::makeItem(
                     label: $child['label'],
-                    group: $group,
+                    group: $resolvedGroup,
                     parentItem: $child['parent'] ?? ($config['label'] ?? $group),
                     icon: $child['icon'],
                     sort: $child['sort'] ?? ($index + 1),
@@ -125,6 +126,7 @@ final class FilamentDemoNavigation
             ],
 
             'Retrofit / Ampliação' => [
+                'navigationGroup' => 'Outros',
                 'label' => 'Retrofit / Ampliação',
                 'icon' => 'heroicon-o-wrench-screwdriver',
                 'sort' => 1,
@@ -140,6 +142,7 @@ final class FilamentDemoNavigation
             ],
 
             'Telão' => [
+                'navigationGroup' => 'Outros',
                 'label' => 'Telão',
                 'icon' => 'heroicon-o-tv',
                 'sort' => 1,
@@ -147,6 +150,7 @@ final class FilamentDemoNavigation
             ],
 
             'Painel Global' => [
+                'navigationGroup' => 'Outros',
                 'label' => 'Painel Global',
                 'icon' => 'heroicon-o-globe-alt',
                 'sort' => 1,

@@ -31,7 +31,7 @@ class AprovacaoNotasFiscaisPage extends Page implements HasTable
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-check-badge';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Implantação BIM';
+    protected static UnitEnum|string|null $navigationGroup = 'Outros';
 
     protected static ?string $navigationParentItem = 'Engenharia';
 

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Filament\Pages\PosObra;
 
@@ -18,7 +18,8 @@ class AprovacoesPage extends Page
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-check-circle';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Pós Obra';
+    protected static UnitEnum|string|null $navigationGroup = 'Outros';
+    protected static ?string $navigationParentItem = 'Pós Obra';
 
     protected static ?string $navigationLabel = 'Aprovações';
 

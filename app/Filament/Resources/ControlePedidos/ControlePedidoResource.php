@@ -28,7 +28,7 @@ class ControlePedidoResource extends Resource
 
     protected static ?string $modelLabel = 'Controle de Pedido';
 
-    protected static string|null|UnitEnum $navigationGroup = 'Implantação BIM';
+    protected static string|null|UnitEnum $navigationGroup = 'Outros';
 
     protected static ?string $navigationParentItem = 'Orçamentos';
 

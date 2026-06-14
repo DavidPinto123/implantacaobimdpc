@@ -27,7 +27,7 @@ class AsaResource extends Resource
 
     protected static ?int $navigationSort = 4;
 
-    protected static UnitEnum|string|null $navigationGroup = 'Implantação BIM';
+    protected static UnitEnum|string|null $navigationGroup = 'Outros';
 
     protected static ?string $navigationParentItem = 'Engenharia';
 

@@ -30,7 +30,7 @@ class ControleNotaFiscalResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Controle de Notas Fiscais';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Implantação BIM';
+    protected static UnitEnum|string|null $navigationGroup = 'Outros';
 
     protected static ?string $navigationParentItem = 'Engenharia';
 

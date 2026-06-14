@@ -20,7 +20,7 @@ class AutorizacaoServicoResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-document-check';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Implantação BIM';
+    protected static UnitEnum|string|null $navigationGroup = 'Outros';
 
     protected static ?string $navigationParentItem = 'Orçamentos';
 

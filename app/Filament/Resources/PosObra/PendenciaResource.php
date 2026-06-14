@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Filament\Resources\PosObra;
 
@@ -42,7 +42,8 @@ class PendenciaResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::ClipboardDocumentList;
 
-    protected static UnitEnum|string|null $navigationGroup = 'Pós Obra';
+    protected static UnitEnum|string|null $navigationGroup = 'Outros';
+    protected static ?string $navigationParentItem = 'Pós Obra';
 
     protected static ?string $navigationLabel = 'Pendências';
 

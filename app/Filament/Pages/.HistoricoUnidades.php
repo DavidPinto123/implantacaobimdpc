@@ -24,7 +24,7 @@ class HistoricoUnidades extends Page implements HasTable
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-clock';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Implantação BIM';
+    protected static UnitEnum|string|null $navigationGroup = 'Outros';
 
     protected static ?string $navigationParentItem = 'PMO';
 

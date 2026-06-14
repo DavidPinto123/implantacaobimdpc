@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Filament\Pages\PosObra;
 
@@ -19,7 +19,8 @@ class KanbanPendencias extends Page
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-squares-2x2';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Pós Obra';
+    protected static UnitEnum|string|null $navigationGroup = 'Outros';
+    protected static ?string $navigationParentItem = 'Pós Obra';
 
     protected static ?string $navigationLabel = 'Kanban';
 
