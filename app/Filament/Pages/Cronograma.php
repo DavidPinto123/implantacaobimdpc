@@ -3691,9 +3691,12 @@ class Cronograma extends Page
 
         $item->duracao_dias = ($valor !== null && $valor > 0) ? $valor : null;
 
-        // Se tem data de início e duração definida, calcula a data final automaticamente
-        if ($item->duracao_dias && $item->data_prevista_inicio && ! $item->data_prevista_manual) {
+        // Quando o usuário define duração, calcula a data final sempre (tem precedência sobre qualquer flag).
+        // Também reseta a flag manual — ao usar duração em vez de data fixa, o item volta a seguir
+        // o planejamento da fase em shifts futuros.
+        if ($item->duracao_dias && $item->data_prevista_inicio) {
             $item->data_prevista_fim = $item->data_prevista_inicio->copy()->addDays($item->duracao_dias - 1);
+            $item->data_prevista_manual = false;
         }
 
         $item->save();
