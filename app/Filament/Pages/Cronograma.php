@@ -250,6 +250,8 @@ class Cronograma extends Page
 
     public bool $mostrarModalExcluirPlanejamento = false;
 
+    public ?int $projetoParaExcluir = null;
+
     /**
      * Edição em lote das datas de todas as fases da obra selecionada.
      * Indexado por id da fase: ['prev_i','prev_f','real_i','real_f'].
@@ -2753,16 +2755,22 @@ class Cronograma extends Page
         $this->mostrarModalNovaFase = false;
     }
 
+    public function confirmarExcluirPlanejamento(int $projetoId): void
+    {
+        $this->projetoParaExcluir = $projetoId;
+        $this->mostrarModalExcluirPlanejamento = true;
+    }
+
     public function excluirPlanejamento(): void
     {
-        $projeto = \App\Models\Projeto::find($this->projetoSelecionado);
+        $projeto = \App\Models\Projeto::find($this->projetoParaExcluir);
         if (! $projeto) {
             $this->mostrarModalExcluirPlanejamento = false;
+            $this->projetoParaExcluir = null;
 
             return;
         }
 
-        // Exclui fases e seus itens (cascade via FK ou manualmente)
         foreach ($projeto->cronogramaFases as $fase) {
             $fase->itens()->delete();
             $fase->delete();
@@ -2771,8 +2779,12 @@ class Cronograma extends Page
         $projeto->delete();
 
         $this->mostrarModalExcluirPlanejamento = false;
-        $this->projetoSelecionado = null;
-        $this->modoIndividual = false;
+        $this->projetoParaExcluir = null;
+
+        if ($this->projetoSelecionado === $projeto->id) {
+            $this->projetoSelecionado = null;
+            $this->modoIndividual = false;
+        }
 
         $this->dispatch('notify', type: 'success', message: 'Planejamento excluído com sucesso.');
     }
@@ -4083,32 +4095,47 @@ class Cronograma extends Page
 
         $faseIds = CronogramaFase::where('projeto_id', $this->projetoSelecionado)->pluck('id');
 
+        $projeto = \App\Models\Projeto::find($this->projetoSelecionado);
+
         $itens = CronogramaFaseItem::whereIn('cronograma_fase_id', $faseIds)
-            ->with('responsaveis')
+            ->with(['responsaveis', 'fase'])
             ->get();
 
         $criadas = 0;
 
         foreach ($itens as $item) {
+            $faseLbl  = $item->fase?->label_exibicao;
+            $descricao = implode(' | ', array_filter([
+                $projeto?->nome ? 'Projeto: ' . $projeto->nome : null,
+                $faseLbl        ? 'Fase: '    . $faseLbl        : null,
+                'Atividade: '   . $item->titulo,
+            ]));
+
             foreach ($item->responsaveis as $responsavel) {
-                $jaExiste = Task::where('cronograma_fase_item_id', $item->id)
+                $tarefaExistente = Task::where('cronograma_fase_item_id', $item->id)
                     ->where('assigned_to', $responsavel->id)
                     ->where('eh_revisor', false)
-                    ->exists();
-                if (! $jaExiste) {
+                    ->first();
+                if (! $tarefaExistente) {
                     $this->criarTarefaDeSubitem($item, $responsavel->id, ehRevisor: false);
                     $criadas++;
+                } elseif (blank($tarefaExistente->description)) {
+                    $tarefaExistente->description = $descricao;
+                    $tarefaExistente->saveQuietly();
                 }
             }
 
             if ($item->revisor_id) {
-                $jaExiste = Task::where('cronograma_fase_item_id', $item->id)
+                $tarefaExistente = Task::where('cronograma_fase_item_id', $item->id)
                     ->where('assigned_to', $item->revisor_id)
                     ->where('eh_revisor', true)
-                    ->exists();
-                if (! $jaExiste) {
+                    ->first();
+                if (! $tarefaExistente) {
                     $this->criarTarefaDeSubitem($item, $item->revisor_id, ehRevisor: true);
                     $criadas++;
+                } elseif (blank($tarefaExistente->description)) {
+                    $tarefaExistente->description = $descricao;
+                    $tarefaExistente->saveQuietly();
                 }
             }
 

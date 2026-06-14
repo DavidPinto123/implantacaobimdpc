@@ -2524,13 +2524,6 @@
                     Adicionar fase
                 </button>
 
-                <button class="vo-btn-outline" wire:click="$set('mostrarModalExcluirPlanejamento', true)"
-                        title="Excluir este planejamento"
-                        style="padding:5px 10px;display:inline-flex;align-items:center;gap:6px;font-size:0.75rem;border-color:#dc2626;color:#dc2626;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-                    Excluir planejamento
-                </button>
-
             @else
                 <input type="text" placeholder="Buscar projeto..." wire:model.live.debounce.300ms="busca">
 
@@ -3040,6 +3033,12 @@
                                             title="Duplicar este planejamento"
                                             style="padding:3px 5px;border:1px solid var(--vo-border);background:transparent;border-radius:.25rem;cursor:pointer;color:var(--vo-text-muted);line-height:1;margin-right:3px;">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                                    </button>
+                                    <button type="button"
+                                            wire:click.stop="confirmarExcluirPlanejamento({{ $projetoItem->id }})"
+                                            title="Excluir este planejamento"
+                                            style="padding:3px 5px;border:1px solid var(--vo-border);background:transparent;border-radius:.25rem;cursor:pointer;color:var(--vo-text-muted);line-height:1;margin-right:3px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
                                     </button>
                                     <button type="button"
                                             wire:click.stop="abrirHistoricoProjeto({{ $projetoItem->id }})"
