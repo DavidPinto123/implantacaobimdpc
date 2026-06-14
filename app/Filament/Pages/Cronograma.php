@@ -324,7 +324,7 @@ class Cronograma extends Page
             ->get();
 
         foreach ($projetos as $projeto) {
-            if ($projeto->cronogramaFases->isEmpty()) {
+            if ($projeto->cronogramaFases->isEmpty() && ! $projeto->sem_fases_auto) {
                 $cronogramaService->criarFasesParaProjeto($projeto);
                 $projeto->load(['cronogramaFases.template', 'cronogramaFases.templateFase']);
             }
@@ -380,7 +380,7 @@ class Cronograma extends Page
             return $this->getViewDataMacro();
         }
 
-        if ($projeto->cronogramaFases->isEmpty()) {
+        if ($projeto->cronogramaFases->isEmpty() && ! $projeto->sem_fases_auto) {
             (new CronogramaService)->criarFasesParaProjeto($projeto);
             $projeto->load(['cronogramaFases.template', 'cronogramaFases.templateFase', 'cronogramaFases.dependencias.dependeDeItem.fase', 'cronogramaFases.templateFase.dependencias.dependeDeItem.templateFase', 'cronogramaFases.itens.children.responsaveis', 'cronogramaFases.itens.children.revisor', 'cronogramaFases.itens.children.dependencias', 'cronogramaFases.itens.responsaveis', 'cronogramaFases.itens.revisor', 'cronogramaFases.itens.dependeDeFase', 'cronogramaFases.itens.dependeDeItem', 'cronogramaFases.itens.dependencias.dependeDeFase', 'cronogramaFases.itens.dependencias.dependeDeItem']);
         }
@@ -2685,8 +2685,9 @@ class Cronograma extends Page
         );
 
         $projeto = \App\Models\Projeto::create([
-            'nome'    => trim($this->novoPlanejamentoNome),
-            'user_id' => auth()->id(),
+            'nome'          => trim($this->novoPlanejamentoNome),
+            'user_id'       => auth()->id(),
+            'sem_fases_auto' => true,
         ]);
 
         $this->mostrarModalNovoPlanejamento = false;

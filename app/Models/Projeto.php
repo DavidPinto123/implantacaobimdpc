@@ -21,6 +21,7 @@ class Projeto extends Model
 
     protected $fillable = [
         'nome',
+        'sem_fases_auto',
         'sigla',
         'sigla_antiga',
         'nova_sigla',
