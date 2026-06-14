@@ -65,7 +65,6 @@ class UserResource extends Resource
                         Forms\Components\TextInput::make('email')
                             ->label('E-mail')
                             ->email()
-                            ->required()
                             ->maxLength(255)
                             ->unique(ignoreRecord: true),
 
@@ -157,12 +156,8 @@ class UserResource extends Resource
                             ->label('País')
                             ->options(Pais::pluck('nome', 'id'))
                             ->reactive()
-                            ->required()
                             ->afterStateUpdated(fn (callable $set) => $set('estado_id', null))
-                            ->searchable()
-                            ->validationMessages([
-                                'required' => 'O país é obrigatório.',
-                            ]),
+                            ->searchable(),
 
                         Select::make('estado_id')
                             ->label('Estado')
@@ -178,13 +173,9 @@ class UserResource extends Resource
                             })
                             ->searchable()
                             ->preload()
-                            ->required()
                             ->reactive()
                             ->afterStateUpdated(fn (callable $set) => $set('cidade_id', null))
-                            ->disabled(fn (callable $get) => empty($get('pais_id')))
-                            ->validationMessages([
-                                'required' => 'O estado é obrigatório.',
-                            ]),
+                            ->disabled(fn (callable $get) => empty($get('pais_id'))),
 
                         Select::make('cidade_id')
                             ->label('Cidade')
@@ -199,12 +190,8 @@ class UserResource extends Resource
                                     ->pluck('nome', 'id');
                             })
                             ->searchable()
-                            ->required()
                             ->preload()
-                            ->disabled(fn (callable $get) => empty($get('estado_id')))
-                            ->validationMessages([
-                                'required' => 'A cidade é obrigatória.',
-                            ]),
+                            ->disabled(fn (callable $get) => empty($get('estado_id'))),
                     ])
                     ->columns(3),
 
@@ -215,20 +202,15 @@ class UserResource extends Resource
                             ->label('Cargo')
                             ->relationship('roles', 'name')
                             ->preload()
-                            ->required()
                             ->multiple()
-                            ->searchable()
-                            ->validationMessages([
-                                'required' => 'O cargo é obrigatório.',
-                            ]),
+                            ->searchable(),
 
                         Select::make('setores')
                             ->label('Setor')
                             ->relationship('setores', 'setor')
                             ->multiple()
                             ->preload()
-                            ->searchable()
-                            ->required(),
+                            ->searchable(),
                     ]),
             ]);
     }

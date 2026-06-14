@@ -354,6 +354,7 @@ class Cronograma extends Page
             'cronogramaFases.comentarios.usuario',
             'cronogramaFases.itens.children.responsaveis',
             'cronogramaFases.itens.children.revisor',
+            'cronogramaFases.itens.children.dependencias',
             'cronogramaFases.itens.responsaveis',
             'cronogramaFases.itens.revisor',
             'cronogramaFases.itens.dependeDeFase',
@@ -377,7 +378,7 @@ class Cronograma extends Page
 
         if ($projeto->cronogramaFases->isEmpty()) {
             (new CronogramaService)->criarFasesParaProjeto($projeto);
-            $projeto->load(['cronogramaFases.template', 'cronogramaFases.templateFase', 'cronogramaFases.dependencias.dependeDeItem.fase', 'cronogramaFases.templateFase.dependencias.dependeDeItem.templateFase', 'cronogramaFases.itens.children.responsaveis', 'cronogramaFases.itens.children.revisor', 'cronogramaFases.itens.responsaveis', 'cronogramaFases.itens.revisor', 'cronogramaFases.itens.dependeDeFase', 'cronogramaFases.itens.dependeDeItem', 'cronogramaFases.itens.dependencias.dependeDeFase', 'cronogramaFases.itens.dependencias.dependeDeItem']);
+            $projeto->load(['cronogramaFases.template', 'cronogramaFases.templateFase', 'cronogramaFases.dependencias.dependeDeItem.fase', 'cronogramaFases.templateFase.dependencias.dependeDeItem.templateFase', 'cronogramaFases.itens.children.responsaveis', 'cronogramaFases.itens.children.revisor', 'cronogramaFases.itens.children.dependencias', 'cronogramaFases.itens.responsaveis', 'cronogramaFases.itens.revisor', 'cronogramaFases.itens.dependeDeFase', 'cronogramaFases.itens.dependeDeItem', 'cronogramaFases.itens.dependencias.dependeDeFase', 'cronogramaFases.itens.dependencias.dependeDeItem']);
         }
 
         $fases = $this->mostrarOcultas
@@ -1978,6 +1979,15 @@ class Cronograma extends Page
         }
     }
 
+    public function expandirFaseEFocarInput(int $faseId): void
+    {
+        if (! in_array($faseId, $this->fasesExpandidas, true)) {
+            $this->fasesExpandidas[] = $faseId;
+        }
+        // O foco no input é feito via JS depois do re-render (dispatch para o Alpine)
+        $this->dispatch('focarInputNovaAtividade', faseId: $faseId);
+    }
+
     /**
      * Atualiza o tri-estado (Sim/Não/Risco) dos subitens de Liberação de Posse.
      * O observer de CronogramaFaseItem sincroniza `recebido` automaticamente
@@ -2551,6 +2561,16 @@ class Cronograma extends Page
         $item->data_prevista_inicio = $inicio;
         $item->data_prevista_fim = $inicio->copy()->addDays($duracao - 1);
         $item->save();
+
+        // Atualiza o item pai (e ascendentes) após a cascata de dependência
+        if ($item->parent_id) {
+            $this->recalcularDatasItemPai($item->parent_id);
+        } else {
+            $this->recalcularDatasFaseDeItens($item->cronograma_fase_id);
+        }
+
+        // Cascateia para os próprios dependentes deste item
+        $this->recalcularDependentesSubitem($item);
     }
 
     private function recalcularDependentesSubitem(CronogramaFaseItem $item): void
@@ -2595,14 +2615,25 @@ class Cronograma extends Page
             $item->data_prevista_manual = true;
         }
 
+        // Ao alterar data de início, recalcula data_fim pela duração (se definida)
+        if ($campo === 'data_prevista_inicio' && ! blank($valor) && $item->duracao_dias > 0) {
+            $item->data_prevista_fim = \Carbon\Carbon::parse($valor)->addDays($item->duracao_dias - 1);
+        }
+
         $item->save();
 
-        // Atualiza datas do item pai (e ascendentes) como min/max dos filhos
+        // Atualiza datas do item pai (e ascendentes) como min/max dos filhos,
+        // chegando até a fase. Se já é item raiz, atualiza a fase diretamente.
         if ($item->parent_id) {
             $this->recalcularDatasItemPai($item->parent_id);
+        } else {
+            $this->recalcularDatasFaseDeItens($item->cronograma_fase_id);
         }
 
         $this->recalcularDependentesSubitem($item);
+        if (in_array($campo, ['data_prevista_inicio', 'data_prevista_fim'], true)) {
+            $this->sincronizarDatasTaskDeSubitem($item->fresh());
+        }
         $this->renderKey++;
     }
 
@@ -3427,7 +3458,7 @@ class Cronograma extends Page
     /**
      * Recalcula as datas previstas de um item pai com base nas datas dos filhos:
      * início = mínimo dos inícios dos filhos, fim = máximo dos fins dos filhos.
-     * Sobe recursivamente até a raiz da hierarquia.
+     * Sobe recursivamente até a raiz e, ao chegar na raiz, atualiza a FASE.
      */
     private function recalcularDatasItemPai(int $parentId): void
     {
@@ -3451,7 +3482,36 @@ class Cronograma extends Page
 
         if ($pai->parent_id) {
             $this->recalcularDatasItemPai($pai->parent_id);
+        } else {
+            // Chegou à raiz: atualiza a fase com o agregado de todos os itens raiz
+            $this->recalcularDatasFaseDeItens($pai->cronograma_fase_id);
         }
+    }
+
+    /**
+     * Atualiza as datas previstas da FASE como min/max dos itens raiz que têm datas.
+     * Chamado após alterações nos subitems para manter a fase como resumo.
+     */
+    private function recalcularDatasFaseDeItens(int $faseId): void
+    {
+        $itens = CronogramaFaseItem::where('cronograma_fase_id', $faseId)
+            ->whereNull('parent_id')
+            ->whereNotNull('data_prevista_inicio')
+            ->whereNotNull('data_prevista_fim')
+            ->get();
+
+        if ($itens->isEmpty()) {
+            return;
+        }
+
+        $fase = CronogramaFase::find($faseId);
+        if (! $fase) {
+            return;
+        }
+
+        $fase->data_prevista_inicio = $itens->min('data_prevista_inicio');
+        $fase->data_prevista_fim    = $itens->max('data_prevista_fim');
+        $fase->saveQuietly();
     }
 
     /**
@@ -3736,11 +3796,15 @@ class Cronograma extends Page
 
         $item->save();
 
-        // Atualiza datas do item pai (e ascendentes) como min/max dos filhos
+        // Atualiza datas do item pai (e ascendentes) como min/max dos filhos,
+        // chegando até a fase. Se já é item raiz, atualiza a fase diretamente.
         if ($item->parent_id) {
             $this->recalcularDatasItemPai($item->parent_id);
+        } else {
+            $this->recalcularDatasFaseDeItens($item->cronograma_fase_id);
         }
 
+        $this->sincronizarDatasTaskDeSubitem($item);
         $this->renderKey++;
     }
 
@@ -3814,6 +3878,16 @@ class Cronograma extends Page
 
     private function criarTarefaDeSubitem(CronogramaFaseItem $item, int $userId, bool $ehRevisor = false): void
     {
+        // Não duplicar: se já existe tarefa para este item + usuário + tipo, ignora
+        $jaExiste = Task::where('cronograma_fase_item_id', $item->id)
+            ->where('assigned_to', $userId)
+            ->where('eh_revisor', $ehRevisor)
+            ->exists();
+
+        if ($jaExiste) {
+            return;
+        }
+
         $categoria = TaskCategory::firstOrCreate(
             ['name' => 'Planejamento BIM'],
             ['name' => 'Planejamento BIM']
@@ -3831,18 +3905,163 @@ class Cronograma extends Page
 
         try {
             Task::create([
-                'title'            => $titulo,
-                'task_category_id' => $categoria->id,
-                'assigned_to'      => $userId,
-                'created_by'       => auth()->id() ?? $userId,
-                'inicio'           => $inicio,
-                'prazo'            => $prazo,
-                'status'           => 'pendente',
-                'projeto_id'       => $this->projetoSelecionado,
+                'title'                   => $titulo,
+                'task_category_id'        => $categoria->id,
+                'assigned_to'             => $userId,
+                'created_by'              => auth()->id() ?? $userId,
+                'inicio'                  => $inicio,
+                'prazo'                   => $prazo,
+                'status'                  => 'pendente',
+                'projeto_id'              => $this->projetoSelecionado,
+                'cronograma_fase_item_id' => $item->id,
+                'eh_revisor'              => $ehRevisor,
             ]);
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('criarTarefaDeSubitem falhou: ' . $e->getMessage());
         }
+    }
+
+    private function sincronizarDatasTaskDeSubitem(CronogramaFaseItem $item): void
+    {
+        $inicio = $item->data_prevista_inicio?->toDateString();
+        $prazo  = $item->duracao_dias;
+
+        if (! $prazo && $item->data_prevista_inicio && $item->data_prevista_fim) {
+            $prazo = $item->data_prevista_inicio->diffInDays($item->data_prevista_fim) + 1;
+        }
+
+        if (! $inicio || ! $prazo) {
+            return;
+        }
+
+        // Itera individualmente para disparar o hook `updating` do modelo,
+        // que recalcula `termino_programado` respeitando `dias_corridos` de cada tarefa.
+        Task::where('cronograma_fase_item_id', $item->id)
+            ->where(fn ($q) => $q->whereNull('data_entrega')->orWhere('status', '!=', 'concluida'))
+            ->get()
+            ->each(function (Task $task) use ($inicio, $prazo) {
+                $task->inicio = $inicio;
+                $task->prazo  = $prazo;
+                $task->save();
+            });
+    }
+
+    public function duplicarProjeto(int $projetoId): void
+    {
+        $original = Projeto::with([
+            'cronogramaFases.itens.children.children',
+            'cronogramaFases.itens.responsaveis',
+            'cronogramaFases.itens.children.responsaveis',
+            'cronogramaFases.itens.children.children.responsaveis',
+        ])->find($projetoId);
+
+        if (! $original) {
+            return;
+        }
+
+        $novoProjeto = $original->replicate(['codigo']);
+        $novoProjeto->nome = 'Cópia de ' . $original->nome;
+        $novoProjeto->codigo = null;
+        $novoProjeto->save();
+
+        foreach ($original->cronogramaFases as $fase) {
+            $novaFase = $fase->replicate();
+            $novaFase->projeto_id = $novoProjeto->id;
+            $novaFase->save();
+
+            $this->duplicarItens($fase->itens->whereNull('parent_id'), $novaFase->id, null);
+        }
+
+        Notification::make()
+            ->title('Projeto duplicado com sucesso')
+            ->body('Cópia de "' . $original->nome . '" criada.')
+            ->success()
+            ->send();
+
+        $this->renderKey++;
+    }
+
+    private function duplicarItens($itens, int $faseId, ?int $parentId): void
+    {
+        foreach ($itens->sortBy('ordem') as $item) {
+            $novoItem = $item->replicate();
+            $novoItem->cronograma_fase_id = $faseId;
+            $novoItem->parent_id = $parentId;
+            $novoItem->save();
+
+            foreach ($item->responsaveis as $resp) {
+                $novoItem->responsaveis()->attach($resp->id);
+            }
+
+            if ($item->children->isNotEmpty()) {
+                $this->duplicarItens($item->children, $faseId, $novoItem->id);
+            }
+        }
+    }
+
+    public function sincronizarTarefasDoProjetoAtual(): void
+    {
+        if (! $this->projetoSelecionado) {
+            return;
+        }
+
+        $faseIds = CronogramaFase::where('projeto_id', $this->projetoSelecionado)->pluck('id');
+
+        $itens = CronogramaFaseItem::whereIn('cronograma_fase_id', $faseIds)
+            ->with('responsaveis')
+            ->get();
+
+        $criadas = 0;
+
+        foreach ($itens as $item) {
+            foreach ($item->responsaveis as $responsavel) {
+                $jaExiste = Task::where('cronograma_fase_item_id', $item->id)
+                    ->where('assigned_to', $responsavel->id)
+                    ->where('eh_revisor', false)
+                    ->exists();
+                if (! $jaExiste) {
+                    $this->criarTarefaDeSubitem($item, $responsavel->id, ehRevisor: false);
+                    $criadas++;
+                }
+            }
+
+            if ($item->revisor_id) {
+                $jaExiste = Task::where('cronograma_fase_item_id', $item->id)
+                    ->where('assigned_to', $item->revisor_id)
+                    ->where('eh_revisor', true)
+                    ->exists();
+                if (! $jaExiste) {
+                    $this->criarTarefaDeSubitem($item, $item->revisor_id, ehRevisor: true);
+                    $criadas++;
+                }
+            }
+
+            // Sincroniza datas das tarefas já existentes (e recém-criadas)
+            $this->sincronizarDatasTaskDeSubitem($item);
+        }
+
+        // Recalcular datas dos itens pai (bottom-up): processa os itens que são pais
+        // de outros itens, recursão interna garante propagação até a fase.
+        $parentIds = CronogramaFaseItem::whereIn('cronograma_fase_id', $faseIds)
+            ->whereNotNull('parent_id')
+            ->distinct()
+            ->pluck('parent_id')
+            ->unique();
+
+        foreach ($parentIds as $parentId) {
+            $this->recalcularDatasItemPai($parentId);
+        }
+
+        foreach ($faseIds as $faseId) {
+            $this->recalcularDatasFaseDeItens($faseId);
+        }
+
+        Notification::make()
+            ->title($criadas > 0 ? "{$criadas} tarefa(s) criada(s) e datas sincronizadas" : 'Datas e hierarquia sincronizadas')
+            ->success()
+            ->send();
+
+        $this->renderKey++;
     }
 
     // ─── Ações em lote sobre subitens ────────────────────────────────────────
@@ -3878,10 +4097,173 @@ class Cronograma extends Page
     {
         foreach ($ids as $itemId) {
             $item = CronogramaFaseItem::find($itemId);
-            if ($item && ! $item->responsaveis->contains('id', $userId)) {
+            if (! $item) {
+                continue;
+            }
+            if (! $item->responsaveis->contains('id', $userId)) {
                 $item->responsaveis()->attach($userId);
             }
+            $this->criarTarefaDeSubitem($item, $userId, ehRevisor: false);
         }
+        $this->renderKey++;
+    }
+
+    public function atribuirRevisorSubitemsEmLote(array $ids, int $userId): void
+    {
+        foreach ($ids as $itemId) {
+            $item = CronogramaFaseItem::find($itemId);
+            if (! $item) {
+                continue;
+            }
+            $item->revisor_id = $userId;
+            $item->save();
+            $this->criarTarefaDeSubitem($item, $userId, ehRevisor: true);
+        }
+        $this->renderKey++;
+    }
+
+    public function atribuirDependenciaSubitemsEmLote(array $ids, string $alvo, string $gatilho, int $gap): void
+    {
+        [$tipo, $alvoIdStr] = array_pad(explode(':', $alvo, 2), 2, null);
+        $alvoId = (int) $alvoIdStr;
+
+        if (! in_array($tipo, ['fase', 'item'], true) || $alvoId <= 0) {
+            return;
+        }
+
+        $gatilhoEnum = GatilhoTemplateFase::tryFrom($gatilho);
+        if (! $gatilhoEnum) {
+            return;
+        }
+
+        $itens = CronogramaFaseItem::whereIn('id', $ids)->get();
+
+        foreach ($itens as $item) {
+            if ($tipo === 'item' && $alvoId === $item->id) {
+                continue;
+            }
+            if ($tipo === 'fase' && $alvoId === $item->cronograma_fase_id) {
+                continue;
+            }
+
+            $dep = $item->dependencias()->create([
+                'gatilho'  => $gatilhoEnum->value,
+                'gap_dias' => $gap,
+            ]);
+
+            if ($tipo === 'fase') {
+                $dep->update(['depende_de_fase_id' => $alvoId, 'depende_de_item_id' => null]);
+            } else {
+                $dep->update(['depende_de_fase_id' => null, 'depende_de_item_id' => $alvoId]);
+            }
+
+            $this->recalcularDatasSubitemPorDependencias($item);
+        }
+
+        $this->renderKey++;
+    }
+
+    public function editarSubitemsEmLote(
+        array $ids,
+        ?string $inicio,
+        ?string $fim,
+        ?int $duracao,
+        ?int $responsavelId,
+        ?int $revisorId,
+        ?string $depAlvo,
+        string $depGatilho,
+        int $depGap
+    ): void {
+        // Datas e duração
+        if ($inicio || $fim || ($duracao > 0)) {
+            if ($duracao > 0) {
+                // Duração definida: salva duracao_dias e recalcula data_fim em cada item
+                $itensParaDuracao = CronogramaFaseItem::whereIn('id', $ids)->get();
+                foreach ($itensParaDuracao as $item) {
+                    $item->duracao_dias = $duracao;
+                    if ($inicio) {
+                        $item->data_prevista_inicio = $inicio;
+                    }
+                    $dataBase = $item->data_prevista_inicio;
+                    if ($dataBase) {
+                        $item->data_prevista_fim = $dataBase->copy()->addDays($duracao - 1);
+                        $item->data_prevista_manual = false;
+                    }
+                    $item->save();
+                }
+            } else {
+                $dados = [];
+                if ($inicio) {
+                    $dados['data_prevista_inicio'] = $inicio;
+                }
+                if ($fim) {
+                    $dados['data_prevista_fim'] = $fim;
+                }
+                CronogramaFaseItem::whereIn('id', $ids)->update($dados);
+            }
+        }
+
+        if ($responsavelId) {
+            foreach ($ids as $itemId) {
+                $item = CronogramaFaseItem::find($itemId);
+                if (! $item) {
+                    continue;
+                }
+                if (! $item->responsaveis->contains('id', $responsavelId)) {
+                    $item->responsaveis()->attach($responsavelId);
+                }
+                $this->criarTarefaDeSubitem($item, $responsavelId, ehRevisor: false);
+            }
+        }
+
+        if ($revisorId) {
+            foreach ($ids as $itemId) {
+                $item = CronogramaFaseItem::find($itemId);
+                if (! $item) {
+                    continue;
+                }
+                $item->revisor_id = $revisorId;
+                $item->save();
+                $this->criarTarefaDeSubitem($item, $revisorId, ehRevisor: true);
+            }
+        }
+
+        if ($depAlvo) {
+            [$tipo, $alvoIdStr] = array_pad(explode(':', $depAlvo, 2), 2, null);
+            $alvoId = (int) $alvoIdStr;
+            $gatilhoEnum = GatilhoTemplateFase::tryFrom($depGatilho);
+
+            if (in_array($tipo, ['fase', 'item'], true) && $alvoId > 0 && $gatilhoEnum) {
+                $itens = CronogramaFaseItem::whereIn('id', $ids)->get();
+                foreach ($itens as $item) {
+                    if ($tipo === 'item' && $alvoId === $item->id) {
+                        continue;
+                    }
+                    if ($tipo === 'fase' && $alvoId === $item->cronograma_fase_id) {
+                        continue;
+                    }
+                    $dep = $item->dependencias()->create([
+                        'gatilho'  => $gatilhoEnum->value,
+                        'gap_dias' => $depGap,
+                    ]);
+                    if ($tipo === 'fase') {
+                        $dep->update(['depende_de_fase_id' => $alvoId, 'depende_de_item_id' => null]);
+                    } else {
+                        $dep->update(['depende_de_fase_id' => null, 'depende_de_item_id' => $alvoId]);
+                    }
+                    $this->recalcularDatasSubitemPorDependencias($item);
+                }
+            }
+        }
+
+        // Sincronizar datas das tasks vinculadas para todos os itens editados
+        foreach ($ids as $itemId) {
+            $item = CronogramaFaseItem::find($itemId);
+            if ($item) {
+                $this->sincronizarDatasTaskDeSubitem($item);
+            }
+        }
+
         $this->renderKey++;
     }
 

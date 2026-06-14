@@ -25,6 +25,8 @@ class Task extends Model
         'setor_id',
         'dias_corridos',
         'projeto_id',
+        'cronograma_fase_item_id',
+        'eh_revisor',
     ];
 
     protected $casts = [
@@ -32,6 +34,7 @@ class Task extends Model
         'termino_programado' => 'date',
         'data_entrega' => 'datetime',
         'dias_corridos' => 'boolean',
+        'eh_revisor' => 'boolean',
     ];
 
     public function category(): BelongsTo

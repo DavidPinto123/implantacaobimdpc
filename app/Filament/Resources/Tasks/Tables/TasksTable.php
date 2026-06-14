@@ -158,7 +158,7 @@ class TasksTable
                         )->pluck('name', 'id');
                     })
                     ->searchable()
-                    ->visible(fn () => auth()->user()?->hasAnyRole(['Coordenador', 'Gestor', 'Diretor'])),
+                    ->visible(fn () => auth()->user()?->hasAnyRole(['super_admin', 'admin', 'Coordenador', 'Gestor', 'Diretor'])),
                 /*
                 SelectFilter::make('overdue')
                     ->label('Atrasadas')

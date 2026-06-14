@@ -1503,6 +1503,17 @@
             background: var(--vo-bg-subtle);
         }
 
+        /* Farol de completude dos subitens */
+        .cr-subitem-vermelho { background: rgba(255, 77, 106, 0.12) !important; }
+        .cr-subitem-vermelho td { background: rgba(255, 77, 106, 0.12) !important; }
+        .cr-subitem-vermelho td.cr-td-sticky { background: linear-gradient(rgba(255,77,106,.12),rgba(255,77,106,.12)), var(--vo-bg) !important; }
+        .cr-subitem-vermelho:hover { filter: brightness(0.96); }
+
+        .cr-subitem-azul { background: rgba(59, 130, 246, 0.10) !important; }
+        .cr-subitem-azul td { background: rgba(59, 130, 246, 0.10) !important; }
+        .cr-subitem-azul td.cr-td-sticky { background: linear-gradient(rgba(59,130,246,.10),rgba(59,130,246,.10)), var(--vo-bg) !important; }
+        .cr-subitem-azul:hover { filter: brightness(0.96); }
+
         .cr-subitem-tr:hover {
             background: var(--vo-bg-subtle);
             filter: brightness(0.97);
@@ -2484,6 +2495,12 @@
                     Versões
                 </button>
 
+                <button class="vo-btn-outline" wire:click="sincronizarTarefasDoProjetoAtual" title="Criar tarefas faltantes para responsáveis e revisores já atribuídos"
+                        style="padding:5px 10px;display:inline-flex;align-items:center;gap:6px;font-size:0.75rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Sincronizar tarefas
+                </button>
+
             @else
                 <input type="text" placeholder="Buscar projeto..." wire:model.live.debounce.300ms="busca">
 
@@ -2534,6 +2551,13 @@
                         Limpar filtros
                     </button>
                 @endif
+
+                <a href="{{ \App\Filament\Resources\ProjetoResource::getUrl('create') }}"
+                   class="vo-btn-outline"
+                   style="padding:5px 12px;display:inline-flex;align-items:center;gap:6px;font-size:0.75rem;text-decoration:none;color:inherit;font-weight:600;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Criar novo
+                </a>
 
                 <button type="button" class="vo-btn-outline" wire:click="abrirHistoricoGlobal"
                         title="Histórico de alterações de todos os projetos"
@@ -2951,7 +2975,13 @@
                                         -
                                     @endif
                                 </td>
-                                <td style="text-align:center;" wire:click.stop>
+                                <td style="text-align:center;white-space:nowrap;" wire:click.stop>
+                                    <button type="button"
+                                            wire:click.stop="duplicarProjeto({{ $projetoItem->id }})"
+                                            title="Duplicar este planejamento"
+                                            style="padding:3px 5px;border:1px solid var(--vo-border);background:transparent;border-radius:.25rem;cursor:pointer;color:var(--vo-text-muted);line-height:1;margin-right:3px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                                    </button>
                                     <button type="button"
                                             wire:click.stop="abrirHistoricoProjeto({{ $projetoItem->id }})"
                                             title="Histórico de alterações deste projeto"
@@ -3489,6 +3519,33 @@
                          $wire.criarGrupoAtividades(this.batchGrupoNome.trim(), [...this.selItemIds]);
                          this.batchModalGrupo = false; this.limparSelecao();
                      },
+                     // Batch modal unificado de edição
+                     batchModalEditar: false,
+                     batchInicio: '', batchFim: '', batchDuracao: '',
+                     batchUserId: '', batchRevisorId: '',
+                     batchDepAlvo: '', batchDepGatilho: 'fim_anterior', batchDepGap: 1,
+                     abrirBatchEditar() {
+                         this.batchModalEditar = true;
+                         this.batchInicio = ''; this.batchFim = ''; this.batchDuracao = '';
+                         this.batchUserId = ''; this.batchRevisorId = '';
+                         this.batchDepAlvo = ''; this.batchDepGatilho = 'fim_anterior'; this.batchDepGap = 1;
+                     },
+                     confirmarBatchEditar() {
+                         const algoCampo = this.batchInicio || this.batchFim || this.batchDuracao || this.batchUserId || this.batchRevisorId || this.batchDepAlvo;
+                         if (!algoCampo) { this.batchModalEditar = false; return; }
+                         $wire.editarSubitemsEmLote(
+                             [...this.selItemIds],
+                             this.batchInicio || null,
+                             this.batchFim || null,
+                             this.batchDuracao ? parseInt(this.batchDuracao) : null,
+                             this.batchUserId ? parseInt(this.batchUserId) : null,
+                             this.batchRevisorId ? parseInt(this.batchRevisorId) : null,
+                             this.batchDepAlvo || null,
+                             this.batchDepGatilho,
+                             parseInt(this.batchDepGap) || 0
+                         );
+                         this.batchModalEditar = false; this.limparSelecao();
+                     },
                      // ─── Drag-drop de subitens ─────────────────────────────
                      dragItemSrc: null, dragFaseItemSrc: null,
                      dragItemTarget: null, dragFaseTarget: null,
@@ -3730,6 +3787,12 @@
                                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg>
                                             {{ $qtdItensTbl > 0 ? $qtdItensTbl : '+' }}
                                         </button>
+                                        <button type="button"
+                                                wire:click.stop="expandirFaseEFocarInput({{ $fase->id }})"
+                                                title="Nova atividade"
+                                                style="padding:2px 7px;border:1px dashed var(--vo-accent);border-radius:.25rem;background:transparent;cursor:pointer;color:var(--vo-accent);font-size:0.7rem;line-height:1.4;white-space:nowrap;flex-shrink:0;">
+                                            + Atividade
+                                        </button>
                                     </span>
                                 </td>
                                 <td class="cr-td-sticky cr-col-status">
@@ -3928,16 +3991,32 @@
                                 </tr>
                             @endif
                         @endforeach
+                        {{-- Linha para adicionar nova fase diretamente na tabela --}}
+                        <tr>
+                            <td colspan="99" style="padding:8px 14px;border-top:1px dashed var(--vo-border);background:var(--vo-bg);">
+                                <div style="display:flex;align-items:center;gap:8px;">
+                                    <input type="text"
+                                           wire:model="novaFasePersonalizadaTitulo"
+                                           wire:keydown.enter.prevent="adicionarFasePersonalizada"
+                                           placeholder="+ Nova fase personalizada… (Enter para adicionar)"
+                                           style="flex:1;min-width:180px;padding:5px 10px;border:1px dashed var(--vo-border);border-radius:.375rem;background:transparent;color:var(--vo-text);font-size:0.78rem;outline:none;">
+                                    <button type="button"
+                                            wire:click="adicionarFasePersonalizada"
+                                            style="padding:4px 14px;font-size:0.75rem;font-weight:500;border:1px solid var(--vo-accent);background:transparent;color:var(--vo-accent);border-radius:.375rem;cursor:pointer;white-space:nowrap;">
+                                        Adicionar fase
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
                 </div>
 
                 {{-- Barra de ações em lote (aparece quando há seleção) --}}
                 <div x-show="selItemIds.length > 0" x-cloak class="cr-batch-toolbar">
-                    <span class="cr-batch-label" x-text="selItemIds.length + ' selecionadas'"></span>
+                    <span class="cr-batch-label" x-text="selItemIds.length + ' selecionada(s)'"></span>
                     <div class="cr-batch-sep"></div>
-                    <button type="button" class="cr-batch-btn cr-batch-btn--primary" @click="abrirBatchDatas()">📅 Alterar datas</button>
-                    <button type="button" class="cr-batch-btn cr-batch-btn--primary" @click="abrirBatchResp()">👤 Responsável</button>
+                    <button type="button" class="cr-batch-btn cr-batch-btn--primary" @click="abrirBatchEditar()">✏️ Editar</button>
                     <button type="button" class="cr-batch-btn" @click="$wire.marcarConcluidsEmLote([...selItemIds]); limparSelecao()">✔ Concluir</button>
                     <button type="button" class="cr-batch-btn cr-batch-btn--primary" @click="abrirBatchGrupo()">⊞ Salvar como grupo</button>
                     <div class="cr-batch-sep"></div>
@@ -3948,40 +4027,103 @@
                     <button type="button" class="cr-batch-btn cr-batch-btn--cancel" @click="limparSelecao()">✕ Cancelar</button>
                 </div>
 
-                {{-- Modal: alterar datas em lote --}}
-                <div x-show="batchModalDatas" x-cloak class="cr-modal-overlay" @click.self="batchModalDatas = false">
-                    <div class="cr-modal-box">
-                        <div class="cr-modal-title">Alterar datas das atividades selecionadas</div>
-                        <div style="display:flex;flex-direction:column;gap:10px;">
-                            <label style="font-size:0.78rem;color:var(--vo-text-secondary);">
-                                Data início prevista
-                                <input type="date" x-model="batchInicio" style="display:block;width:100%;margin-top:4px;border:1px solid var(--vo-border);border-radius:.3rem;background:var(--vo-bg);color:var(--vo-text);padding:5px 8px;font-size:0.78rem;">
-                            </label>
-                            <label style="font-size:0.78rem;color:var(--vo-text-secondary);">
-                                Data fim prevista
-                                <input type="date" x-model="batchFim" style="display:block;width:100%;margin-top:4px;border:1px solid var(--vo-border);border-radius:.3rem;background:var(--vo-bg);color:var(--vo-text);padding:5px 8px;font-size:0.78rem;">
-                            </label>
-                        </div>
-                        <div class="cr-modal-actions">
-                            <button type="button" class="cr-batch-btn cr-batch-btn--cancel" @click="batchModalDatas = false">Cancelar</button>
-                            <button type="button" class="cr-batch-btn cr-batch-btn--primary" @click="confirmarBatchDatas()">Aplicar</button>
-                        </div>
-                    </div>
-                </div>
+                {{-- Modal unificado: editar atividades selecionadas --}}
+                <div x-show="batchModalEditar" x-cloak class="cr-modal-overlay" @click.self="batchModalEditar = false">
+                    <div class="cr-modal-box" style="max-width:460px;">
+                        <div class="cr-modal-title">Editar atividades selecionadas</div>
+                        <p style="font-size:0.72rem;color:var(--vo-text-faint);margin-bottom:14px;">Preencha apenas os campos que deseja alterar. Os demais serão ignorados.</p>
+                        <div style="display:flex;flex-direction:column;gap:14px;">
 
-                {{-- Modal: atribuir responsável em lote --}}
-                <div x-show="batchModalResp" x-cloak class="cr-modal-overlay" @click.self="batchModalResp = false">
-                    <div class="cr-modal-box">
-                        <div class="cr-modal-title">Atribuir responsável às atividades selecionadas</div>
-                        <select x-model="batchUserId" style="width:100%;border:1px solid var(--vo-border);border-radius:.3rem;background:var(--vo-bg);color:var(--vo-text);padding:6px 8px;font-size:0.8rem;">
-                            <option value="">— selecione um usuário —</option>
-                            @foreach($usuarios ?? [] as $u)
-                                <option value="{{ $u->id }}">{{ $u->name }}</option>
-                            @endforeach
-                        </select>
+                            {{-- Datas --}}
+                            <div>
+                                <div style="font-size:0.72rem;font-weight:600;color:var(--vo-text-secondary);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">📅 Datas previstas</div>
+                                <div style="display:flex;gap:8px;">
+                                    <label style="font-size:0.75rem;color:var(--vo-text-secondary);flex:1;">
+                                        Início
+                                        <input type="date" x-model="batchInicio" style="display:block;width:100%;margin-top:3px;border:1px solid var(--vo-border);border-radius:.3rem;background:var(--vo-bg);color:var(--vo-text);padding:5px 8px;font-size:0.78rem;">
+                                    </label>
+                                    <label style="font-size:0.75rem;color:var(--vo-text-secondary);flex:1;">
+                                        Fim
+                                        <input type="date" x-model="batchFim" style="display:block;width:100%;margin-top:3px;border:1px solid var(--vo-border);border-radius:.3rem;background:var(--vo-bg);color:var(--vo-text);padding:5px 8px;font-size:0.78rem;" :disabled="batchDuracao > 0">
+                                    </label>
+                                    <label style="font-size:0.75rem;color:var(--vo-text-secondary);width:80px;">
+                                        Duração (d)
+                                        <input type="number" x-model="batchDuracao" min="1" placeholder="—"
+                                               style="display:block;width:100%;margin-top:3px;border:1px solid var(--vo-border);border-radius:.3rem;background:var(--vo-bg);color:var(--vo-text);padding:5px 8px;font-size:0.78rem;"
+                                               @input="if (batchDuracao > 0) batchFim = ''">
+                                    </label>
+                                </div>
+                                <p x-show="batchDuracao > 0 && batchInicio" style="font-size:0.68rem;color:var(--vo-text-faint);margin-top:4px;">
+                                    Data fim será calculada automaticamente: início + duração − 1 dia
+                                </p>
+                                <p x-show="batchDuracao > 0 && !batchInicio" style="font-size:0.68rem;color:var(--vo-text-faint);margin-top:4px;">
+                                    Duração será salva; data fim recalculada pela data de início de cada item
+                                </p>
+                            </div>
+
+                            {{-- Responsável --}}
+                            <div>
+                                <div style="font-size:0.72rem;font-weight:600;color:var(--vo-text-secondary);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">👤 Responsável</div>
+                                <select x-model="batchUserId" style="width:100%;border:1px solid var(--vo-border);border-radius:.3rem;background:var(--vo-bg);color:var(--vo-text);padding:6px 8px;font-size:0.78rem;">
+                                    <option value="">— não alterar —</option>
+                                    @foreach($usuarios ?? [] as $u)
+                                        <option value="{{ $u->id }}">{{ $u->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            {{-- Revisor --}}
+                            <div>
+                                <div style="font-size:0.72rem;font-weight:600;color:var(--vo-text-secondary);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">📋 Revisor</div>
+                                <select x-model="batchRevisorId" style="width:100%;border:1px solid var(--vo-border);border-radius:.3rem;background:var(--vo-bg);color:var(--vo-text);padding:6px 8px;font-size:0.78rem;">
+                                    <option value="">— não alterar —</option>
+                                    @foreach($usuarios ?? [] as $u)
+                                        <option value="{{ $u->id }}">{{ $u->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            {{-- Dependência --}}
+                            <div>
+                                <div style="font-size:0.72rem;font-weight:600;color:var(--vo-text-secondary);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">🔗 Dependência (adicionar)</div>
+                                <label style="font-size:0.75rem;color:var(--vo-text-secondary);">
+                                    Depende de
+                                    <select x-model="batchDepAlvo" style="display:block;width:100%;margin-top:3px;border:1px solid var(--vo-border);border-radius:.3rem;background:var(--vo-bg);color:var(--vo-text);padding:6px 8px;font-size:0.78rem;">
+                                        <option value="">— não adicionar —</option>
+                                        <optgroup label="Fases">
+                                            @foreach($fases->sortBy('ordem') as $faseOpcao)
+                                                <option value="fase:{{ $faseOpcao->id }}">{{ $faseOpcao->label_exibicao }}</option>
+                                            @endforeach
+                                        </optgroup>
+                                        <optgroup label="Subitens">
+                                            @foreach($fases->sortBy('ordem') as $faseOpcao)
+                                                @foreach($faseOpcao->itens->sortBy('ordem') as $opcao)
+                                                    <option value="item:{{ $opcao->id }}">{{ $faseOpcao->label_exibicao }} / {{ $opcao->titulo }}</option>
+                                                @endforeach
+                                            @endforeach
+                                        </optgroup>
+                                    </select>
+                                </label>
+                                <div style="display:flex;gap:8px;margin-top:6px;" x-show="batchDepAlvo">
+                                    <label style="font-size:0.75rem;color:var(--vo-text-secondary);flex:1;">
+                                        Gatilho
+                                        <select x-model="batchDepGatilho" style="display:block;width:100%;margin-top:3px;border:1px solid var(--vo-border);border-radius:.3rem;background:var(--vo-bg);color:var(--vo-text);padding:5px 8px;font-size:0.78rem;">
+                                            @foreach(\App\Enums\GatilhoTemplateFase::cases() as $gatilho)
+                                                <option value="{{ $gatilho->value }}">{{ $gatilho->labelCurto() }}</option>
+                                            @endforeach
+                                        </select>
+                                    </label>
+                                    <label style="font-size:0.75rem;color:var(--vo-text-secondary);width:80px;">
+                                        Gap (dias)
+                                        <input type="number" x-model="batchDepGap" min="0" style="display:block;width:100%;margin-top:3px;border:1px solid var(--vo-border);border-radius:.3rem;background:var(--vo-bg);color:var(--vo-text);padding:5px 8px;font-size:0.78rem;">
+                                    </label>
+                                </div>
+                            </div>
+
+                        </div>
                         <div class="cr-modal-actions">
-                            <button type="button" class="cr-batch-btn cr-batch-btn--cancel" @click="batchModalResp = false">Cancelar</button>
-                            <button type="button" class="cr-batch-btn cr-batch-btn--primary" @click="confirmarBatchResp()">Atribuir</button>
+                            <button type="button" class="cr-batch-btn cr-batch-btn--cancel" @click="batchModalEditar = false">Cancelar</button>
+                            <button type="button" class="cr-batch-btn cr-batch-btn--primary" @click="confirmarBatchEditar()">Aplicar</button>
                         </div>
                     </div>
                 </div>
@@ -5488,23 +5630,41 @@
                         document.addEventListener('fullscreenchange', () => {
                             this.isFullscreen = !!document.fullscreenElement;
                         });
+                        // Foca o input de nova atividade quando Livewire despacha o evento
+                        window.addEventListener('focarInputNovaAtividade', (e) => {
+                            const faseId = e.detail?.faseId;
+                            if (!faseId) return;
+                            setTimeout(() => {
+                                const input = document.querySelector(`input[wire\\:model="novoSubitemTitulos.${faseId}"]`);
+                                if (input) {
+                                    input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                    input.focus();
+                                }
+                            }, 300);
+                        });
+
                         // Dá ao cr-table-wrap um max-height = espaço restante no viewport abaixo dele.
-                        // Isso transforma o wrap no scroll container da tabela, tornando o thead
-                        // sticky com top:0 relativo ao wrap — sem depender do Filament.
+                        // Transforma o wrap no scroll container → thead sticky relativo ao wrap.
+                        // NOTA: Filament usa scroll container interno (não window), então window.scrollY
+                        // é sempre 0. Usamos rect.top diretamente, mas só quando > 60 (tabela visível),
+                        // garantindo que o valor capturado é o da posição real na primeira renderização.
                         const tableWrap = this.$el.querySelector('.cr-table-wrap');
                         if (tableWrap) {
-                            const calcTableH = () => {
+                            const aplicarAlturaTabela = () => {
                                 const rect = tableWrap.getBoundingClientRect();
-                                const h = Math.max(window.innerHeight - rect.top, 200);
-                                this.$el.style.setProperty('--cr-table-max-h', h + 'px');
+                                // Só aplica quando a tabela está visivelmente abaixo do topo do viewport.
+                                // Após max-height ser definido, a tabela vira scroll container e rect.top
+                                // não muda mais, tornando o valor estável para interações futuras.
+                                if (rect.top > 60) {
+                                    const h = Math.max(window.innerHeight - rect.top - 8, 200);
+                                    this.$el.style.setProperty('--cr-table-max-h', h + 'px');
+                                }
                             };
-                            calcTableH();
-                            setTimeout(() => calcTableH(), 150);
-                            setTimeout(() => calcTableH(), 500);
-                            setTimeout(() => calcTableH(), 1000);
-                            window.addEventListener('resize', calcTableH, { passive: true });
-                            window.addEventListener('scroll', calcTableH, { passive: true, capture: true });
-                            new ResizeObserver(calcTableH).observe(this.$el);
+                            aplicarAlturaTabela();
+                            setTimeout(aplicarAlturaTabela, 150);
+                            setTimeout(aplicarAlturaTabela, 600);
+                            setTimeout(aplicarAlturaTabela, 1500);
+                            window.addEventListener('resize', () => setTimeout(aplicarAlturaTabela, 150), { passive: true });
                         }
                     });
                 },

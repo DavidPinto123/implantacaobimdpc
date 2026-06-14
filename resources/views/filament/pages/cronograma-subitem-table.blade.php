@@ -55,8 +55,33 @@
 
     // Responsáveis já carregados via eager load
     $responsaveis = $item->relationLoaded('responsaveis') ? $item->responsaveis : collect();
+
+    // ── Cor da linha ──────────────────────────────────────────────────────
+    // Vermelho: tarefa atrasada (data_fim < hoje e não recebida)
+    // Azul: tarefa incompleta (faltam: início/dependência, duração, responsável ou revisor)
+    // Neutro: completa e no prazo
+    $hojeItem = now()->startOfDay();
+    $itemAtrasado = $item->data_prevista_fim
+        && $item->data_prevista_fim->copy()->startOfDay()->lt($hojeItem)
+        && ! $item->recebido;
+
+    $temDependencia = $item->relationLoaded('dependencias')
+        ? $item->dependencias->isNotEmpty()
+        : false;
+    $temInicio      = (bool) $item->data_prevista_inicio || $temDependencia;
+    $temDuracao     = $durSubitem > 0;
+    $temResponsavel = $responsaveis->isNotEmpty();
+    $temRevisor     = (bool) $item->revisor_id;
+    $itemCompleto   = $temInicio && $temDuracao && $temResponsavel && $temRevisor;
+
+    $corLinhaItem = 'neutro';
+    if ($itemAtrasado) {
+        $corLinhaItem = 'vermelho';
+    } elseif (! $itemCompleto) {
+        $corLinhaItem = 'azul';
+    }
 @endphp
-<tr class="cr-subitem-tr" wire:key="st-{{ $item->id }}"
+<tr class="cr-subitem-tr {{ $corLinhaItem !== 'neutro' ? 'cr-subitem-'.$corLinhaItem : '' }}" wire:key="st-{{ $item->id }}"
     draggable="true"
     @dragstart.stop="dragItemSrc = {{ $item->id }}; dragFaseItemSrc = {{ $item->cronograma_fase_id }}"
     @dragover.prevent.stop="dragItemTarget = {{ $item->id }}; dragFaseTarget = {{ $item->cronograma_fase_id }}"
@@ -71,13 +96,11 @@
             @if($depth === 0)
             <span class="cr-drag-handle" title="Arrastar para reordenar" @mousedown.stop>⠿</span>
             @endif
-            {{-- Checkbox de seleção (só nível raiz) --}}
-            @if($depth === 0)
+            {{-- Checkbox de seleção (todos os níveis) --}}
             <input type="checkbox" class="cr-sel-check" style="margin-top:3px;"
                    :checked="isSelItem({{ $item->id }})"
                    @click.stop="toggleSelItem({{ $item->id }})"
                    title="Selecionar esta atividade">
-            @endif
             <span class="cr-subitem-tree" style="margin-top:2px;">└</span>
             @if($numPrefix)
                 <span style="color:var(--vo-text-faint);font-size:0.68rem;font-weight:700;flex-shrink:0;white-space:nowrap;margin-top:3px;">{{ $numPrefix }}</span>
