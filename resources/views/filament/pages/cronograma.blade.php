@@ -2501,6 +2501,13 @@
                     Sincronizar tarefas
                 </button>
 
+                <button class="vo-btn-outline" wire:click="$set('mostrarModalNovaFase', true)"
+                        title="Inserir nova fase no planejamento"
+                        style="padding:5px 10px;display:inline-flex;align-items:center;gap:6px;font-size:0.75rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Inserir fase
+                </button>
+
             @else
                 <input type="text" placeholder="Buscar projeto..." wire:model.live.debounce.300ms="busca">
 
@@ -4252,6 +4259,36 @@
                             wire:click="$set('mostrarModalNovoPlanejamento', false)">Cancelar</button>
                     <button type="button" class="cr-batch-btn cr-batch-btn--primary"
                             wire:click="criarNovoPlanejamento">Criar</button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- Modal: inserir fase no planejamento --}}
+    @if($mostrarModalNovaFase)
+        <div class="cr-modal-overlay" style="z-index:300;" wire:click.self="$set('mostrarModalNovaFase', false)">
+            <div class="cr-modal-box" style="max-width:440px;">
+                <div class="cr-modal-title">Inserir fase</div>
+                <p style="font-size:0.78rem;color:var(--vo-text-muted);margin-bottom:14px;">
+                    Adiciona uma nova fase ao planejamento. Dentro dela você poderá criar tarefas e subtarefas.
+                </p>
+                <label style="display:block;font-size:0.78rem;color:var(--vo-text-secondary);margin-bottom:12px;">
+                    Nome da fase
+                    <input type="text"
+                           wire:model="novaFasePersonalizadaTitulo"
+                           wire:keydown.enter.prevent="adicionarFasePersonalizadaEFecharModal"
+                           placeholder="Ex.: Projeto Modelo 1 – Morar Mais"
+                           autofocus
+                           style="display:block;width:100%;margin-top:4px;border:1px solid var(--vo-border);border-radius:.375rem;background:var(--vo-bg);color:var(--vo-text);padding:7px 10px;font-size:0.82rem;">
+                </label>
+                @error('novaFasePersonalizadaTitulo')
+                    <p style="font-size:0.72rem;color:#dc2626;margin-bottom:8px;">{{ $message }}</p>
+                @enderror
+                <div class="cr-modal-actions">
+                    <button type="button" class="cr-batch-btn cr-batch-btn--cancel"
+                            wire:click="$set('mostrarModalNovaFase', false)">Cancelar</button>
+                    <button type="button" class="cr-batch-btn cr-batch-btn--primary"
+                            wire:click="adicionarFasePersonalizadaEFecharModal">Inserir</button>
                 </div>
             </div>
         </div>

@@ -246,6 +246,8 @@ class Cronograma extends Page
 
     public string $novoPlanejamentoNome = '';
 
+    public bool $mostrarModalNovaFase = false;
+
     /**
      * Edição em lote das datas de todas as fases da obra selecionada.
      * Indexado por id da fase: ['prev_i','prev_f','real_i','real_f'].
@@ -2734,7 +2736,19 @@ class Cronograma extends Page
 
         $this->novaFasePersonalizadaTitulo = '';
         $this->renderKey++;
-        Notification::make()->title('Fase personalizada adicionada')->success()->send();
+        Notification::make()->title('Fase adicionada')->success()->send();
+    }
+
+    public function adicionarFasePersonalizadaEFecharModal(): void
+    {
+        if (trim($this->novaFasePersonalizadaTitulo) === '') {
+            $this->addError('novaFasePersonalizadaTitulo', 'Informe o nome da fase.');
+
+            return;
+        }
+
+        $this->adicionarFasePersonalizada();
+        $this->mostrarModalNovaFase = false;
     }
 
     public function alternarVisibilidadeFase(int $faseId): void
