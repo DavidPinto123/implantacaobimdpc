@@ -242,6 +242,10 @@ class Cronograma extends Page
 
     public bool $mostrarConfirmacaoSalvarDatas = false;
 
+    public bool $mostrarModalNovoPlanejamento = false;
+
+    public string $novoPlanejamentoNome = '';
+
     /**
      * Edição em lote das datas de todas as fases da obra selecionada.
      * Indexado por id da fase: ['prev_i','prev_f','real_i','real_f'].
@@ -2669,6 +2673,28 @@ class Cronograma extends Page
     }
 
     // ------------------------------------------------------------------
+    // Criação rápida de planejamento (projeto apenas com nome).
+    // ------------------------------------------------------------------
+
+    public function criarNovoPlanejamento(): void
+    {
+        $this->validate(
+            ['novoPlanejamentoNome' => 'required|min:2'],
+            ['novoPlanejamentoNome.required' => 'Informe o nome do planejamento.',
+             'novoPlanejamentoNome.min'      => 'O nome precisa ter ao menos 2 caracteres.']
+        );
+
+        $projeto = \App\Models\Projeto::create([
+            'nome'    => trim($this->novoPlanejamentoNome),
+            'user_id' => auth()->id(),
+        ]);
+
+        $this->mostrarModalNovoPlanejamento = false;
+        $this->novoPlanejamentoNome = '';
+
+        $this->redirect(static::getUrl(['projeto' => $projeto->id]));
+    }
+
     // Fases ad-hoc (personalizadas por projeto) e visibilidade local.
     // ------------------------------------------------------------------
 

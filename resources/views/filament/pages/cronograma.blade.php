@@ -2556,8 +2556,15 @@
                    class="vo-btn-outline"
                    style="padding:5px 12px;display:inline-flex;align-items:center;gap:6px;font-size:0.75rem;text-decoration:none;color:inherit;font-weight:600;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    Criar novo
+                    Novo projeto
                 </a>
+                <button type="button"
+                        wire:click="$set('mostrarModalNovoPlanejamento', true)"
+                        class="vo-btn-outline"
+                        style="padding:5px 12px;display:inline-flex;align-items:center;gap:6px;font-size:0.75rem;font-weight:600;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                    Novo planejamento
+                </button>
 
                 <button type="button" class="vo-btn-outline" wire:click="abrirHistoricoGlobal"
                         title="Histórico de alterações de todos os projetos"
@@ -2673,6 +2680,35 @@
                             @if($projeto->estado) &bull; {{ $projeto->estado->uf }}@endif
                             @if($projeto->marca) &bull; {{ $projeto->marca }}@endif
                         </div>
+                        @php
+                            $planInicio = $fases->whereNotNull('data_prevista_inicio')->min('data_prevista_inicio');
+                            $planFim    = $fases->whereNotNull('data_prevista_fim')->max('data_prevista_fim');
+                            $planDias   = ($planInicio && $planFim)
+                                ? \Carbon\Carbon::parse($planInicio)->diffInDays(\Carbon\Carbon::parse($planFim)) + 1
+                                : null;
+                        @endphp
+                        @if($planInicio || $planFim)
+                            <div style="display:flex;align-items:center;gap:14px;margin-top:6px;font-size:0.75rem;color:#333;flex-wrap:wrap;">
+                                @if($planInicio)
+                                    <span>
+                                        <span style="opacity:.65;font-size:0.68rem;text-transform:uppercase;letter-spacing:.04em;">Início</span>
+                                        &nbsp;{{ \Carbon\Carbon::parse($planInicio)->format('d/m/Y') }}
+                                    </span>
+                                @endif
+                                @if($planFim)
+                                    <span style="opacity:.5;">—</span>
+                                    <span>
+                                        <span style="opacity:.65;font-size:0.68rem;text-transform:uppercase;letter-spacing:.04em;">Fim</span>
+                                        &nbsp;{{ \Carbon\Carbon::parse($planFim)->format('d/m/Y') }}
+                                    </span>
+                                @endif
+                                @if($planDias)
+                                    <span style="padding:1px 8px;background:rgba(0,0,0,.12);border-radius:99px;font-size:0.7rem;font-weight:600;">
+                                        {{ $planDias }} dias
+                                    </span>
+                                @endif
+                            </div>
+                        @endif
                         @if($projeto->suframaPendente())
                             @php $diasInaug = $projeto->diasParaInauguracao(); @endphp
                             <div class="cr-suframa-pisca"
@@ -4197,6 +4233,36 @@
             @endif
         @endif
     </div>
+
+    {{-- Modal: criar novo planejamento --}}
+    @if($mostrarModalNovoPlanejamento)
+        <div class="cr-modal-overlay" style="z-index:300;" wire:click.self="$set('mostrarModalNovoPlanejamento', false)">
+            <div class="cr-modal-box" style="max-width:420px;">
+                <div class="cr-modal-title">Novo planejamento</div>
+                <p style="font-size:0.78rem;color:var(--vo-text-muted);margin-bottom:14px;">
+                    Cria um planejamento independente. Você poderá adicionar fases e atividades após a criação.
+                </p>
+                <label style="display:block;font-size:0.78rem;color:var(--vo-text-secondary);margin-bottom:12px;">
+                    Nome do planejamento
+                    <input type="text"
+                           wire:model="novoPlanejamentoNome"
+                           wire:keydown.enter.prevent="criarNovoPlanejamento"
+                           placeholder="Ex.: Implantação BIM — DPC Consultoria"
+                           autofocus
+                           style="display:block;width:100%;margin-top:4px;border:1px solid var(--vo-border);border-radius:.375rem;background:var(--vo-bg);color:var(--vo-text);padding:7px 10px;font-size:0.82rem;">
+                </label>
+                @error('novoPlanejamentoNome')
+                    <p style="font-size:0.72rem;color:#dc2626;margin-bottom:8px;">{{ $message }}</p>
+                @enderror
+                <div class="cr-modal-actions">
+                    <button type="button" class="cr-batch-btn cr-batch-btn--cancel"
+                            wire:click="$set('mostrarModalNovoPlanejamento', false)">Cancelar</button>
+                    <button type="button" class="cr-batch-btn cr-batch-btn--primary"
+                            wire:click="criarNovoPlanejamento">Criar</button>
+                </div>
+            </div>
+        </div>
+    @endif
 
     {{-- Painel de Versoes --}}
     @if($mostrarVersoes && $modoIndividual && $projetoSelecionado)

@@ -3155,7 +3155,7 @@ class ProjetoResource extends Resource
                                     ->schema([
                                         DatePicker::make('data_posse')
                                             ->label('Data de Posse')
-                                            ->required()
+                                            ->required(fn () => Auth::user()?->hasAnyRole(['PMO', 'Planejamento Estratégico', 'super_admin']))
                                             ->live()
                                             ->disabled(fn () => ! Auth::user()?->hasAnyRole(['PMO', 'Planejamento Estratégico', 'super_admin']))
                                             ->helperText(fn () => Auth::user()?->hasAnyRole(['PMO', 'Planejamento Estratégico', 'super_admin'])
