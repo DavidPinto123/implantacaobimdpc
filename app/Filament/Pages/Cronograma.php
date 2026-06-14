@@ -2597,6 +2597,11 @@ class Cronograma extends Page
 
         $item->save();
 
+        // Atualiza datas do item pai (e ascendentes) como min/max dos filhos
+        if ($item->parent_id) {
+            $this->recalcularDatasItemPai($item->parent_id);
+        }
+
         $this->recalcularDependentesSubitem($item);
         $this->renderKey++;
     }
@@ -3420,6 +3425,36 @@ class Cronograma extends Page
     }
 
     /**
+     * Recalcula as datas previstas de um item pai com base nas datas dos filhos:
+     * início = mínimo dos inícios dos filhos, fim = máximo dos fins dos filhos.
+     * Sobe recursivamente até a raiz da hierarquia.
+     */
+    private function recalcularDatasItemPai(int $parentId): void
+    {
+        $pai = CronogramaFaseItem::find($parentId);
+        if (! $pai) {
+            return;
+        }
+
+        $filhos = CronogramaFaseItem::where('parent_id', $parentId)
+            ->whereNotNull('data_prevista_inicio')
+            ->whereNotNull('data_prevista_fim')
+            ->get();
+
+        if ($filhos->isEmpty()) {
+            return;
+        }
+
+        $pai->data_prevista_inicio = $filhos->min('data_prevista_inicio');
+        $pai->data_prevista_fim    = $filhos->max('data_prevista_fim');
+        $pai->saveQuietly();
+
+        if ($pai->parent_id) {
+            $this->recalcularDatasItemPai($pai->parent_id);
+        }
+    }
+
+    /**
      * Desloca todas as datas previstas dos subitems de uma fase que NÃO foram
      * definidas manualmente (data_prevista_manual = false). Preserva subitems
      * com datas manuais intactos.
@@ -3700,6 +3735,11 @@ class Cronograma extends Page
         }
 
         $item->save();
+
+        // Atualiza datas do item pai (e ascendentes) como min/max dos filhos
+        if ($item->parent_id) {
+            $this->recalcularDatasItemPai($item->parent_id);
+        }
 
         $this->renderKey++;
     }
