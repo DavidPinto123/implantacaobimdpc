@@ -1187,12 +1187,18 @@ class Cronograma extends Page
             $inicioAntes = $fase->data_prevista_inicio?->toDateString();
             $fimAntes = $fase->data_prevista_fim?->toDateString();
 
-            $update = [
-                'data_prevista_inicio' => $datas['prev_i'] ?: null,
-                'data_prevista_fim' => $datas['prev_f'] ?: null,
-            ];
-
+            // Calcula data final a partir de início + duração quando o fim não foi preenchido
+            $prevI = $datas['prev_i'] ?: null;
+            $prevF = $datas['prev_f'] ?: null;
             $novaDur = isset($datas['duracao']) ? max(0, (int) $datas['duracao']) : null;
+            if ($prevI && ! $prevF && $novaDur > 0) {
+                $prevF = Carbon::parse($prevI)->addDays($novaDur - 1)->toDateString();
+            }
+
+            $update = [
+                'data_prevista_inicio' => $prevI,
+                'data_prevista_fim' => $prevF,
+            ];
             if ($novaDur !== null) {
                 $tpl = $fase->templateFase;
                 if ($tpl && $novaDur !== (int) $tpl->duracao_dias) {
@@ -1211,11 +1217,17 @@ class Cronograma extends Page
             $fase->update($update);
 
             $motivo = $this->motivoLoteDatas ?: 'Edição em lote';
-            if ($inicioAntes !== ($datas['prev_i'] ?: null)) {
-                CronogramaService::registrarHistoricoDatas($fase, 'data_prevista_inicio', $inicioAntes, $datas['prev_i'] ?: null, $motivo, auth()->id());
+            if ($inicioAntes !== $prevI) {
+                CronogramaService::registrarHistoricoDatas($fase, 'data_prevista_inicio', $inicioAntes, $prevI, $motivo, auth()->id());
             }
-            if ($fimAntes !== ($datas['prev_f'] ?: null)) {
-                CronogramaService::registrarHistoricoDatas($fase, 'data_prevista_fim', $fimAntes, $datas['prev_f'] ?: null, $motivo, auth()->id());
+            if ($fimAntes !== $prevF) {
+                CronogramaService::registrarHistoricoDatas($fase, 'data_prevista_fim', $fimAntes, $prevF, $motivo, auth()->id());
+            }
+
+            // Propaga variação de datas para subitems sem datas manuais
+            $delta = $this->calcularDeltaDias($inicioAntes, $prevI);
+            if ($delta !== null && $delta !== 0) {
+                $this->propagarShiftSubitensDaFase($fase->id, $delta);
             }
 
             $afetadas++;
@@ -2577,6 +2589,12 @@ class Cronograma extends Page
         }
 
         $item->{$campo} = blank($valor) ? null : $valor;
+
+        // Marcar como data definida manualmente para preservar ao reajustar planejamento
+        if (in_array($campo, ['data_prevista_inicio', 'data_prevista_fim'], true)) {
+            $item->data_prevista_manual = true;
+        }
+
         $item->save();
 
         $this->recalcularDependentesSubitem($item);
@@ -3082,6 +3100,8 @@ class Cronograma extends Page
 
         $service = new CronogramaTemplateService;
         if ($deltaInicio !== null && $deltaFim !== null && $deltaInicio === $deltaFim && $deltaInicio !== 0) {
+            // Propaga shift para subitems da fase diretamente editada
+            $this->propagarShiftSubitensDaFase($fase->id, $deltaInicio);
             $fase->refresh();
             $service->shiftComponent($fase, $deltaInicio);
         }
@@ -3370,21 +3390,55 @@ class Cronograma extends Page
         if ($regraMudou) {
             // Mudança de duração/tipo/deps → recálculo híbrido completo.
             $service->recalcularFaseEDependentes($fase);
+            $fase->refresh();
+            // Propaga a variação de datas resultante do recálculo para os subitems
+            $deltaAposRecalc = $this->calcularDeltaDias($dataPrevistaInicioAntes, $fase->data_prevista_inicio?->toDateString());
+            if ($deltaAposRecalc !== null && $deltaAposRecalc !== 0) {
+                $this->propagarShiftSubitensDaFase($fase->id, $deltaAposRecalc);
+            }
             $this->renderKey++;
         } elseif ($deltaInicio !== null && $deltaFim !== null && $deltaInicio === $deltaFim && $deltaInicio !== 0) {
             // Shift limpo: mesma quantidade de dias em inicio e fim → shiftComponent.
+            $this->propagarShiftSubitensDaFase($fase->id, $deltaInicio);
             $service->shiftComponent($fase, $deltaInicio);
             $this->renderKey++;
         } elseif ($deltaInicio !== null && $deltaFim !== null && $deltaInicio !== $deltaFim) {
             // Inicio e fim mudaram com deltas diferentes → duração mudou.
             // Trata como regra mudando e recalcula híbrido.
             $service->recalcularFaseEDependentes($fase);
+            $fase->refresh();
+            $deltaAposRecalc = $this->calcularDeltaDias($dataPrevistaInicioAntes, $fase->data_prevista_inicio?->toDateString());
+            if ($deltaAposRecalc !== null && $deltaAposRecalc !== 0) {
+                $this->propagarShiftSubitensDaFase($fase->id, $deltaAposRecalc);
+            }
             $this->renderKey++;
         }
         // Caso contrário (datas inalteradas): só gravou metadados, sem recálculo.
 
         $this->editingFaseId = null;
         Notification::make()->title('Fase atualizada')->success()->send();
+    }
+
+    /**
+     * Desloca todas as datas previstas dos subitems de uma fase que NÃO foram
+     * definidas manualmente (data_prevista_manual = false). Preserva subitems
+     * com datas manuais intactos.
+     */
+    private function propagarShiftSubitensDaFase(int $faseId, int $delta): void
+    {
+        if ($delta === 0) {
+            return;
+        }
+
+        CronogramaFaseItem::where('cronograma_fase_id', $faseId)
+            ->where('data_prevista_manual', false)
+            ->whereNotNull('data_prevista_inicio')
+            ->whereNotNull('data_prevista_fim')
+            ->each(function (CronogramaFaseItem $item) use ($delta) {
+                $item->data_prevista_inicio = $item->data_prevista_inicio->copy()->addDays($delta);
+                $item->data_prevista_fim = $item->data_prevista_fim->copy()->addDays($delta);
+                $item->saveQuietly();
+            });
     }
 
     /**
@@ -3636,6 +3690,12 @@ class Cronograma extends Page
         }
 
         $item->duracao_dias = ($valor !== null && $valor > 0) ? $valor : null;
+
+        // Se tem data de início e duração definida, calcula a data final automaticamente
+        if ($item->duracao_dias && $item->data_prevista_inicio && ! $item->data_prevista_manual) {
+            $item->data_prevista_fim = $item->data_prevista_inicio->copy()->addDays($item->duracao_dias - 1);
+        }
+
         $item->save();
 
         $this->renderKey++;

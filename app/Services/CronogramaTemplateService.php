@@ -515,7 +515,27 @@ class CronogramaTemplateService
 
             CronogramaService::registrarHistoricoDatas($faseObra, 'data_prevista_inicio', $inicioAntes, $faseObra->data_prevista_inicio->toDateString(), $motivoShift, auth()->id(), true);
             CronogramaService::registrarHistoricoDatas($faseObra, 'data_prevista_fim', $fimAntes, $faseObra->data_prevista_fim->toDateString(), $motivoShift, auth()->id(), true);
+
+            // Propaga o mesmo shift para subitems sem datas definidas manualmente
+            $this->shiftItensNaoManuais($faseObra->id, $deltaDias);
         }
+    }
+
+    /**
+     * Desloca as datas previstas de todos os subitems de uma fase que não foram
+     * definidas manualmente (data_prevista_manual = false).
+     */
+    private function shiftItensNaoManuais(int $faseId, int $delta): void
+    {
+        \App\Models\CronogramaFaseItem::where('cronograma_fase_id', $faseId)
+            ->where('data_prevista_manual', false)
+            ->whereNotNull('data_prevista_inicio')
+            ->whereNotNull('data_prevista_fim')
+            ->each(function (\App\Models\CronogramaFaseItem $item) use ($delta) {
+                $item->data_prevista_inicio = $item->data_prevista_inicio->copy()->addDays($delta);
+                $item->data_prevista_fim = $item->data_prevista_fim->copy()->addDays($delta);
+                $item->saveQuietly();
+            });
     }
 
     /**

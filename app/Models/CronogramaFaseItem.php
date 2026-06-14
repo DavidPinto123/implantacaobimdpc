@@ -34,6 +34,7 @@ class CronogramaFaseItem extends Model
         'origem',
         'data_prevista_inicio',
         'data_prevista_fim',
+        'data_prevista_manual',
         'data_realizada_inicio',
         'data_realizada_fim',
     ];
@@ -50,6 +51,7 @@ class CronogramaFaseItem extends Model
         'valor' => 'decimal:2',
         'data_prevista_inicio' => 'date',
         'data_prevista_fim' => 'date',
+        'data_prevista_manual' => 'boolean',
         'data_realizada_inicio' => 'date',
         'data_realizada_fim' => 'date',
     ];
