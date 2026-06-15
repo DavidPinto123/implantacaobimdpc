@@ -33,7 +33,8 @@ class RegiaoInteresseResource extends Resource
 
     protected static ?string $navigationLabel = 'Cadastro de Regiões de Interesse';
   
-  	protected static ?string $navigationGroup = 'Cadastros';
+  	protected static ?string $navigationGroup = 'Outros';
+    protected static ?string $navigationParentItem = 'Cadastros';
 
     protected static ?string $modelLabel = 'Região de Interesse';
 

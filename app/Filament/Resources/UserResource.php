@@ -35,7 +35,8 @@ class UserResource extends Resource
 
     protected static ?string $navigationLabel = 'Cadastro de Usuários';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Cadastros';
+    protected static UnitEnum|string|null $navigationGroup = 'Outros';
+    protected static ?string $navigationParentItem = 'Cadastros';
 
     protected static ?string $modelLabel = 'Usuário';
 

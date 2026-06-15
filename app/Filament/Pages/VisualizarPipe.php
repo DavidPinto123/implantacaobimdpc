@@ -20,9 +20,7 @@ class VisualizarPipe extends Page
 
     protected static ?int $navigationSort = 2;
 
-    protected static string|null|UnitEnum $navigationGroup = 'Outros';
-
-    protected static ?string $navigationParentItem = 'Dashboard';
+    protected static string|null|UnitEnum $navigationGroup = 'Dashboard';
 
     protected string $view = 'filament.pages.visualizar-pipe';
 

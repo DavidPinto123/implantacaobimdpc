@@ -21,9 +21,7 @@ class PipeResource extends Resource
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-chart-bar-square';
 
-    protected static null|string|UnitEnum $navigationGroup = 'Outros';
-
-    protected static ?string $navigationParentItem = 'Dashboard';
+    protected static null|string|UnitEnum $navigationGroup = 'Dashboard';
 
     protected static ?string $navigationLabel = 'Cadastro de Pipeline';
 

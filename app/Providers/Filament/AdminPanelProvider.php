@@ -61,36 +61,30 @@ class AdminPanelProvider extends PanelProvider
             ])
 
             ->navigationGroups([
-                // ── Grupos principais (ordem definida pelo cliente) ──────────────
+                // ── Grupos principais ────────────────────────────────────────────
+                NavigationGroup::make()->label('Dashboard')->collapsed(),
                 NavigationGroup::make()->label('Planejamento')->collapsed(),
+                NavigationGroup::make()->label('Tarefas')->collapsed(),
                 NavigationGroup::make()->label('Agenda Geral')->collapsed(),
                 NavigationGroup::make()->label('Tour 360°')->collapsed(),
                 NavigationGroup::make()->label('Registro fotográfico')->collapsed(),
                 NavigationGroup::make()->label('Mapas')->collapsed(),
-                NavigationGroup::make()->label('Tarefas')->collapsed(),
                 NavigationGroup::make()->label('Financeiro')->collapsed(),
                 NavigationGroup::make()->label('Orçamentos')->collapsed(),
                 NavigationGroup::make()->label('Projetos Piloto')->collapsed(),
-                NavigationGroup::make()->label('Gestão Predial e Ativos')->collapsed(),
                 NavigationGroup::make()->label('Visualizador 3D')->collapsed(),
                 NavigationGroup::make()->label('WhatsApp')->collapsed(),
                 NavigationGroup::make()->label('Checklist de revisão')->collapsed(),
                 NavigationGroup::make()->label('Upload de documentos')->collapsed(),
                 NavigationGroup::make()->label('Downloads e Documentos')->collapsed(),
                 NavigationGroup::make()->label('Treinamentos')->collapsed(),
-                NavigationGroup::make()->label('Cadastros')->collapsed(),
-                NavigationGroup::make()->label('Central de Notificações')->collapsed(),
                 NavigationGroup::make()->label('Atas')->collapsed(),
-                NavigationGroup::make()->label('Configurações')->collapsed(),
                 NavigationGroup::make()->label('Outros')->collapsed(),
-
             ])
             ->navigationItems([
                 // ── Subgrupos de Outros ──────────────────────────────────────────
-                NavigationItem::make('Dashboard')
-                    ->group('Outros')->icon('heroicon-o-squares-2x2')->sort(2)->url(null),
                 NavigationItem::make('PMO')
-                    ->group('Outros')->icon('heroicon-o-presentation-chart-line')->sort(3)->url(null),
+                    ->group('Outros')->icon('heroicon-o-presentation-chart-line')->sort(1)->url(null),
                 NavigationItem::make('Comercial')
                     ->group('Outros')->icon('heroicon-o-briefcase')->sort(4)->url(null),
                 NavigationItem::make('Arquitetura')
@@ -107,13 +101,18 @@ class AdminPanelProvider extends PanelProvider
                     ->group('Outros')->icon('heroicon-o-building-office')->sort(10)->url(null),
                 NavigationItem::make('Retrofit / Ampliação')
                     ->group('Outros')->icon('heroicon-o-wrench-screwdriver')->sort(11)->url(null),
+                NavigationItem::make('Gestão Predial e Ativos')
+                    ->group('Outros')->icon('heroicon-o-building-office-2')->sort(12)->url(null),
+                NavigationItem::make('Cadastros')
+                    ->group('Outros')->icon('heroicon-o-rectangle-stack')->sort(13)->url(null),
+                NavigationItem::make('Central de Notificações')
+                    ->group('Outros')->icon('heroicon-o-bell')->sort(14)->url(null),
+                NavigationItem::make('Configurações')
+                    ->group('Outros')->icon('heroicon-o-cog-6-tooth')->sort(15)->url(null),
                 ...FilamentDemoNavigation::items(),
-                // ── Configurações ────────────────────────────────────────────────
-                NavigationItem::make('Segurança')
-                    ->group('Configurações')->icon('heroicon-o-shield-check')->sort(1)->url(null),
                 // ── Outros ───────────────────────────────────────────────────────
                 NavigationItem::make('Fornecedor')
-                    ->group('Outros')->icon('heroicon-o-building-office-2')->sort(1)->url(null),
+                    ->group('Outros')->icon('heroicon-o-building-office-2')->sort(16)->url(null),
                 // ── Projetos Piloto (placeholder) ────────────────────────────────
                 NavigationItem::make('Projetos Piloto')
                     ->group('Projetos Piloto')->icon('heroicon-o-rocket-launch')->sort(1)->url(null),
@@ -247,9 +246,9 @@ class AdminPanelProvider extends PanelProvider
                     ->navigationLabel('Perfis e Permissões')
                     ->navigationIcon('heroicon-o-shield-check')
                     ->activeNavigationIcon('heroicon-s-shield-check')
-                    ->navigationGroup('Configurações')
+                    ->navigationGroup('Outros')
                     ->navigationSort(99)
-                    ->navigationParentItem('Segurança')
+                    ->navigationParentItem('Configurações')
                     ->registerNavigation(true),
                 FilamentApexChartsPlugin::make(),
                 StickyTableHeaderPlugin::make(),

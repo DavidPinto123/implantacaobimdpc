@@ -23,7 +23,8 @@ class DisciplinaConfigResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::Tag;
 
-    protected static UnitEnum|string|null $navigationGroup = 'Cadastros';
+    protected static UnitEnum|string|null $navigationGroup = 'Outros';
+    protected static ?string $navigationParentItem = 'Cadastros';
 
     protected static ?string $navigationLabel = 'Disciplinas';
 

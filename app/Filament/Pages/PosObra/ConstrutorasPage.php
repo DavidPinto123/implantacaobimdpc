@@ -22,7 +22,8 @@ class ConstrutorasPage extends Page
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-building-office-2';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Cadastros';
+    protected static UnitEnum|string|null $navigationGroup = 'Outros';
+    protected static ?string $navigationParentItem = 'Cadastros';
 
     protected static ?string $navigationLabel = 'Construtoras / Prestadoras';
 

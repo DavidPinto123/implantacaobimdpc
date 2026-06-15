@@ -34,7 +34,8 @@ class ReuniaoResource extends Resource
   
   	protected static ?string $navigationLabel = 'Cadastro de Reuniões';
   
-  	protected static ?string $navigationGroup = 'Cadastros';
+  	protected static ?string $navigationGroup = 'Outros';
+    protected static ?string $navigationParentItem = 'Cadastros';
 
     protected static ?string $modelLabel = 'Reuniões';
 

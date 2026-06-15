@@ -22,7 +22,8 @@ class DepartamentosResource extends Resource
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-building-office-2';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Gestão Predial e Ativos';
+    protected static UnitEnum|string|null $navigationGroup = 'Outros';
+    protected static ?string $navigationParentItem = 'Gestão Predial e Ativos';
 
     public static function form(Schema $schema): Schema
     {

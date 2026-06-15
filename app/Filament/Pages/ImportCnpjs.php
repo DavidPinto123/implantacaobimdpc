@@ -34,7 +34,8 @@ class ImportCnpjs extends Page
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-arrow-up-tray';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Cadastros';
+    protected static UnitEnum|string|null $navigationGroup = 'Outros';
+    protected static ?string $navigationParentItem = 'Cadastros';
 
     protected static ?string $navigationLabel = 'Importar CNPJs';
 

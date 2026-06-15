@@ -29,7 +29,8 @@ class AsEscopoResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Escopos';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Cadastros';
+    protected static UnitEnum|string|null $navigationGroup = 'Outros';
+    protected static ?string $navigationParentItem = 'Cadastros';
 
     protected static ?string $slug = 'escopos';
 
