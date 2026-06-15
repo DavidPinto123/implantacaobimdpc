@@ -114,55 +114,6 @@ class AdminPanelProvider extends PanelProvider
                 // ── Outros ───────────────────────────────────────────────────────
                 NavigationItem::make('Fornecedor')
                     ->group('Outros')->icon('heroicon-o-building-office-2')->sort(16)->url(null),
-                // ── Projetos Piloto (placeholder) ────────────────────────────────
-                NavigationItem::make('Projetos Piloto')
-                    ->group('Projetos Piloto')->icon('heroicon-o-rocket-launch')->sort(1)->url(null),
-                // ── Upload de documentos (placeholder) ───────────────────────────
-                NavigationItem::make('Upload de documentos')
-                    ->group('Upload de documentos')->icon('heroicon-o-arrow-up-tray')->sort(1)->url(null),
-                // ── Checklist de revisão ─────────────────────────────────────────
-                NavigationItem::make('De projetos modelo')
-                    ->group('Checklist de revisão')->icon('heroicon-o-check-circle')->sort(1)->url(null),
-                NavigationItem::make('De BIM Mandate')
-                    ->group('Checklist de revisão')->icon('heroicon-o-check-circle')->sort(2)->url(null),
-                NavigationItem::make('De templates')
-                    ->group('Checklist de revisão')->icon('heroicon-o-check-circle')->sort(3)->url(null),
-                NavigationItem::make('De showroom')
-                    ->group('Checklist de revisão')->icon('heroicon-o-check-circle')->sort(4)->url(null),
-                NavigationItem::make('De manuais')
-                    ->group('Checklist de revisão')->icon('heroicon-o-check-circle')->sort(5)->url(null),
-                NavigationItem::make('De plugins')
-                    ->group('Checklist de revisão')->icon('heroicon-o-check-circle')->sort(6)->url(null),
-                // ── Downloads e Documentos ───────────────────────────────────────
-                NavigationItem::make('Projeto modelo')
-                    ->group('Downloads e Documentos')->icon('heroicon-o-arrow-down-tray')->sort(1)->url(null),
-                NavigationItem::make('Templates')
-                    ->group('Downloads e Documentos')->icon('heroicon-o-arrow-down-tray')->sort(2)->url(null),
-                NavigationItem::make('Showroom')
-                    ->group('Downloads e Documentos')->icon('heroicon-o-arrow-down-tray')->sort(3)->url(null),
-                NavigationItem::make('BIM Mandate')
-                    ->group('Downloads e Documentos')->icon('heroicon-o-arrow-down-tray')->sort(4)->url(null),
-                NavigationItem::make('Manuais')
-                    ->group('Downloads e Documentos')->icon('heroicon-o-arrow-down-tray')->sort(5)->url(null),
-                NavigationItem::make('Plugins')
-                    ->group('Downloads e Documentos')->icon('heroicon-o-arrow-down-tray')->sort(6)->url(null),
-                // ── Treinamentos ─────────────────────────────────────────────────
-                NavigationItem::make('EAD Gestão')
-                    ->group('Treinamentos')->icon('heroicon-o-academic-cap')->sort(1)->url(null),
-                NavigationItem::make('Material didático')
-                    ->group('Treinamentos')->icon('heroicon-o-academic-cap')->sort(2)->url(null),
-                NavigationItem::make('Comentários do instrutor sobre as turmas')
-                    ->group('Treinamentos')->icon('heroicon-o-academic-cap')->sort(3)->url(null)
-                    ->visible(fn () => auth()->check() && auth()->user()->hasAnyRole(['super_admin', 'gestor', 'Gestor'])),
-                NavigationItem::make('Relatório resumo de avaliação de treinamentos')
-                    ->group('Treinamentos')->icon('heroicon-o-academic-cap')->sort(4)->url(null),
-                NavigationItem::make('Conteúdo programático')
-                    ->group('Treinamentos')->icon('heroicon-o-academic-cap')->sort(5)->url(null),
-                NavigationItem::make('Certificados')
-                    ->group('Treinamentos')->icon('heroicon-o-academic-cap')->sort(6)->url(null),
-                // ── Atas ─────────────────────────────────────────────────────────
-                NavigationItem::make('Registro de assuntos tratados em reunião')
-                    ->group('Atas')->icon('heroicon-o-document-text')->sort(1)->url(null),
                 // ── Ocultar item avulso ──────────────────────────────────────────
                 NavigationItem::make('Notas Fiscais')->hidden(),
             ])
