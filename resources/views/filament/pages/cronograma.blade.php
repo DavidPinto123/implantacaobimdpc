@@ -2393,6 +2393,25 @@
 
         /* ====== Col-status: largura dinâmica ====== */
         .cr-col-status { width: var(--cr-col-status-w, 155px); min-width: var(--cr-col-status-w, 155px); }
+
+        /* ====== Impressão ====== */
+        @media print {
+            @page { size: A3 landscape; margin: 10mm; }
+            /* Oculta toda a UI do Filament */
+            nav, aside, header,
+            .fi-sidebar, .fi-topbar, .fi-header,
+            .fi-sidebar-nav, .fi-breadcrumbs,
+            .fi-page-header, .fi-footer,
+            [x-data*="sidebar"], [x-data*="topbar"],
+            .cr-toolbar, .cr-sidebar-panel { display: none !important; }
+            /* Expande o conteúdo */
+            body, .fi-body, .fi-main, .fi-main-ctn,
+            .fi-page, .fi-page-content { overflow: visible !important; }
+            /* Remove scroll horizontal da tabela */
+            .cr-table-scroll-x { overflow: visible !important; max-height: none !important; }
+            /* Força cor de fundo branca */
+            * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
     </style>
 
     <div class="vo-theme-cronograma" style="display:flex;gap:0;overflow:clip;border-radius:0.75rem;border:1px solid var(--vo-border);box-shadow:var(--vo-shadow);align-self:flex-start;width:100%;position:relative;">
@@ -2443,7 +2462,8 @@
                     </div>
                 @endif
 
-<button class="vo-btn-outline" wire:click="abrirEditorFases"
+@if($podeEditar)
+                <button class="vo-btn-outline" wire:click="abrirEditorFases"
                         title="{{ ($templateAplicadoNoProjeto ?? null) ? 'Template: '.$templateAplicadoNoProjeto->nome : 'Editar fases' }}"
                         style="{{ $mostrarEditorFases ? 'background:var(--vo-accent);color:#111;border-color:var(--vo-accent);' : '' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="10" y2="18"/><circle cx="19" cy="15" r="3"/><line x1="21.5" y1="17.5" x2="23" y2="19"/></svg>
@@ -2455,6 +2475,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M12 14l2 2 4-4"/></svg>
                     Alterar datas
                 </button>
+                @endif
 
                 <div style="display:flex;gap:2px;background:var(--vo-bg-subtle);border:1px solid var(--vo-border);border-radius:0.5rem;padding:2px;">
                     <button class="vo-btn-outline" wire:click="$set('visualizacao', 'gantt')" style="padding:5px 10px;border:none;border-radius:0.375rem;{{ $visualizacao === 'gantt' ? 'background:var(--vo-accent);color:#111;' : '' }}">
@@ -2511,6 +2532,7 @@
                     Versões
                 </button>
 
+                @if($podeEditar)
                 <button class="vo-btn-outline" wire:click="sincronizarTarefasDoProjetoAtual" title="Criar tarefas faltantes para responsáveis e revisores já atribuídos"
                         style="padding:5px 10px;display:inline-flex;align-items:center;gap:6px;font-size:0.75rem;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -2522,6 +2544,14 @@
                         style="padding:5px 10px;display:inline-flex;align-items:center;gap:6px;font-size:0.75rem;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     Adicionar fase
+                </button>
+                @endif
+
+                <button type="button" class="vo-btn-outline" onclick="window.print()"
+                        title="Imprimir / Exportar PDF este planejamento"
+                        style="margin-left:auto;padding:5px 10px;display:inline-flex;align-items:center;gap:6px;font-size:0.75rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                    Imprimir
                 </button>
 
             @else
@@ -2595,7 +2625,6 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     Histórico
                 </button>
-
                 <div style="position:relative;" @click.outside="painelColunas = false">
                     <button type="button" class="vo-btn-outline"
                             @click="painelColunas = !painelColunas"
@@ -3028,6 +3057,7 @@
                                     @endif
                                 </td>
                                 <td style="text-align:center;white-space:nowrap;" wire:click.stop>
+                                    @if($podeEditar)
                                     <button type="button"
                                             wire:click.stop="duplicarProjeto({{ $projetoItem->id }})"
                                             title="Duplicar este planejamento"
@@ -3035,11 +3065,18 @@
                                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
                                     </button>
                                     <button type="button"
+                                            wire:click.stop="transformarEmTemplate({{ $projetoItem->id }})"
+                                            title="Transformar em template de planejamento"
+                                            style="padding:3px 5px;border:1px solid var(--vo-border);background:transparent;border-radius:.25rem;cursor:pointer;color:var(--vo-text-muted);line-height:1;margin-right:3px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                                    </button>
+                                    <button type="button"
                                             wire:click.stop="confirmarExcluirPlanejamento({{ $projetoItem->id }})"
                                             title="Excluir este planejamento"
                                             style="padding:3px 5px;border:1px solid var(--vo-border);background:transparent;border-radius:.25rem;cursor:pointer;color:var(--vo-text-muted);line-height:1;margin-right:3px;">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
                                     </button>
+                                    @endif
                                     <button type="button"
                                             wire:click.stop="abrirHistoricoProjeto({{ $projetoItem->id }})"
                                             title="Histórico de alterações deste projeto"
@@ -3199,6 +3236,7 @@
                                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg>
                                     {{ $qtdItens > 0 ? $qtdItens : '+' }}
                                 </button>
+                                @if($podeEditar)
                                 <div class="cr-status-dropdown cr-status-sm" x-data="{ open: false, pos: {top:0,left:0}, reposition() { const r = this.$refs.trigger.getBoundingClientRect(); this.pos = {top: r.bottom + 4, left: r.left}; } }" @click.stop @click.outside="open = false">
                                     <button type="button" class="cr-status-trigger" style="background:{{ $fase->status->color() }}" x-ref="trigger"
                                             @click="reposition(); open = !open" :aria-expanded="open">
@@ -3220,6 +3258,11 @@
                                     </div>
                                     </template>
                                 </div>
+                                @else
+                                <span class="cr-status-pill" style="background:{{ $fase->status->color() }};font-size:0.6rem;padding:2px 8px;">
+                                    {{ $fase->status->label() }}
+                                </span>
+                                @endif
                             </div>
                             @php
                                 $mLeft = $mapaFases[$fase->id] ?? [];
@@ -3289,6 +3332,7 @@
                             @foreach($fase->itens->whereNull('parent_id')->sortBy('ordem') as $item)
                                 @include('filament.pages.cronograma-subitem-gantt', ['item' => $item, 'depth' => 0, 'fasesDependencia' => $fases])
                             @endforeach
+                            @if($podeEditar)
                             <div class="cr-row-left cr-subitem-gantt-row cr-subitem-add-row">
                                 <div class="cr-col-fase">
                                     <span class="cr-subitem-tree">+</span>
@@ -3302,6 +3346,7 @@
                                     </button>
                                 </div>
                             </div>
+                            @endif
                         @endif
                     @endforeach
                 </div>
@@ -3874,15 +3919,18 @@
                                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg>
                                             {{ $qtdItensTbl > 0 ? $qtdItensTbl : '+' }}
                                         </button>
+                                        @if($podeEditar)
                                         <button type="button"
                                                 wire:click.stop="expandirFaseEFocarInput({{ $fase->id }})"
                                                 title="Nova atividade"
                                                 style="padding:2px 7px;border:1px dashed var(--vo-accent);border-radius:.25rem;background:transparent;cursor:pointer;color:var(--vo-accent);font-size:0.7rem;line-height:1.4;white-space:nowrap;flex-shrink:0;">
                                             + Atividade
                                         </button>
+                                        @endif
                                     </span>
                                 </td>
                                 <td class="cr-td-sticky cr-col-status">
+                                    @if($podeEditar)
                                     <div class="cr-status-dropdown" x-data="{ open: false, pos: {top:0,left:0}, reposition() { const r = this.$refs.trigger.getBoundingClientRect(); this.pos = {top: r.bottom + 4, left: r.left}; } }" @click.outside="open = false">
                                         <button type="button" class="cr-status-trigger" style="background:{{ $fase->status->color() }}" x-ref="trigger"
                                                 @click="reposition(); open = !open" :aria-expanded="open">
@@ -3904,6 +3952,11 @@
                                         </div>
                                         </template>
                                     </div>
+                                    @else
+                                    <span class="cr-status-pill" style="background:{{ $fase->status->color() }};font-size:0.6rem;padding:2px 8px;">
+                                        {{ $fase->status->label() }}
+                                    </span>
+                                    @endif
                                 </td>
                                 <td x-show="cols.planejado" style="font-variant-numeric:tabular-nums;color:var(--vo-text-secondary);">
                                     <div style="display:flex;gap:4px;align-items:center;">
@@ -3920,6 +3973,7 @@
                                     @endif
                                 </td>
                                 <td x-show="cols.realizado" style="font-variant-numeric:tabular-nums;color:var(--vo-text-secondary);">
+                                    @if($podeEditar)
                                     <div style="display:flex;gap:4px;align-items:center;"
                                          x-data="{ ri: '{{ $fase->data_realizada_inicio?->toDateString() }}', rf: '{{ $fase->data_realizada_fim?->toDateString() }}' }">
                                         <input type="date" x-model="ri"
@@ -3936,6 +3990,13 @@
                                                title="Data realizada de fim"
                                                class="cr-inline-date">
                                     </div>
+                                    @else
+                                    <div style="display:flex;gap:4px;align-items:center;">
+                                        {{ $fase->data_realizada_inicio?->format('d/m/Y') ?? '—' }}
+                                        <span style="color:var(--vo-text-faint);">—</span>
+                                        {{ $fase->data_realizada_fim?->format('d/m/Y') ?? '—' }}
+                                    </div>
+                                    @endif
                                 </td>
                                 <td x-show="cols.pct" class="cr-td-center">
                                     @php
@@ -4100,6 +4161,7 @@
                 </div>
 
                 {{-- Barra de ações em lote (aparece quando há seleção) --}}
+                @if($podeEditar)
                 <div x-show="selItemIds.length > 0" x-cloak class="cr-batch-toolbar">
                     <span class="cr-batch-label" x-text="selItemIds.length + ' selecionada(s)'"></span>
                     <div class="cr-batch-sep"></div>
@@ -4113,6 +4175,7 @@
                     </button>
                     <button type="button" class="cr-batch-btn cr-batch-btn--cancel" @click="limparSelecao()">✕ Cancelar</button>
                 </div>
+                @endif
 
                 {{-- Modal unificado: editar atividades selecionadas --}}
                 <div x-show="batchModalEditar" x-cloak class="cr-modal-overlay" @click.self="batchModalEditar = false">
@@ -4305,6 +4368,18 @@
                 @error('novoPlanejamentoNome')
                     <p style="font-size:0.72rem;color:#dc2626;margin-bottom:8px;">{{ $message }}</p>
                 @enderror
+                @if($templatesDisponiveis->isNotEmpty())
+                <label style="display:block;font-size:0.78rem;color:var(--vo-text-secondary);margin-bottom:14px;">
+                    Aplicar template <span style="font-weight:400;color:var(--vo-text-muted)">(opcional)</span>
+                    <select wire:model="novoPlanejamentoTemplateId"
+                            style="display:block;width:100%;margin-top:4px;border:1px solid var(--vo-border);border-radius:.375rem;background:var(--vo-bg);color:var(--vo-text);padding:7px 10px;font-size:0.82rem;">
+                        <option value="">— Nenhum —</option>
+                        @foreach($templatesDisponiveis as $tpl)
+                            <option value="{{ $tpl->id }}">{{ $tpl->nome }}</option>
+                        @endforeach
+                    </select>
+                </label>
+                @endif
                 <div class="cr-modal-actions">
                     <button type="button" class="cr-batch-btn cr-batch-btn--cancel"
                             wire:click="$set('mostrarModalNovoPlanejamento', false)">Cancelar</button>

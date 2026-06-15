@@ -82,18 +82,20 @@
     }
 @endphp
 <tr class="cr-subitem-tr {{ $corLinhaItem !== 'neutro' ? 'cr-subitem-'.$corLinhaItem : '' }}" wire:key="st-{{ $item->id }}"
+    @if($podeEditar ?? true)
     draggable="true"
     @dragstart.stop="dragItemSrc = {{ $item->id }}; dragFaseItemSrc = {{ $item->cronograma_fase_id }}"
     @dragover.prevent.stop="dragItemTarget = {{ $item->id }}; dragFaseTarget = {{ $item->cronograma_fase_id }}"
     @dragleave.stop="if (dragItemTarget === {{ $item->id }}) dragItemTarget = null"
     @drop.prevent.stop="onDropSubitem({{ $item->id }}, {{ $item->cronograma_fase_id }}, {{ $item->ordem }})"
     @dragend="dragItemSrc = null; dragFaseItemSrc = null; dragItemTarget = null; dragFaseTarget = null"
+    @endif
     :class="{ 'cr-item-dragging': dragItemSrc === {{ $item->id }}, 'cr-item-dragover': dragItemTarget === {{ $item->id }} && dragItemSrc !== {{ $item->id }}, 'cr-selected': isSelItem({{ $item->id }}) }">
     {{-- Fase / Título --}}
     <td class="cr-td-sticky cr-col-fase">
         <span style="display:flex;align-items:flex-start;gap:6px;padding-left:{{ $indentPx }}px;">
             {{-- Drag handle (só nível raiz) --}}
-            @if($depth === 0)
+            @if($depth === 0 && ($podeEditar ?? true))
             <span class="cr-drag-handle" title="Arrastar para reordenar" @mousedown.stop>⠿</span>
             @endif
             {{-- Checkbox de seleção (todos os níveis) --}}
@@ -105,7 +107,7 @@
             @if($numPrefix)
                 <span style="color:var(--vo-text-faint);font-size:0.68rem;font-weight:700;flex-shrink:0;white-space:nowrap;margin-top:3px;">{{ $numPrefix }}</span>
             @endif
-            @if($podeTerFilho)
+            @if($podeTerFilho && ($podeEditar ?? true))
                 <button type="button"
                         wire:click="alternarAdicionarFilho({{ $item->id }})"
                         title="Adicionar subitem dentro deste"
@@ -113,6 +115,7 @@
                         style="margin-top:1px;">+</button>
             @endif
             @if($usaTriEstado)
+                @if($podeEditar ?? true)
                 <span style="display:inline-flex;gap:3px;flex-shrink:0;margin-top:1px;">
                     @foreach(\App\Enums\StatusLiberacaoPosse::cases() as $st)
                         @php $ativo = $item->status_liberacao === $st; @endphp
@@ -124,12 +127,20 @@
                         </button>
                     @endforeach
                 </span>
+                @else
+                <span class="cr-subitem-status-badge" style="background:{{ $statusItemCor }}">{{ $statusItemLabel }}</span>
+                @endif
             @else
+                @if($podeEditar ?? true)
                 <input type="checkbox"
                        @checked($item->recebido)
                        wire:click="alternarRecebidoSubitem({{ $item->id }})"
                        style="width:13px;height:13px;cursor:pointer;flex-shrink:0;margin-top:3px;">
+                @else
+                <span style="width:13px;height:13px;flex-shrink:0;margin-top:3px;border:2px solid var(--vo-border);border-radius:2px;display:inline-block;{{ $item->recebido ? 'background:var(--cr-concluido);border-color:var(--cr-concluido);' : '' }}"></span>
+                @endif
             @endif
+            @if($podeEditar ?? true)
             <textarea x-data
                       x-init="$nextTick(() => { $el.style.height = 'auto'; $el.style.height = $el.scrollHeight + 'px' })"
                       @input="$el.style.height = 'auto'; $el.style.height = $el.scrollHeight + 'px'"
@@ -137,6 +148,9 @@
                       wire:change="salvarTituloSubitem({{ $item->id }}, $event.target.value)"
                       rows="1"
                       class="cr-subitem-titulo-inline {{ $item->recebido ? 'cr-subitem-done' : '' }}">{{ $item->titulo }}</textarea>
+            @else
+            <span class="cr-subitem-titulo-inline {{ $item->recebido ? 'cr-subitem-done' : '' }}" style="cursor:default;">{{ $item->titulo }}</span>
+            @endif
         </span>
     </td>
 
@@ -149,6 +163,7 @@
 
     {{-- Planejado --}}
     <td x-show="cols.planejado" style="font-variant-numeric:tabular-nums;color:var(--vo-text-secondary);">
+        @if($podeEditar ?? true)
         <div style="display:flex;gap:4px;align-items:center;"
              x-data="{ pi: '{{ $item->data_prevista_inicio?->toDateString() }}', pf: '{{ $item->data_prevista_fim?->toDateString() }}' }">
             <input type="date" x-model="pi"
@@ -161,6 +176,13 @@
                    @blur="if (pf) $wire.salvarDataInlineSubitem({{ $item->id }}, 'data_prevista_fim', pf)"
                    class="cr-inline-date">
         </div>
+        @else
+        <div style="display:flex;gap:4px;align-items:center;">
+            {{ $item->data_prevista_inicio?->format('d/m/Y') ?? '—' }}
+            <span style="color:var(--vo-text-faint);">—</span>
+            {{ $item->data_prevista_fim?->format('d/m/Y') ?? '—' }}
+        </div>
+        @endif
     </td>
 
     {{-- Duração --}}
@@ -174,6 +196,7 @@
             @endif
         @else
             {{-- Folha: campo editável de duracao_dias --}}
+            @if($podeEditar ?? true)
             <input type="number"
                    value="{{ $item->duracao_dias ?? '' }}"
                    min="0"
@@ -181,11 +204,19 @@
                    title="Duração em dias"
                    style="width:52px;text-align:center;border:1px solid var(--vo-border);border-radius:.25rem;background:var(--vo-bg);color:var(--vo-text);font-size:0.75rem;padding:2px 4px;">
             <span style="font-size:0.65rem;color:var(--vo-text-faint);"> d</span>
+            @else
+            @if($durSubitem !== null)
+                <span>{{ $durSubitem }} dias</span>
+            @else
+                <span style="color:var(--vo-text-faint)">-</span>
+            @endif
+            @endif
         @endif
     </td>
 
     {{-- Realizado --}}
     <td x-show="cols.realizado" style="font-variant-numeric:tabular-nums;color:var(--vo-text-secondary);">
+        @if($podeEditar ?? true)
         <div style="display:flex;gap:4px;align-items:center;"
              x-data="{ ri: '{{ $item->data_realizada_inicio?->toDateString() }}', rf: '{{ $item->data_realizada_fim?->toDateString() }}' }">
             <input type="date" x-model="ri"
@@ -198,6 +229,13 @@
                    @blur="if (rf) $wire.salvarDataInlineSubitem({{ $item->id }}, 'data_realizada_fim', rf)"
                    class="cr-inline-date">
         </div>
+        @else
+        <div style="display:flex;gap:4px;align-items:center;">
+            {{ $item->data_realizada_inicio?->format('d/m/Y') ?? '—' }}
+            <span style="color:var(--vo-text-faint);">—</span>
+            {{ $item->data_realizada_fim?->format('d/m/Y') ?? '—' }}
+        </div>
+        @endif
     </td>
 
     {{-- % --}}
@@ -209,6 +247,7 @@
     @can('ver_valores_planejamento')
     <td x-show="cols.valor" style="text-align:right;white-space:nowrap;padding:2px 4px;">
         @if($depth === 0)
+            @if($podeEditar ?? true)
             <input type="text"
                    value="{{ $item->valor ? number_format($item->valor, 2, ',', '.') : '' }}"
                    placeholder="—"
@@ -216,6 +255,14 @@
                    style="width:100%;text-align:right;font-size:0.78rem;font-variant-numeric:tabular-nums;background:transparent;border:1px solid transparent;border-radius:4px;padding:2px 4px;color:var(--vo-text);"
                    @focus="$event.target.style.borderColor='var(--primary-500,#6366f1)'"
                    @blur="$event.target.style.borderColor='transparent'; $wire.salvarValorSubitem({{ $item->id }}, $event.target.value)">
+            @else
+            @if($item->valor)
+                <span style="color:var(--vo-text-secondary);font-size:0.7rem;">R$</span>
+                <span style="font-weight:600;font-size:0.78rem;">{{ number_format($item->valor, 2, ',', '.') }}</span>
+            @else
+                <span style="color:var(--vo-text-faint);">—</span>
+            @endif
+            @endif
         @else
             @if($item->valor)
                 <span style="color:var(--vo-text-secondary);font-size:0.7rem;">R$</span>
@@ -233,12 +280,15 @@
             @foreach($responsaveis as $resp)
                 <span style="display:inline-flex;align-items:center;gap:3px;padding:2px 6px;background:var(--vo-bg-subtle);border:1px solid var(--vo-border);border-radius:99px;font-size:0.65rem;white-space:nowrap;">
                     <span style="font-weight:600;">{{ \Illuminate\Support\Str::limit($resp->name, 18) }}</span>
+                    @if($podeEditar ?? true)
                     <button type="button"
                             wire:click="removerResponsavelSubitem({{ $item->id }}, {{ $resp->id }})"
                             title="Remover responsável"
                             style="background:none;border:none;cursor:pointer;color:var(--vo-text-faint);padding:0 1px;line-height:1;font-size:0.75rem;">×</button>
+                    @endif
                 </span>
             @endforeach
+            @if($podeEditar ?? true)
             <div style="position:relative;">
                 <button type="button" @click="aberto = !aberto"
                         title="Adicionar responsável"
@@ -258,6 +308,7 @@
                     </select>
                 </div>
             </div>
+            @endif
         </div>
     </td>
 
@@ -267,12 +318,15 @@
             @if($item->revisor)
                 <span style="display:inline-flex;align-items:center;gap:3px;padding:2px 6px;background:var(--vo-bg-subtle);border:1px solid var(--vo-border);border-radius:99px;font-size:0.65rem;white-space:nowrap;">
                     <span style="font-weight:600;">{{ \Illuminate\Support\Str::limit($item->revisor->name, 18) }}</span>
+                    @if($podeEditar ?? true)
                     <button type="button"
                             wire:click="salvarRevisorSubitem({{ $item->id }}, null)"
                             title="Remover revisor"
                             style="background:none;border:none;cursor:pointer;color:var(--vo-text-faint);padding:0 1px;line-height:1;font-size:0.75rem;">×</button>
+                    @endif
                 </span>
             @endif
+            @if($podeEditar ?? true)
             <div style="position:relative;">
                 <button type="button" @click="aberto = !aberto"
                         title="{{ $item->revisor ? 'Trocar revisor' : 'Definir revisor' }}"
@@ -290,12 +344,14 @@
                     </select>
                 </div>
             </div>
+            @endif
         </div>
     </td>
 
     {{-- Dependências --}}
     <td x-show="cols.deps">
         <div style="display:flex;flex-direction:column;gap:3px;">
+            @if($podeEditar ?? true)
             @forelse($item->dependencias as $dep)
                 <div style="display:flex;align-items:center;gap:3px;">
                     <select wire:change="salvarAlvoDependenciaSubitem({{ $dep->id }}, $event.target.value)"
@@ -340,11 +396,19 @@
                     style="align-self:flex-start;background:transparent;border:1px solid var(--vo-border);border-radius:4px;color:var(--vo-text-secondary);cursor:pointer;font-size:.68rem;line-height:1;padding:2px 6px;">
                 + dependência
             </button>
+            @else
+            @forelse($item->dependencias as $dep)
+                <span style="font-size:0.65rem;color:var(--vo-text-secondary);">← {{ $dep->dependeDeFase?->label_exibicao ?? $dep->dependeDeItem?->titulo ?? '?' }}</span>
+            @empty
+                <span style="color:var(--vo-text-faint);font-size:0.65rem;">Sem dependência</span>
+            @endforelse
+            @endif
         </div>
     </td>
 
     {{-- Observações --}}
     <td x-show="cols.comentarios">
+        @if($podeEditar ?? true)
         <textarea x-data
                   x-init="$nextTick(() => { $el.style.height = 'auto'; $el.style.height = $el.scrollHeight + 'px' })"
                   @input="$el.style.height = 'auto'; $el.style.height = $el.scrollHeight + 'px'"
@@ -352,17 +416,24 @@
                   wire:change="salvarObservacoesSubitem({{ $item->id }}, $event.target.value)"
                   placeholder="Observação…" rows="1"
                   class="cr-subitem-obs-inline">{{ $item->observacoes }}</textarea>
+        @else
+        <span style="font-size:0.75rem;color:var(--vo-text-secondary);">{{ $item->observacoes }}</span>
+        @endif
     </td>
 
     {{-- Remover --}}
+    @if($podeEditar ?? true)
     <td style="text-align:center;">
         <button type="button" wire:click="removerSubitem({{ $item->id }})" title="Remover subitem"
                 style="padding:3px 5px;border:1px solid var(--vo-border);background:transparent;border-radius:.25rem;cursor:pointer;color:var(--vo-text-muted);line-height:1;">×</button>
     </td>
+    @else
+    <td></td>
+    @endif
 </tr>
 
 {{-- Linha de adição de filho --}}
-@if($podeTerFilho && $expandindoFilhosDeItemId === $item->id)
+@if($podeTerFilho && ($podeEditar ?? true) && $expandindoFilhosDeItemId === $item->id)
     <tr class="cr-subitem-add-tr" wire:key="st-add-{{ $item->id }}">
         <td class="cr-td-sticky cr-col-fase" colspan="2">
             <div style="display:flex;gap:6px;padding-left:{{ $indentPx + 20 }}px;align-items:center;">

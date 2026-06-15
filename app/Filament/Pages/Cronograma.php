@@ -38,9 +38,9 @@ class Cronograma extends Page
 
     protected string $view = 'filament.pages.cronograma';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Planejamento';
+    protected static UnitEnum|string|null $navigationGroup = null;
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 1;
 
     protected static ?string $navigationLabel = 'Planejamento';
 
@@ -213,6 +213,8 @@ class Cronograma extends Page
 
     public ?int $templateSelecionadoParaAplicar = null;
 
+    public ?int $novoPlanejamentoTemplateId = null;
+
     public ?string $templateDataAncora = null;
 
     public ?string $templateAncoraLabel = null;
@@ -350,6 +352,8 @@ class Cronograma extends Page
             'statusOptions' => StatusCronograma::cases(),
             'statusProjetoOptions' => Projeto::distinct()->pluck('status')->filter()->sort()->values(),
             'estadosDisponiveis' => Estado::whereHas('projetos')->orderBy('uf')->get(),
+            'templatesDisponiveis' => CronogramaTemplate::ativos()->orderBy('nome')->get(),
+            'podeEditar' => auth()->user()?->can('Update:Cronograma') ?? false,
             'modoIndividual' => false,
         ];
     }
@@ -443,6 +447,7 @@ class Cronograma extends Page
             'timeline' => $timeline,
             'statusOptions' => StatusCronograma::cases(),
             'modoIndividual' => true,
+            'podeEditar' => auth()->user()?->can('Update:Cronograma') ?? false,
             'totalFases' => $totalFases,
             'fasesConcluidas' => $fasesConcluidas,
             'fasesAtrasadas' => $fasesAtrasadas,
@@ -2696,10 +2701,94 @@ class Cronograma extends Page
             'sem_fases_auto' => true,
         ]);
 
+        if ($this->novoPlanejamentoTemplateId) {
+            $template = CronogramaTemplate::find($this->novoPlanejamentoTemplateId);
+            if ($template) {
+                $temAncora = $template->fases()->where('is_ancora', true)->exists();
+                try {
+                    if ($temAncora) {
+                        (new CronogramaTemplateService)->aplicar($template, $projeto, \Carbon\CarbonImmutable::now());
+                    } else {
+                        $this->aplicarTemplateSemAncora($template, $projeto);
+                    }
+                } catch (\Throwable $e) {
+                    // Template não pôde ser aplicado; projeto criado sem template
+                }
+            }
+        }
+
         $this->mostrarModalNovoPlanejamento = false;
         $this->novoPlanejamentoNome = '';
+        $this->novoPlanejamentoTemplateId = null;
 
         $this->redirect(static::getUrl(['projeto' => $projeto->id]));
+    }
+
+    private function aplicarTemplateSemAncora(CronogramaTemplate $template, Projeto $projeto): void
+    {
+        $fasesTemplate = $template->fases()->with(['itens.responsaveis'])->get();
+
+        // mapa: CronogramaTemplateFaseItem.id => CronogramaFaseItem.id (para dependências)
+        $itemIdMap = [];
+
+        foreach ($fasesTemplate->sortBy('ordem') as $tplFase) {
+            $fase = \App\Models\CronogramaFase::firstOrCreate(
+                ['projeto_id' => $projeto->id, 'fase' => $tplFase->fase->value],
+                [
+                    'ordem'                       => $tplFase->ordem,
+                    'titulo_personalizado'        => $tplFase->titulo_personalizado,
+                    'valor'                       => $tplFase->valor,
+                    'descricao'                   => $tplFase->descricao,
+                    'observacoes'                 => $tplFase->observacoes,
+                    'visivel'                     => $tplFase->visivel ?? true,
+                    'cronograma_template_id'      => $template->id,
+                    'cronograma_template_fase_id' => $tplFase->id,
+                ]
+            );
+
+            $todosItens = $tplFase->itens;
+            $itensRaiz  = $todosItens->whereNull('parent_id');
+            $this->copiarItensDeTemplate($itensRaiz, $fase->id, null, $todosItens, $itemIdMap);
+        }
+
+        // Segunda passagem: resolver depende_de_item_id usando o mapa
+        foreach ($itemIdMap as $tplItemId => $novoItemId) {
+            $tplItem = \App\Models\CronogramaTemplateFaseItem::find($tplItemId);
+            if ($tplItem?->depende_de_item_id && isset($itemIdMap[$tplItem->depende_de_item_id])) {
+                \App\Models\CronogramaFaseItem::where('id', $novoItemId)
+                    ->update(['depende_de_item_id' => $itemIdMap[$tplItem->depende_de_item_id]]);
+            }
+        }
+    }
+
+    private function copiarItensDeTemplate($itens, int $faseId, ?int $parentId, $todosItens, array &$itemIdMap): void
+    {
+        foreach ($itens->sortBy('ordem') as $tplItem) {
+            $item = \App\Models\CronogramaFaseItem::create([
+                'cronograma_fase_id' => $faseId,
+                'parent_id'          => $parentId,
+                'titulo'             => $tplItem->titulo,
+                'valor'              => $tplItem->valor,
+                'revisor_id'         => $tplItem->revisor_id,
+                'descricao'          => $tplItem->descricao,
+                'observacoes'        => $tplItem->observacoes,
+                'duracao_dias'       => $tplItem->duracao_dias,
+                'ordem'              => $tplItem->ordem,
+                // depende_de_item_id resolvido na segunda passagem
+            ]);
+
+            $itemIdMap[$tplItem->id] = $item->id;
+
+            // Copiar responsáveis
+            if ($tplItem->relationLoaded('responsaveis') && $tplItem->responsaveis->isNotEmpty()) {
+                $item->responsaveis()->sync($tplItem->responsaveis->pluck('id'));
+            }
+
+            $filhos = $todosItens->where('parent_id', $tplItem->id);
+            if ($filhos->isNotEmpty()) {
+                $this->copiarItensDeTemplate($filhos, $faseId, $item->id, $todosItens, $itemIdMap);
+            }
+        }
     }
 
     // Fases ad-hoc (personalizadas por projeto) e visibilidade local.
@@ -4083,6 +4172,107 @@ class Cronograma extends Page
 
             if ($item->children->isNotEmpty()) {
                 $this->duplicarItens($item->children, $faseId, $novoItem->id);
+            }
+        }
+    }
+
+    public function transformarEmTemplate(int $projetoId): void
+    {
+        $original = Projeto::with([
+            'cronogramaFases.itens.children.children.responsaveis',
+            'cronogramaFases.itens.children.responsaveis',
+            'cronogramaFases.itens.responsaveis',
+            'cronogramaFases.comentarios.usuario',
+        ])->find($projetoId);
+
+        if (! $original) {
+            return;
+        }
+
+        $template = CronogramaTemplate::create([
+            'nome'  => 'Template: ' . $original->nome,
+            'ativo' => true,
+        ]);
+
+        // mapa: CronogramaFaseItem.id => CronogramaTemplateFaseItem.id
+        $itemIdMap = [];
+
+        foreach ($original->cronogramaFases->sortBy('ordem') as $fase) {
+            $duracaoDias = 0;
+            if ($fase->data_prevista_inicio && $fase->data_prevista_fim) {
+                $duracaoDias = max(0, (int) $fase->data_prevista_inicio->diffInDays($fase->data_prevista_fim, absolute: true));
+            }
+
+            // Agregar comentários da fase no campo observacoes do template
+            $comentariosTexto = $fase->comentarios
+                ->map(fn ($c) => '[' . ($c->usuario?->name ?? '?') . '] ' . $c->conteudo)
+                ->implode("\n");
+            $observacoesTemplate = trim(($fase->observacoes ?? '') . ($comentariosTexto ? "\n\n--- Comentários ---\n" . $comentariosTexto : ''));
+
+            $templateFase = \App\Models\CronogramaTemplateFase::create([
+                'cronograma_template_id' => $template->id,
+                'fase'                   => $fase->fase,
+                'titulo_personalizado'   => $fase->titulo_personalizado,
+                'ordem'                  => $fase->ordem,
+                'duracao_dias'           => $duracaoDias,
+                'valor'                  => $fase->valor,
+                'descricao'              => $fase->descricao,
+                'observacoes'            => $observacoesTemplate ?: null,
+                'visivel'                => $fase->visivel ?? true,
+                'regra_elastica'         => $fase->regra_elastica ?? false,
+                'is_ancora'              => false,
+                'tipo_dias'              => $fase->regra_tipo_dias ?? \App\Enums\TipoDiasTemplate::CORRIDOS,
+            ]);
+
+            $todosItens = $fase->itens;
+            $itensRaiz  = $todosItens->whereNull('parent_id');
+            $this->copiarItensParaTemplate($itensRaiz, $templateFase->id, null, $todosItens, $itemIdMap);
+        }
+
+        // Segunda passagem: resolver depende_de_item_id no template
+        foreach ($itemIdMap as $origItemId => $tplItemId) {
+            $origItem = \App\Models\CronogramaFaseItem::find($origItemId);
+            if ($origItem?->depende_de_item_id && isset($itemIdMap[$origItem->depende_de_item_id])) {
+                \App\Models\CronogramaTemplateFaseItem::where('id', $tplItemId)
+                    ->update(['depende_de_item_id' => $itemIdMap[$origItem->depende_de_item_id]]);
+            }
+        }
+
+        Notification::make()
+            ->title('Template criado com sucesso')
+            ->body('"' . $template->nome . '" disponível em Templates de Planejamento.')
+            ->success()
+            ->send();
+
+        $this->renderKey++;
+    }
+
+    private function copiarItensParaTemplate($itens, int $templateFaseId, ?int $parentId, $todosItens, array &$itemIdMap): void
+    {
+        foreach ($itens->sortBy('ordem') as $item) {
+            $novoItem = \App\Models\CronogramaTemplateFaseItem::create([
+                'cronograma_template_fase_id' => $templateFaseId,
+                'parent_id'                   => $parentId,
+                'titulo'                      => $item->titulo,
+                'valor'                       => $item->valor,
+                'revisor_id'                  => $item->revisor_id,
+                'descricao'                   => $item->descricao,
+                'observacoes'                 => $item->observacoes,
+                'duracao_dias'                => $item->duracao_dias,
+                'ordem'                       => $item->ordem,
+                // depende_de_item_id resolvido na segunda passagem
+            ]);
+
+            $itemIdMap[$item->id] = $novoItem->id;
+
+            // Copiar responsáveis
+            if ($item->relationLoaded('responsaveis') && $item->responsaveis->isNotEmpty()) {
+                $novoItem->responsaveis()->sync($item->responsaveis->pluck('id'));
+            }
+
+            $filhos = $todosItens->where('parent_id', $item->id);
+            if ($filhos->isNotEmpty()) {
+                $this->copiarItensParaTemplate($filhos, $templateFaseId, $novoItem->id, $todosItens, $itemIdMap);
             }
         }
     }

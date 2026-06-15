@@ -11,7 +11,7 @@
 <div class="cr-row-left cr-subitem-gantt-row" wire:key="sg-{{ $item->id }}">
     <div class="cr-col-fase" style="padding-left: {{ $depth * 16 }}px">
         <span class="cr-subitem-tree">└</span>
-        @if($podeTerFilho)
+        @if($podeTerFilho && ($podeEditar ?? true))
             <button type="button"
                     wire:click="alternarAdicionarFilho({{ $item->id }})"
                     title="Adicionar subitem dentro deste"
@@ -19,10 +19,15 @@
                 +
             </button>
         @endif
+        @if($podeEditar ?? true)
         <input type="checkbox"
                @checked($item->recebido)
                wire:click="alternarRecebidoSubitem({{ $item->id }})"
                style="width:13px;height:13px;cursor:pointer;flex-shrink:0;">
+        @else
+        <span style="width:13px;height:13px;flex-shrink:0;border:2px solid var(--vo-border);border-radius:2px;display:inline-block;{{ $item->recebido ? 'background:var(--cr-concluido);border-color:var(--cr-concluido);' : '' }}"></span>
+        @endif
+        @if($podeEditar ?? true)
         <textarea x-data
                   x-init="$nextTick(() => { $el.style.height = 'auto'; $el.style.height = $el.scrollHeight + 'px' })"
                   @input="$el.style.height = 'auto'; $el.style.height = $el.scrollHeight + 'px'"
@@ -30,15 +35,20 @@
                   wire:change="salvarTituloSubitem({{ $item->id }}, $event.target.value)"
                   rows="1"
                   class="cr-subitem-titulo-inline {{ $item->recebido ? 'cr-subitem-done' : '' }}">{{ $item->titulo }}</textarea>
+        @else
+        <span class="cr-subitem-titulo-inline {{ $item->recebido ? 'cr-subitem-done' : '' }}" style="cursor:default;">{{ $item->titulo }}</span>
+        @endif
         <span class="cr-subitem-status-badge" style="background:{{ $item->recebido ? 'var(--cr-concluido, #2dd67c)' : 'var(--cr-nao-iniciado, #6b7280)' }};">
             {{ $item->recebido ? 'Ok' : '—' }}
         </span>
+        @if($podeEditar ?? true)
         <button type="button" wire:click="removerSubitem({{ $item->id }})"
                 title="Remover subitem"
                 x-show="!mostrarDeps" x-cloak
                 style="margin-left:auto;background:transparent;border:none;color:var(--vo-text-faint);cursor:pointer;padding:2px 6px;font-size:0.85rem;line-height:1;">
             ×
         </button>
+        @endif
     </div>
     <div class="cr-gantt-col cr-gantt-col-status" x-show="ganttCols.status" x-cloak>
         <span class="cr-status-pill" style="background:{{ $item->recebido ? 'var(--cr-concluido)' : 'var(--cr-nao-iniciado)' }};font-size:0.6rem;padding:2px 8px;">
@@ -68,7 +78,7 @@
         @endif
     </div>
     <div class="cr-col-deps" x-show="mostrarDeps" x-cloak>
-        @if($podeTerFilho)
+        @if($podeTerFilho && ($podeEditar ?? true))
             <button type="button"
                     wire:click="alternarAdicionarFilho({{ $item->id }})"
                     title="Adicionar subitem dentro deste"
@@ -77,6 +87,7 @@
             </button>
         @endif
         <div style="display:flex;flex-direction:column;gap:3px;min-width:0;flex:1;">
+            @if($podeEditar ?? true)
             @forelse($item->dependencias as $dep)
                 <div style="display:flex;align-items:center;gap:3px;min-width:0;">
                     <select wire:change="salvarAlvoDependenciaSubitem({{ $dep->id }}, $event.target.value)"
@@ -123,20 +134,31 @@
             @empty
                 <span style="color:var(--vo-text-faint);font-size:0.65rem;">Sem dependência</span>
             @endforelse
+            @else
+            @forelse($item->dependencias as $dep)
+                <span style="font-size:0.65rem;color:var(--vo-text-secondary);">← {{ $dep->dependeDeFase?->label_exibicao ?? $dep->dependeDeItem?->titulo ?? '?' }}</span>
+            @empty
+                <span style="color:var(--vo-text-faint);font-size:0.65rem;">Sem dependência</span>
+            @endforelse
+            @endif
         </div>
+        @if($podeEditar ?? true)
         <button type="button" wire:click="adicionarDependenciaSubitem({{ $item->id }})"
                 title="Adicionar dependência"
                 style="background:transparent;border:1px solid var(--vo-border);border-radius:4px;color:var(--vo-text-secondary);cursor:pointer;font-size:.7rem;line-height:1;padding:2px 5px;">
             dep+
         </button>
+        @endif
+        @if($podeEditar ?? true)
         <button type="button" wire:click="removerSubitem({{ $item->id }})"
                 title="Remover subitem"
                 style="background:transparent;border:none;color:var(--vo-text-faint);cursor:pointer;padding:2px 6px;font-size:0.85rem;line-height:1;">
             ×
         </button>
+        @endif
     </div>
 </div>
-@if($podeTerFilho && $expandindoFilhosDeItemId === $item->id)
+@if($podeTerFilho && ($podeEditar ?? true) && $expandindoFilhosDeItemId === $item->id)
     <div class="cr-row-left cr-subitem-gantt-row cr-subitem-add-row" wire:key="sg-add-{{ $item->id }}">
         <div class="cr-col-fase" style="padding-left: {{ ($depth + 1) * 16 }}px">
             <span class="cr-subitem-tree">+</span>
