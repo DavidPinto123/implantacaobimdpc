@@ -28,6 +28,7 @@ use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Url;
 use UnitEnum;
@@ -275,11 +276,39 @@ class Cronograma extends Page
         return $this->getViewDataMacro();
     }
 
+    private function filtrarProjetosPorParticipacao(Builder $query): Builder
+    {
+        if (auth()->user()?->can('View:TodosProjetosCronograma')) {
+            return $query;
+        }
+
+        $userId = auth()->id();
+
+        $projetoIds = CronogramaFaseItem::query()
+            ->select('cronograma_fases.projeto_id')
+            ->join('cronograma_fases', 'cronograma_fase_itens.cronograma_fase_id', '=', 'cronograma_fases.id')
+            ->where(function ($q) use ($userId) {
+                $q->where('cronograma_fase_itens.revisor_id', $userId)
+                    ->orWhereExists(function ($exists) use ($userId) {
+                        $exists->selectRaw('1')
+                            ->from('cronograma_fase_item_responsaveis')
+                            ->whereColumn('cronograma_fase_item_responsaveis.cronograma_fase_item_id', 'cronograma_fase_itens.id')
+                            ->where('cronograma_fase_item_responsaveis.user_id', $userId);
+                    });
+            })
+            ->distinct()
+            ->pluck('cronograma_fases.projeto_id');
+
+        return $query->whereIn('id', $projetoIds);
+    }
+
     private function getViewDataMacro(): array
     {
         $cronogramaService = new CronogramaService;
 
         $query = Projeto::with(['cronogramaFases.template', 'cronogramaFases.templateFase', 'estado', 'obras']);
+
+        $this->filtrarProjetosPorParticipacao($query);
 
         if ($this->filtroEstado) {
             $query->where('estado_id', $this->filtroEstado);
@@ -429,9 +458,13 @@ class Cronograma extends Page
             ? ((int) $inicios->min()->diffInDays($fins->max())) + 1
             : 0;
 
-        $projetosDisponiveis = Projeto::with('estado')
+        $projetosDisponiveisQuery = Projeto::with('estado')
             ->select('id', 'nome', 'codigo', 'estado_id')
-            ->orderBy('nome')
+            ->orderBy('nome');
+
+        $this->filtrarProjetosPorParticipacao($projetosDisponiveisQuery);
+
+        $projetosDisponiveis = $projetosDisponiveisQuery
             ->get()
             ->map(fn ($p) => [
                 'id' => $p->id,
