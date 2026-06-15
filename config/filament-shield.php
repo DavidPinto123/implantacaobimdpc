@@ -233,6 +233,7 @@ return [
 
     'custom_permissions' => [
         'ZerarDatas:Cronograma',
+        'Update:Cronograma',
         'View:CadastrarCnpj',
         'Create:CadastrarCnpj',
         'Update:CadastrarCnpj',
