@@ -2,12 +2,13 @@
 
 namespace App\Filament\Pages\Checklist;
 
+use BackedEnum;
 use Filament\Pages\Page;
 use UnitEnum;
 
 class Showroom extends Page
 {
-    protected static ?string $navigationIcon = 'heroicon-o-check-circle';
+    protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-check-circle';
     protected static UnitEnum|string|null $navigationGroup = 'Checklist de revisão';
     protected static ?string $navigationLabel = 'De showroom';
     protected static ?string $title = 'De showroom';

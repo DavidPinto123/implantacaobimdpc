@@ -2,12 +2,13 @@
 
 namespace App\Filament\Pages\Atas;
 
+use BackedEnum;
 use Filament\Pages\Page;
 use UnitEnum;
 
 class RegistroReuniao extends Page
 {
-    protected static ?string $navigationIcon = 'heroicon-o-document-text';
+    protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-document-text';
     protected static UnitEnum|string|null $navigationGroup = 'Atas';
     protected static ?string $navigationLabel = 'Registro de assuntos tratados em reunião';
     protected static ?string $title = 'Registro de assuntos tratados em reunião';

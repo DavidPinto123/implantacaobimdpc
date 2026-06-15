@@ -2,12 +2,13 @@
 
 namespace App\Filament\Pages;
 
+use BackedEnum;
 use Filament\Pages\Page;
 use UnitEnum;
 
 class ProjetosPilotoPage extends Page
 {
-    protected static ?string $navigationIcon = 'heroicon-o-rocket-launch';
+    protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-rocket-launch';
     protected static UnitEnum|string|null $navigationGroup = 'Projetos Piloto';
     protected static ?string $navigationLabel = 'Projetos Piloto';
     protected static ?string $title = 'Projetos Piloto';

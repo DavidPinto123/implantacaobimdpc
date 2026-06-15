@@ -2,12 +2,13 @@
 
 namespace App\Filament\Pages\Downloads;
 
+use BackedEnum;
 use Filament\Pages\Page;
 use UnitEnum;
 
 class Manuais extends Page
 {
-    protected static ?string $navigationIcon = 'heroicon-o-arrow-down-tray';
+    protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-arrow-down-tray';
     protected static UnitEnum|string|null $navigationGroup = 'Downloads e Documentos';
     protected static ?string $navigationLabel = 'Manuais';
     protected static ?string $title = 'Manuais';

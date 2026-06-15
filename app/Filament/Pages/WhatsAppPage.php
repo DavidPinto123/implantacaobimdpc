@@ -2,12 +2,13 @@
 
 namespace App\Filament\Pages;
 
+use BackedEnum;
 use Filament\Pages\Page;
 use UnitEnum;
 
 class WhatsAppPage extends Page
 {
-    protected static ?string $navigationIcon = 'heroicon-o-chat-bubble-left-right';
+    protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-chat-bubble-left-right';
     protected static UnitEnum|string|null $navigationGroup = 'WhatsApp';
     protected static ?string $navigationLabel = 'WhatsApp';
     protected static ?string $title = 'WhatsApp';
