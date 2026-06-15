@@ -84,6 +84,8 @@ class Cronograma extends Page
 
     public string $editObservacoes = '';
 
+    public string $editTituloPersonalizado = '';
+
     public string $editMotivoDatas = '';
 
     public bool $mostrarMotivoDatas = false;
@@ -2832,6 +2834,16 @@ class Cronograma extends Page
         Notification::make()->title('Fase adicionada')->success()->send();
     }
 
+    public function salvarNomeFase(int $faseId, string $nome): void
+    {
+        $fase = CronogramaFase::find($faseId);
+        if (! $fase) {
+            return;
+        }
+        $fase->update(['titulo_personalizado' => trim($nome) ?: null]);
+        $this->renderKey++;
+    }
+
     public function adicionarFasePersonalizadaEFecharModal(): void
     {
         if (trim($this->novaFasePersonalizadaTitulo) === '') {
@@ -3069,6 +3081,7 @@ class Cronograma extends Page
         $this->editStatus = $fase->status->value;
         $this->editPercentual = $fase->percentual_conclusao;
         $this->editObservacoes = $fase->observacoes ?? '';
+        $this->editTituloPersonalizado = $fase->titulo_personalizado ?? '';
         $this->editMotivoDatas = '';
         $this->mostrarMotivoDatas = false;
 
@@ -3551,6 +3564,7 @@ class Cronograma extends Page
             'status' => $this->editStatus,
             'percentual_conclusao' => $this->editPercentual,
             'observacoes' => $this->editObservacoes ?: null,
+            'titulo_personalizado' => trim($this->editTituloPersonalizado) ?: null,
             'regra_customizada' => $regraCustomizada || ($depsMudaram && ! $depsIguaisAoTemplate),
         ]));
 

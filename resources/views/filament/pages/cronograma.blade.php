@@ -3237,6 +3237,14 @@
                                     {{ $qtdItens > 0 ? $qtdItens : '+' }}
                                 </button>
                                 @if($podeEditar)
+                                <button type="button"
+                                        wire:click.stop="abrirEdicaoFase({{ $fase->id }})"
+                                        title="Editar fase"
+                                        style="padding:2px 5px;border:1px solid var(--vo-border);border-radius:.25rem;background:transparent;cursor:pointer;color:var(--vo-text-muted);font-size:0.65rem;line-height:1.4;flex-shrink:0;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                </button>
+                                @endif
+                                @if($podeEditar)
                                 <div class="cr-status-dropdown cr-status-sm" x-data="{ open: false, pos: {top:0,left:0}, reposition() { const r = this.$refs.trigger.getBoundingClientRect(); this.pos = {top: r.bottom + 4, left: r.left}; } }" @click.stop @click.outside="open = false">
                                     <button type="button" class="cr-status-trigger" style="background:{{ $fase->status->color() }}" x-ref="trigger"
                                             @click="reposition(); open = !open" :aria-expanded="open">
@@ -3925,6 +3933,12 @@
                                                 title="Nova atividade"
                                                 style="padding:2px 7px;border:1px dashed var(--vo-accent);border-radius:.25rem;background:transparent;cursor:pointer;color:var(--vo-accent);font-size:0.7rem;line-height:1.4;white-space:nowrap;flex-shrink:0;">
                                             + Atividade
+                                        </button>
+                                        <button type="button"
+                                                wire:click.stop="abrirEdicaoFase({{ $fase->id }})"
+                                                title="Editar fase"
+                                                style="padding:2px 5px;border:1px solid var(--vo-border);border-radius:.25rem;background:transparent;cursor:pointer;color:var(--vo-text-muted);font-size:0.65rem;line-height:1.4;flex-shrink:0;">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                                         </button>
                                         @endif
                                     </span>
@@ -4616,10 +4630,16 @@
                                 <span style="display:inline-block;width:7px;height:7px;transform:rotate(45deg);background:var(--vo-accent);flex-shrink:0;"></span>
                             @endif
 
-                            {{-- nome --}}
-                            <span style="flex:1;font-size:0.83rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--vo-text);">
-                                {{ $nomeFase }}
-                            </span>
+                            {{-- nome (editável inline) --}}
+                            <input type="text"
+                                   value="{{ $nomeFase }}"
+                                   wire:change="salvarNomeFase({{ $fase->id }}, $event.target.value)"
+                                   @click.stop
+                                   placeholder="{{ $fase->fase?->label() ?? 'Nome da fase' }}"
+                                   title="Clique para renomear"
+                                   style="flex:1;min-width:0;font-size:0.83rem;font-weight:500;color:var(--vo-text);background:transparent;border:none;border-bottom:1px dashed transparent;padding:0;outline:none;cursor:text;"
+                                   @focus="$el.style.borderBottomColor='var(--vo-accent)';$el.style.cursor='text'"
+                                   @blur="$el.style.borderBottomColor='transparent'">
 
                             {{-- badges e ações --}}
                             <div style="display:flex;gap:4px;align-items:center;flex-shrink:0;" @click.stop>
@@ -4663,6 +4683,7 @@
                                 {{-- X: excluir fase do projeto --}}
                                 <button type="button"
                                         wire:click="excluirFaseProjeto({{ $fase->id }})"
+                                        wire:confirm="Excluir esta fase e todos os seus itens? Esta ação não pode ser desfeita."
                                         class="cr-ef-btn-icon"
                                         style="color:#b91c1c;"
                                         title="Excluir fase do projeto">
@@ -5245,7 +5266,15 @@
         @if($faseEditando)
             <div class="cr-modal-overlay" wire:click.self="fecharEdicao">
                 <div class="cr-modal">
-                    <h3>{{ $faseEditando->fase->label() }}</h3>
+                    <h3>{{ $faseEditando->label_exibicao }}</h3>
+
+                    <div style="margin-bottom:12px;">
+                        <label>Nome da fase</label>
+                        <input type="text"
+                               wire:model="editTituloPersonalizado"
+                               placeholder="{{ $faseEditando->fase->label() }}"
+                               style="width:100%;padding:7px 10px;background:var(--vo-bg-subtle);border:1px solid var(--vo-border);border-radius:.375rem;font-size:0.82rem;color:var(--vo-text);box-sizing:border-box;">
+                    </div>
 
                     <div class="cr-modal-grid-2" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
                         <div>
