@@ -62,58 +62,65 @@ class AdminPanelProvider extends PanelProvider
 
             ->navigationGroups([
                 // ── Grupos principais ────────────────────────────────────────────
-                NavigationGroup::make()->label('Dashboard')->collapsed(),
-                NavigationGroup::make()->label('Planejamento')->collapsed(),
-                NavigationGroup::make()->label('Tarefas')->collapsed(),
-                NavigationGroup::make()->label('Agenda Geral')->collapsed(),
-                NavigationGroup::make()->label('Tour 360°')->collapsed(),
+                // Planejamento, Tarefas, WhatsApp — itens únicos, direto no sidebar
                 NavigationGroup::make()->label('Registro fotográfico')->collapsed(),
                 NavigationGroup::make()->label('Mapas')->collapsed(),
                 NavigationGroup::make()->label('Orçamentos')->collapsed(),
-                NavigationGroup::make()->label('Projetos Piloto')->collapsed(),
-                NavigationGroup::make()->label('Visualizador 3D')->collapsed(),
-                NavigationGroup::make()->label('WhatsApp')->collapsed(),
                 NavigationGroup::make()->label('Checklist de revisão')->collapsed(),
-                NavigationGroup::make()->label('Upload de documentos')->collapsed(),
+                // Upload de documentos, Atas, Visualizador 3D — itens únicos, direto no sidebar
                 NavigationGroup::make()->label('Downloads e Documentos')->collapsed(),
                 NavigationGroup::make()->label('Treinamentos')->collapsed(),
-                NavigationGroup::make()->label('Atas')->collapsed(),
                 NavigationGroup::make()->label('Outros')->collapsed(),
             ])
             ->navigationItems([
                 // ── Subgrupos de Outros ──────────────────────────────────────────
                 NavigationItem::make('Dashboard')
-                    ->group('Outros')->icon('heroicon-o-squares-2x2')->sort(0)->url(null),
+                    ->group('Outros')->icon('heroicon-o-squares-2x2')->sort(0)->url(null)
+                    ->visible(fn () => auth()->user()?->can('View:MenuOutros')),
                 NavigationItem::make('PMO')
-                    ->group('Outros')->icon('heroicon-o-presentation-chart-line')->sort(1)->url(null),
+                    ->group('Outros')->icon('heroicon-o-presentation-chart-line')->sort(1)->url(null)
+                    ->visible(fn () => auth()->user()?->can('View:MenuOutros')),
                 NavigationItem::make('Comercial')
-                    ->group('Outros')->icon('heroicon-o-briefcase')->sort(4)->url(null),
+                    ->group('Outros')->icon('heroicon-o-briefcase')->sort(4)->url(null)
+                    ->visible(fn () => auth()->user()?->can('View:MenuOutros')),
                 NavigationItem::make('Arquitetura')
-                    ->group('Outros')->icon('heroicon-o-building-library')->sort(5)->url(null),
+                    ->group('Outros')->icon('heroicon-o-building-library')->sort(5)->url(null)
+                    ->visible(fn () => auth()->user()?->can('View:MenuOutros')),
                 NavigationItem::make('Legalização')
-                    ->group('Outros')->icon('heroicon-o-scale')->sort(6)->url(null),
+                    ->group('Outros')->icon('heroicon-o-scale')->sort(6)->url(null)
+                    ->visible(fn () => auth()->user()?->can('View:MenuOutros')),
                 NavigationItem::make('Engenharia')
-                    ->group('Outros')->icon('heroicon-o-building-office-2')->sort(7)->url(null),
+                    ->group('Outros')->icon('heroicon-o-building-office-2')->sort(7)->url(null)
+                    ->visible(fn () => auth()->user()?->can('View:MenuOutros')),
                 NavigationItem::make('Orçamentos')
-                    ->group('Outros')->icon('heroicon-o-banknotes')->sort(8)->url(null),
+                    ->group('Outros')->icon('heroicon-o-banknotes')->sort(8)->url(null)
+                    ->visible(fn () => auth()->user()?->can('View:MenuOutros')),
                 NavigationItem::make('Financeiro')
-                    ->group('Outros')->icon('heroicon-o-currency-dollar')->sort(9)->url(null),
+                    ->group('Outros')->icon('heroicon-o-currency-dollar')->sort(9)->url(null)
+                    ->visible(fn () => auth()->user()?->can('View:MenuOutros')),
                 NavigationItem::make('Pós Obra')
-                    ->group('Outros')->icon('heroicon-o-building-office')->sort(10)->url(null),
+                    ->group('Outros')->icon('heroicon-o-building-office')->sort(10)->url(null)
+                    ->visible(fn () => auth()->user()?->can('View:MenuOutros')),
                 NavigationItem::make('Retrofit / Ampliação')
-                    ->group('Outros')->icon('heroicon-o-wrench-screwdriver')->sort(11)->url(null),
+                    ->group('Outros')->icon('heroicon-o-wrench-screwdriver')->sort(11)->url(null)
+                    ->visible(fn () => auth()->user()?->can('View:MenuOutros')),
                 NavigationItem::make('Gestão Predial e Ativos')
-                    ->group('Outros')->icon('heroicon-o-building-office-2')->sort(12)->url(null),
+                    ->group('Outros')->icon('heroicon-o-building-office-2')->sort(12)->url(null)
+                    ->visible(fn () => auth()->user()?->can('View:MenuOutros')),
                 NavigationItem::make('Cadastros')
-                    ->group('Outros')->icon('heroicon-o-rectangle-stack')->sort(13)->url(null),
+                    ->group('Outros')->icon('heroicon-o-rectangle-stack')->sort(13)->url(null)
+                    ->visible(fn () => auth()->user()?->can('View:MenuOutros')),
                 NavigationItem::make('Central de Notificações')
-                    ->group('Outros')->icon('heroicon-o-bell')->sort(14)->url(null),
+                    ->group('Outros')->icon('heroicon-o-bell')->sort(14)->url(null)
+                    ->visible(fn () => auth()->user()?->can('View:MenuOutros')),
                 NavigationItem::make('Configurações')
-                    ->group('Outros')->icon('heroicon-o-cog-6-tooth')->sort(15)->url(null),
+                    ->group('Outros')->icon('heroicon-o-cog-6-tooth')->sort(15)->url(null)
+                    ->visible(fn () => auth()->user()?->can('View:MenuOutros')),
                 ...FilamentDemoNavigation::items(),
                 // ── Outros ───────────────────────────────────────────────────────
                 NavigationItem::make('Fornecedor')
-                    ->group('Outros')->icon('heroicon-o-building-office-2')->sort(16)->url(null),
+                    ->group('Outros')->icon('heroicon-o-building-office-2')->sort(16)->url(null)
+                    ->visible(fn () => auth()->user()?->can('View:MenuOutros')),
                 // ── Ocultar item avulso ──────────────────────────────────────────
                 NavigationItem::make('Notas Fiscais')->hidden(),
             ])
