@@ -17,7 +17,8 @@ class LandBank extends Page
 
     protected static ?int $navigationSort = 3; // muda a ordem se precisar
 
-    protected static string|null|UnitEnum $navigationGroup = 'Dashboard';
+    protected static string|null|UnitEnum $navigationGroup = 'Outros';
+    protected static ?string $navigationParentItem = 'Dashboard';
 
     protected string $view = 'filament.pages.land-bank';
 

@@ -48,7 +48,8 @@ class FinanceiroNotasFiscais extends Page
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-document-text';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Financeiro';
+    protected static UnitEnum|string|null $navigationGroup = 'Outros';
+    protected static ?string $navigationParentItem = 'Financeiro';
 
     protected static ?string $navigationLabel = 'Notas Fiscais';
 

@@ -28,7 +28,7 @@ class CronogramaTemplates extends Page
 
     protected string $view = 'filament.pages.cronograma-templates';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Outros';
+    protected static UnitEnum|string|null $navigationGroup = 'Planejamento';
 
     protected static ?int $navigationSort = 4;
 

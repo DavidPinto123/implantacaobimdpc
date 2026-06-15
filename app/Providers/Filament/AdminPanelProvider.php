@@ -69,7 +69,6 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make()->label('Tour 360°')->collapsed(),
                 NavigationGroup::make()->label('Registro fotográfico')->collapsed(),
                 NavigationGroup::make()->label('Mapas')->collapsed(),
-                NavigationGroup::make()->label('Financeiro')->collapsed(),
                 NavigationGroup::make()->label('Orçamentos')->collapsed(),
                 NavigationGroup::make()->label('Projetos Piloto')->collapsed(),
                 NavigationGroup::make()->label('Visualizador 3D')->collapsed(),
@@ -83,6 +82,8 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->navigationItems([
                 // ── Subgrupos de Outros ──────────────────────────────────────────
+                NavigationItem::make('Dashboard')
+                    ->group('Outros')->icon('heroicon-o-squares-2x2')->sort(0)->url(null),
                 NavigationItem::make('PMO')
                     ->group('Outros')->icon('heroicon-o-presentation-chart-line')->sort(1)->url(null),
                 NavigationItem::make('Comercial')
