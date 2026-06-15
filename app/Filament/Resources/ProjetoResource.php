@@ -5890,11 +5890,14 @@ TextInput::make('imp_prazo_planejado')
 
     public static function shouldRegisterNavigation(): bool
     {
-        return ! auth()->user()?->hasAnyRole(['Comercial', 'Colaborador', 'Visita Técnica', 'Fornecedor']);
+        return ! auth()->user()?->hasAnyRole(['Comercial', 'Colaborador', 'Visita Técnica', 'Fornecedor', 'Planejamento']);
     }
 
     public static function canViewAny(): bool
     {
+        if (auth()->user()?->hasRole('Planejamento')) {
+            return false;
+        }
         return auth()->check();
     }
 
