@@ -8,14 +8,12 @@ use BezhanSalleh\FilamentShield\Support\Utils;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
-use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Tables\Table;
-use Illuminate\Support\HtmlString;
 use Spatie\Permission\Models\Role;
 
 class RoleResource extends ShieldRoleResource
@@ -34,31 +32,18 @@ class RoleResource extends ShieldRoleResource
             return parent::getTabFormComponentForResources();
         }
 
-        $filterHtml = <<<'HTML'
-            <input type="text"
-                placeholder="Filtrar recursos..."
-                style="width:100%;padding:7px 12px;border:1px solid var(--fi-color-gray-300,#d1d5db);border-radius:.5rem;background:transparent;color:inherit;font-size:.875rem;outline:none;box-sizing:border-box;"
-                @focus="$el.style.borderColor='var(--fi-color-primary-500,#6366f1)'"
-                @blur="$el.style.borderColor='var(--fi-color-gray-300,#d1d5db)'"
-                x-on:input="
-                    const q=$el.value.toLowerCase().trim();
-                    let c=$el,ss=[];
-                    while(c&&c!==document.body){ss=Array.from(c.querySelectorAll('section.fi-section'));if(ss.length>1)break;c=c.parentElement;}
-                    ss.forEach(s=>{
-                        const h=(s.querySelector('.fi-section-header-heading')?.textContent??'').toLowerCase().trim();
-                        s.style.display=!q||h.includes(q)?'':'none';
-                    });
-                ">
-            HTML;
-
         return Tab::make('resources')
             ->label(__('filament-shield::filament-shield.resources'))
             ->visible(fn (): bool => Utils::isResourceTabEnabled())
             ->badge(static::getResourceTabBadgeCount())
             ->schema([
-                Placeholder::make('recursos_filtro')
-                    ->label('')
-                    ->content(new HtmlString($filterHtml)),
+                TextInput::make('recursos_search')
+                    ->hiddenLabel()
+                    ->placeholder('Filtrar recursos...')
+                    ->dehydrated(false)
+                    ->extraInputAttributes([
+                        'x-on:input' => 'const q=this.value.toLowerCase().trim();let c=this,ss=[];while(c&&c!==document.body){ss=Array.from(c.querySelectorAll("section.fi-section"));if(ss.length>1)break;c=c.parentElement;}ss.forEach(s=>{const h=(s.querySelector(".fi-section-header-heading")?.textContent??"").toLowerCase().trim();s.style.display=!q||h.includes(q)?"":"none";});',
+                    ]),
                 Grid::make()
                     ->schema(static::getResourceEntitiesSchema())
                     ->columns(static::shield()->getGridColumns()),

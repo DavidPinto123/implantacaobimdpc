@@ -23,7 +23,7 @@ class ProjetosDashboard extends Page implements HasForms
 
     protected static ?string $navigationLabel = 'Dashboard de Projetos';
 
-    protected static null|string|UnitEnum $navigationGroup = 'Dashboard';
+    protected static null|string|UnitEnum $navigationGroup = 'Outros';
 
     protected string $view = 'filament.pages.projetos-dashboard';
 
@@ -345,11 +345,11 @@ class ProjetosDashboard extends Page implements HasForms
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->can('View:ProjetosDashboard');
+        return auth()->user()?->can('View:MenuOutros');
     }
 
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->user()?->can('View:ProjetosDashboard');
+        return auth()->user()?->can('View:MenuOutros');
     }
 }

@@ -2,12 +2,20 @@
 
 namespace App\Filament\Pages\Checklist;
 
+use App\Traits\HasMenuPermission;
 use BackedEnum;
 use Filament\Pages\Page;
 use UnitEnum;
 
 class Templates extends Page
 {
+    use HasMenuPermission;
+
+    protected static function menuPermission(): string
+    {
+        return 'View:MenuChecklist';
+    }
+
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-check-circle';
     protected static UnitEnum|string|null $navigationGroup = 'Checklist de revisão';
     protected static ?string $navigationLabel = 'De templates';
