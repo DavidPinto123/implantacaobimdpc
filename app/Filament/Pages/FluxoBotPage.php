@@ -15,7 +15,7 @@ class FluxoBotPage extends Page
 {
     use HasPageShield;
 
-    protected static bool $shouldRegisterNavigation = false;
+    protected static ?int $navigationSort = 3;
 
     protected string $view = 'filament.pages.whatsapp.fluxo-bot';
 
