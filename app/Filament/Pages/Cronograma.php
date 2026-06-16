@@ -564,10 +564,12 @@ class Cronograma extends Page
             return;
         }
 
-        $ordemMax = CronogramaFase::where('projeto_id', $original->projeto_id)->max('ordem') ?? $original->ordem;
+        CronogramaFase::where('projeto_id', $original->projeto_id)
+            ->where('ordem', '>', $original->ordem)
+            ->increment('ordem');
 
         $novaFase = $original->replicate();
-        $novaFase->ordem = $ordemMax + 1;
+        $novaFase->ordem = $original->ordem + 1;
         $novaFase->titulo_personalizado = ($original->titulo_personalizado ?: $original->fase->label()) . ' (cópia)';
         $novaFase->save();
 
