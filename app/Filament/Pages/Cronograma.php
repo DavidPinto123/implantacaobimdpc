@@ -551,6 +551,36 @@ class Cronograma extends Page
         $this->verificarDepsFase($faseId);
     }
 
+    public function duplicarFase(int $faseId): void
+    {
+        $original = CronogramaFase::with([
+            'itens.children.children',
+            'itens.responsaveis',
+            'itens.children.responsaveis',
+            'itens.children.children.responsaveis',
+        ])->find($faseId);
+
+        if (! $original) {
+            return;
+        }
+
+        $ordemMax = CronogramaFase::where('projeto_id', $original->projeto_id)->max('ordem') ?? $original->ordem;
+
+        $novaFase = $original->replicate();
+        $novaFase->ordem = $ordemMax + 1;
+        $novaFase->titulo_personalizado = ($original->titulo_personalizado ?: $original->fase->label()) . ' (cópia)';
+        $novaFase->save();
+
+        $this->duplicarItens($original->itens->whereNull('parent_id'), $novaFase->id, null);
+
+        Notification::make()
+            ->title('Fase duplicada com sucesso')
+            ->success()
+            ->send();
+
+        $this->renderKey++;
+    }
+
     private function verificarDepsFase(int $faseId): void
     {
         $fase = CronogramaFase::find($faseId);
