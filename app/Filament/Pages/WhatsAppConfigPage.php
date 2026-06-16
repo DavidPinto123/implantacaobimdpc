@@ -18,8 +18,6 @@ class WhatsAppConfigPage extends Page
 {
     use HasPageShield;
 
-    protected static ?int $navigationSort = 2;
-
     protected string $view = 'filament.pages.whats-app-config-page';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::ChatBubbleLeftRight;
@@ -28,7 +26,7 @@ class WhatsAppConfigPage extends Page
 
     protected static ?string $navigationLabel = 'Configuração';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 2;
 
     protected static ?string $title = 'Configuração WhatsApp';
 
