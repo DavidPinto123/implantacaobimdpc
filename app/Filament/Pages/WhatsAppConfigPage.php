@@ -18,7 +18,7 @@ class WhatsAppConfigPage extends Page
 {
     use HasPageShield;
 
-    protected static bool $shouldRegisterNavigation = false;
+    protected static ?int $navigationSort = 2;
 
     protected string $view = 'filament.pages.whats-app-config-page';
 
