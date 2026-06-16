@@ -163,7 +163,7 @@ class WhatsAppService
         }
 
         $response = Http::withToken($this->config->token)
-            ->post("https://graph.facebook.com/v19.0/{$this->config->phone_number_id}/messages", $payload);
+            ->post("https://graph.facebook.com/v25.0/{$this->config->phone_number_id}/messages", $payload);
 
         $wamid = $response->json('messages.0.id');
         $sucesso = $response->successful() && $wamid;
