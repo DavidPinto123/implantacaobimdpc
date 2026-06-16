@@ -17,8 +17,10 @@ use App\Models\PosObra\ConfiguracaoSla;
 use App\Models\PosObra\DisciplinaConfig;
 use App\Models\PosObra\Pendencia;
 use App\Models\Projeto;
+use App\Models\Task;
 use App\Observers\ControleNotaFiscalItemObserver;
 use App\Observers\FiscalObraSoftDeleteGuardObserver;
+use App\Observers\TaskObserver;
 use App\Policies\ControlePedidoPolicy;
 use App\Policies\CronogramaFasePolicy;
 use App\Policies\PosObra\ConfiguracaoSlaPolicy;
@@ -70,6 +72,7 @@ class AppServiceProvider extends ServiceProvider
         AutorizacaoServico::observe(FiscalObraSoftDeleteGuardObserver::class);
         Asa::observe(FiscalObraSoftDeleteGuardObserver::class);
         AsaItem::observe(FiscalObraSoftDeleteGuardObserver::class);
+        Task::observe(TaskObserver::class);
 
         FilamentResetPasswordNotification::toMailUsing(function ($notifiable, string $token): MailMessage {
             return (new MailMessage)

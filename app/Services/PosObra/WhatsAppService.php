@@ -212,6 +212,64 @@ class WhatsAppService
         MensagemWhatsapp::where('wamid', $wamid)->update(['status_entrega' => $status]);
     }
 
+    /**
+     * Envia mensagem via template aprovado pela Meta.
+     * Obrigatório para mensagens iniciadas pelo sistema (fora da janela de 24h do usuário).
+     *
+     * @param  array<int, string|int>  $parametros  Valores para {{1}}, {{2}}, etc. no corpo do template
+     */
+    public function enviarTemplate(
+        string $telefone,
+        string $nomeTemplate,
+        array $parametros = [],
+        string $idioma = 'pt_BR',
+    ): bool {
+        $template = [
+            'name'     => $nomeTemplate,
+            'language' => ['code' => $idioma],
+        ];
+
+        if (! empty($parametros)) {
+            $template['components'] = [
+                [
+                    'type'       => 'body',
+                    'parameters' => array_map(
+                        fn ($p) => ['type' => 'text', 'text' => (string) $p],
+                        $parametros
+                    ),
+                ],
+            ];
+        }
+
+        $payload = [
+            'messaging_product' => 'whatsapp',
+            'to'                => $telefone,
+            'type'              => 'template',
+            'template'          => $template,
+        ];
+
+        return $this->enviarPayload($telefone, $payload, "[Template:{$nomeTemplate}]");
+    }
+
+    /**
+     * Normaliza número para formato E.164 com DDI do Brasil.
+     * Exemplo: "11999999999" → "5511999999999"
+     */
+    public static function formatarTelefone(string $telefone): ?string
+    {
+        $digits = preg_replace('/\D/', '', $telefone);
+
+        if (empty($digits)) {
+            return null;
+        }
+
+        if (strlen($digits) <= 11) {
+            $digits = '55' . $digits;
+        }
+
+        return strlen($digits) >= 12 ? $digits : null;
+    }
+
     public function getConfig(): ?WhatsappConfig
     {
         return $this->config;

@@ -45,4 +45,14 @@ return [
         'secret' => env('CONSTRUCTIN_API_SECRET', ''),
     ],
 
+    // Nomes dos templates aprovados no Meta Business Manager
+    // Os credentials (phone_number_id + token) ficam na tabela po_whatsapp_config (via /admin/whatsapp-config)
+    'whatsapp' => [
+        'templates' => [
+            'tarefa_atrasada' => env('WHATSAPP_TEMPLATE_ATRASO', 'tarefa_atrasada'),
+            'status_tarefa'   => env('WHATSAPP_TEMPLATE_STATUS', 'status_tarefa'),
+            'agenda_semanal'  => env('WHATSAPP_TEMPLATE_AGENDA', 'agenda_semanal'),
+        ],
+    ],
+
 ];
