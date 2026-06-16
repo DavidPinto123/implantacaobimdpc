@@ -85,6 +85,12 @@ Route::middleware('auth')->prefix('cronograma')->group(function () {
 });
 
 // Pós Obra — WhatsApp Webhook (sem CSRF)
+Route::get('/politica-de-privacidade', fn () => response(
+    '<html><head><meta charset="utf-8"><title>Política de Privacidade</title></head><body style="font-family:sans-serif;max-width:800px;margin:40px auto;padding:0 20px"><h1>Política de Privacidade</h1><p>Este sistema é de uso interno da DPC - David Pinto Consultoria. Os dados coletados são utilizados exclusivamente para gestão de implantações BIM e não são compartilhados com terceiros.</p><p>Para mais informações: programacao@davidpintoconsultoria.com.br</p></body></html>',
+    200,
+    ['Content-Type' => 'text/html']
+))->name('politica-privacidade');
+
 Route::prefix('webhook/whatsapp')->name('whatsapp.webhook.')->group(function () {
     Route::get('/', [WhatsAppWebhookController::class, 'verify'])->name('verify');
     Route::post('/', [WhatsAppWebhookController::class, 'receive'])->name('receive');
