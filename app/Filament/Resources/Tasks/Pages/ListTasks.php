@@ -17,8 +17,14 @@ class ListTasks extends ListRecords
 
     protected static string $resource = TaskResource::class;
 
+    protected string $view = 'filament.resources.tasks.pages.list-tasks';
+
     #[Url]
     public ?string $status_card = null;
+
+    public string $visualizacao = 'tabela';
+
+    public string $kanbanAgrupamento = 'status';
 
     public bool $isStatsQuery = false;
 
@@ -113,5 +119,53 @@ class ListTasks extends ListRecords
     public function updatedTableFilters(): void
     {
         $this->dispatch('task-table-filters-updated', filters: $this->tableFilters);
+    }
+
+    public function moverTarefaKanban(int $id, string $novoStatus): void
+    {
+        $task = \App\Models\Task::find($id);
+        if (! $task) {
+            return;
+        }
+        $task->status = $novoStatus;
+        $task->save();
+    }
+
+    public function moverTarefaResponsavel(int $id, ?string $userId): void
+    {
+        $task = \App\Models\Task::find($id);
+        if (! $task) {
+            return;
+        }
+        $task->assigned_to = $userId ? (int) $userId : null;
+        $task->save();
+    }
+
+    public function getKanbanTarefas(): \Illuminate\Support\Collection
+    {
+        $tasks = $this->getTableQuery()
+            ->with(['responsavel'])
+            ->get();
+
+        if ($this->kanbanAgrupamento === 'profissional') {
+            return $tasks->groupBy(fn ($t) => $t->assigned_to ?? 0);
+        }
+
+        return $tasks->groupBy('status');
+    }
+
+    public function getKanbanUsuarios(): \Illuminate\Support\Collection
+    {
+        if ($this->kanbanAgrupamento !== 'profissional') {
+            return collect();
+        }
+
+        return $this->getTableQuery()
+            ->with('responsavel')
+            ->get()
+            ->map->responsavel
+            ->filter()
+            ->unique('id')
+            ->sortBy('name');
     }
 }
