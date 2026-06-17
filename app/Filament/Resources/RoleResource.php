@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\RoleResource\Pages\EditRole;
 use App\Filament\Resources\RoleResource\Pages\ListRoles;
 use BezhanSalleh\FilamentShield\Facades\FilamentShield;
 use BezhanSalleh\FilamentShield\Resources\Roles\RoleResource as ShieldRoleResource;
@@ -24,6 +25,7 @@ class RoleResource extends ShieldRoleResource
     {
         $pages = parent::getPages();
         $pages['index'] = ListRoles::route('/');
+        $pages['edit']  = EditRole::route('/{record}/edit');
 
         return $pages;
     }
@@ -31,11 +33,6 @@ class RoleResource extends ShieldRoleResource
     private static function resolveRoleFromLivewire(mixed $livewire): ?Role
     {
         $raw = property_exists($livewire, 'record') ? $livewire->record : null;
-
-        \Log::error('[RoleResource badge] livewire class=' . get_class($livewire)
-            . ' record_type=' . gettype($raw)
-            . ' record_class=' . (is_object($raw) ? get_class($raw) : 'n/a')
-            . ' record_id=' . (is_numeric($raw) ? $raw : (is_object($raw) && isset($raw->id) ? $raw->id : 'n/a')));
 
         if ($raw instanceof Role && $raw->exists) {
             return $raw;
@@ -72,7 +69,7 @@ FILTER;
             ->all();
 
         return Tab::make('resources')
-            ->label('RECURSOS_TESTE_ABC')
+            ->label(__('filament-shield::filament-shield.resources'))
             ->visible(fn (): bool => Utils::isResourceTabEnabled())
             ->deferBadge()
             ->badge(function ($livewire) use ($total, $allResourcePermNames) {
@@ -159,9 +156,20 @@ FILTER;
         $permNames = array_keys($options);
 
         return Tab::make('custom_permissions')
-            ->label('TESTE_LABEL_XYZ')
+            ->label(__('filament-shield::filament-shield.custom'))
             ->visible(fn (): bool => Utils::isCustomPermissionTabEnabled() && $total > 0)
-            ->badge('TEST123')
+            ->deferBadge()
+            ->badge(function ($livewire) use ($total, $permNames) {
+                $record = static::resolveRoleFromLivewire($livewire);
+
+                if (! $record) {
+                    return $total;
+                }
+
+                $selected = $record->permissions()->whereIn('name', $permNames)->count();
+
+                return $selected > 0 ? "{$total} / {$selected}" : $total;
+            })
             ->schema([
                 static::getCheckboxListFormComponent(
                     name: 'custom_permissions_tab',
