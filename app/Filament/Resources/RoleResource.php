@@ -159,7 +159,7 @@ FILTER;
         $permNames = array_keys($options);
 
         return Tab::make('custom_permissions')
-            ->label(__('filament-shield::filament-shield.custom'))
+            ->label('TESTE_LABEL_XYZ')
             ->visible(fn (): bool => Utils::isCustomPermissionTabEnabled() && $total > 0)
             ->badge('TEST123')
             ->schema([
