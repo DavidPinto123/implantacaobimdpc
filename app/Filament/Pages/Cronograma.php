@@ -4529,6 +4529,7 @@ class Cronograma extends Page
     public function marcarConcluidsEmLote(array $ids): void
     {
         CronogramaFaseItem::whereIn('id', $ids)->update(['recebido' => true]);
+        CronogramaFaseItem::whereIn('id', $ids)->whereNull('data_realizada_fim')->update(['data_realizada_fim' => today()]);
         $this->renderKey++;
     }
 

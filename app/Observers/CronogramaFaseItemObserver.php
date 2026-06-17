@@ -20,6 +20,15 @@ class CronogramaFaseItemObserver
         if ($item->isDirty('status_liberacao') && $item->status_liberacao instanceof StatusLiberacaoPosse) {
             $item->recebido = $item->status_liberacao->concluido();
         }
+
+        if ($item->isDirty('recebido')) {
+            if ($item->recebido) {
+                $item->data_realizada_fim ??= today();
+            } else {
+                // desmarcado manualmente — limpa a data para não ficar inconsistente
+                $item->data_realizada_fim = null;
+            }
+        }
     }
 
     public function saved(CronogramaFaseItem $item): void
@@ -56,7 +65,13 @@ class CronogramaFaseItemObserver
                 break;
             }
 
-            $pai->updateQuietly(['recebido' => $todosRecebidos]);
+            $updateData = ['recebido' => $todosRecebidos];
+            if ($todosRecebidos && ! $pai->data_realizada_fim) {
+                $updateData['data_realizada_fim'] = today();
+            } elseif (! $todosRecebidos) {
+                $updateData['data_realizada_fim'] = null;
+            }
+            $pai->updateQuietly($updateData);
             $atual = $pai;
         }
     }
