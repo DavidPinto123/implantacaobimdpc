@@ -49,8 +49,9 @@ FILTER;
         return Tab::make('resources')
             ->label(__('filament-shield::filament-shield.resources'))
             ->visible(fn (): bool => Utils::isResourceTabEnabled())
-            ->badge(function (callable $get) use ($total, $resourceFqcns) {
-                $selected = collect($resourceFqcns)->sum(fn ($fqcn) => count($get($fqcn) ?? []));
+            ->badge(function ($livewire) use ($total, $resourceFqcns) {
+                $data = $livewire->data ?? [];
+                $selected = collect($resourceFqcns)->sum(fn ($fqcn) => count($data[$fqcn] ?? []));
 
                 return $selected > 0 ? "{$total} / {$selected}" : $total;
             })
@@ -70,8 +71,8 @@ FILTER;
         return Tab::make('pages')
             ->label(__('filament-shield::filament-shield.pages'))
             ->visible(fn (): bool => Utils::isPageTabEnabled() && $total > 0)
-            ->badge(function (callable $get) use ($total) {
-                $selected = count($get('pages_tab') ?? []);
+            ->badge(function ($livewire) use ($total) {
+                $selected = count($livewire->data['pages_tab'] ?? []);
 
                 return $selected > 0 ? "{$total} / {$selected}" : $total;
             })
@@ -91,8 +92,8 @@ FILTER;
         return Tab::make('widgets')
             ->label(__('filament-shield::filament-shield.widgets'))
             ->visible(fn (): bool => Utils::isWidgetTabEnabled() && $total > 0)
-            ->badge(function (callable $get) use ($total) {
-                $selected = count($get('widgets_tab') ?? []);
+            ->badge(function ($livewire) use ($total) {
+                $selected = count($livewire->data['widgets_tab'] ?? []);
 
                 return $selected > 0 ? "{$total} / {$selected}" : $total;
             })
@@ -112,8 +113,8 @@ FILTER;
         return Tab::make('custom_permissions')
             ->label(__('filament-shield::filament-shield.custom'))
             ->visible(fn (): bool => Utils::isCustomPermissionTabEnabled() && $total > 0)
-            ->badge(function (callable $get) use ($total) {
-                $selected = count($get('custom_permissions_tab') ?? []);
+            ->badge(function ($livewire) use ($total) {
+                $selected = count($livewire->data['custom_permissions_tab'] ?? []);
 
                 return $selected > 0 ? "{$total} / {$selected}" : $total;
             })
