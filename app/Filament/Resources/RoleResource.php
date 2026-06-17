@@ -72,7 +72,7 @@ FILTER;
             ->all();
 
         return Tab::make('resources')
-            ->label(__('filament-shield::filament-shield.resources'))
+            ->label('RECURSOS_TESTE_ABC')
             ->visible(fn (): bool => Utils::isResourceTabEnabled())
             ->deferBadge()
             ->badge(function ($livewire) use ($total, $allResourcePermNames) {
