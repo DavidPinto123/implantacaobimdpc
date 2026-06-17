@@ -3376,7 +3376,18 @@
                             }
                             $isAncoraLeft = (bool) ($fase->templateFase?->is_ancora);
                         @endphp
-                        @php $farolRow = $fase->farol; $qtdItensRow = $fase->itens->count(); @endphp
+                        @php
+                            $farolRow = $fase->farol;
+                            $qtdItensRow = $fase->itens->count();
+                            $faseNumGantt = $loop->iteration;
+                            $badgeBgGantt = match ($farolRow) {
+                                'vermelho' => '#ff4d6a',
+                                'amarelo'  => '#f5ba00',
+                                'verde'    => '#2dd67c',
+                                default    => '#6b7280',
+                            };
+                            $badgeColorGantt = $farolRow === 'amarelo' ? '#111' : '#fff';
+                        @endphp
                         <div class="cr-row-left {{ ($mapaFases[$fase->id]['isAncora'] ?? false) ? 'cr-row-ancora' : '' }} {{ $farolRow !== 'neutro' ? 'cr-row-'.$farolRow : '' }}"
                              @click="highlightRow({{ $fase->id }}); if ({{ $qtdItensRow }}) $wire.alternarExpansaoFase({{ $fase->id }})"
                              :class="{ 'cr-row-highlighted': highlightedRow === {{ $fase->id }} }"
@@ -3397,6 +3408,7 @@
                                         default => 'Sem indicador',
                                     };
                                 @endphp
+                                <span class="cr-fase-num-badge" style="background:{{ $badgeBgGantt }};color:{{ $badgeColorGantt }}">{{ $faseNumGantt }}</span>
                                 @if($farol !== 'neutro')
                                     <span class="cr-farol" title="{{ $farolTitulo }}" style="background:{{ $farolCor }}"></span>
                                 @endif
@@ -3536,7 +3548,7 @@
                         </div>
                         @if(in_array($fase->id, $fasesExpandidas, true))
                             @foreach($fase->itens->whereNull('parent_id')->sortBy('ordem') as $item)
-                                @include('filament.pages.cronograma-subitem-gantt', ['item' => $item, 'depth' => 0, 'fasesDependencia' => $fases])
+                                @include('filament.pages.cronograma-subitem-gantt', ['item' => $item, 'depth' => 0, 'fasesDependencia' => $fases, 'numPrefix' => $faseNumGantt . '.' . $loop->iteration])
                             @endforeach
                             @if($podeEditar)
                             <div class="cr-row-left cr-subitem-gantt-row cr-subitem-add-row">

@@ -1,6 +1,7 @@
 @php
     $fasesDependencia = $fasesDependencia ?? collect();
-    $podeTerFilho = $depth < 2;
+    $podeTerFilho     = $depth < 2;
+    $numPrefix        = $numPrefix ?? null;
 @endphp
 @php
     $si_prevI_str = $item->data_prevista_inicio  ? \Carbon\Carbon::parse($item->data_prevista_inicio)->format('d/m/y')  : null;
@@ -11,6 +12,9 @@
 <div class="cr-row-left cr-subitem-gantt-row" wire:key="sg-{{ $item->id }}">
     <div class="cr-col-fase" style="padding-left: {{ $depth * 16 }}px">
         <span class="cr-subitem-tree">└</span>
+        @if($numPrefix)
+            <span style="color:var(--vo-text-faint);font-size:0.68rem;font-weight:700;flex-shrink:0;white-space:nowrap;">{{ $numPrefix }}</span>
+        @endif
         @if($podeTerFilho && ($podeEditar ?? true))
             <button type="button"
                     wire:click="alternarAdicionarFilho({{ $item->id }})"
@@ -178,5 +182,5 @@
     </div>
 @endif
 @foreach($item->children as $child)
-    @include('filament.pages.cronograma-subitem-gantt', ['item' => $child, 'depth' => $depth + 1, 'fasesDependencia' => $fasesDependencia])
+    @include('filament.pages.cronograma-subitem-gantt', ['item' => $child, 'depth' => $depth + 1, 'fasesDependencia' => $fasesDependencia, 'numPrefix' => $numPrefix ? $numPrefix . '.' . $loop->iteration : null])
 @endforeach
