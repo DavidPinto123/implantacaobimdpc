@@ -738,6 +738,34 @@
             max-height: var(--cr-cal-max-h, calc(100dvh - 220px));
         }
 
+        /* Gantt: na cr-col-fase, ocultar ações (%, botões, status) quando a linha NÃO está em hover.
+           Isso libera ~200px para o texto do nome da fase/subitem ficar legível.
+           Em hover, todos os elementos reaparecem normalmente. */
+        .cr-container.cr-cal .cr-row-left:not(:hover) .cr-col-fase .cr-pct-inline,
+        .cr-container.cr-cal .cr-row-left:not(:hover) .cr-col-fase > button:not(.cr-checklist-btn),
+        .cr-container.cr-cal .cr-row-left:not(:hover) .cr-col-fase .cr-status-dropdown,
+        .cr-container.cr-cal .cr-row-left:not(:hover) .cr-col-fase .cr-status-pill,
+        .cr-container.cr-cal .cr-row-left:not(:hover) .cr-col-fase .cr-fase-cadeado,
+        .cr-container.cr-cal .cr-row-left:not(:hover) .cr-col-fase .cr-subitem-status-badge,
+        .cr-container.cr-cal .cr-row-left:not(:hover) .cr-col-fase .cr-subitem-child-btn { display: none; }
+
+        /* Gantt: no hover, garantir que o botão de status dropdown e ações sejam flex */
+        .cr-container.cr-cal .cr-row-left:hover .cr-col-fase .cr-status-dropdown { display: flex; }
+
+        /* Gantt: nome da fase — permitir que ocupe todo o espaço disponível */
+        .cr-container.cr-cal .cr-row-left .cr-col-fase .fase-label {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        /* Gantt: titulo do subitem — mesma largura máxima */
+        .cr-container.cr-cal .cr-row-left .cr-col-fase .cr-subitem-titulo-inline {
+            flex: 1;
+            min-width: 0;
+        }
+
         /* ── Modo Calendário ──────────────────────────────── */
         .cr-calendar-view { padding: 0 16px 16px; }
         .cr-calendar-toolbar {
