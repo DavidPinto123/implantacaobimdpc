@@ -187,6 +187,7 @@ class Cronograma extends Page
     public int $porPagina = 50;
 
     public string $visualizacao = 'barras';
+    public string $kanbanAgrupamento = 'status';
 
     public int $calMes = 0;
 
@@ -618,6 +619,22 @@ class Cronograma extends Page
         if (! $fase) return;
         $fase->status = $statusEnum;
         $fase->save();
+        $this->renderKey++;
+    }
+
+    public function moverItemKanbanResponsavel(int $itemId, ?int $userId): void
+    {
+        $item = \App\Models\CronogramaFaseItem::find($itemId);
+        if (! $item) {
+            return;
+        }
+
+        if ($userId) {
+            $item->responsaveis()->sync([$userId]);
+        } else {
+            $item->responsaveis()->detach();
+        }
+
         $this->renderKey++;
     }
 

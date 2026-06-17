@@ -45,6 +45,10 @@ class DashboardTarefas extends Page implements HasTable
 
     public $chartImages = [];
 
+    public string $visualizacao = 'tabela';
+
+    public string $kanbanAgrupamento = 'status';
+
     protected $listeners = ['setCharts'];
 
     public function setCharts($data)
@@ -494,6 +498,54 @@ class DashboardTarefas extends Page implements HasTable
             ])
             ->defaultSort('created_at', 'desc')
             ->paginated([10, 25, 50]);
+    }
+
+    public function moverTarefaKanban(int $id, string $novoStatus): void
+    {
+        $task = Task::find($id);
+        if (! $task) {
+            return;
+        }
+        $task->status = $novoStatus;
+        $task->save();
+    }
+
+    public function moverTarefaResponsavel(int $id, ?string $userId): void
+    {
+        $task = Task::find($id);
+        if (! $task) {
+            return;
+        }
+        $task->assigned_to = $userId ? (int) $userId : null;
+        $task->save();
+    }
+
+    public function getKanbanTarefas(): \Illuminate\Support\Collection
+    {
+        $tasks = $this->getBaseFilteredTasksQuery()
+            ->with(['responsavel'])
+            ->get();
+
+        if ($this->kanbanAgrupamento === 'profissional') {
+            return $tasks->groupBy(fn ($t) => $t->assigned_to ?? 0);
+        }
+
+        return $tasks->groupBy('status');
+    }
+
+    public function getKanbanUsuarios(): \Illuminate\Support\Collection
+    {
+        if ($this->kanbanAgrupamento !== 'profissional') {
+            return collect();
+        }
+
+        return $this->getBaseFilteredTasksQuery()
+            ->with('responsavel')
+            ->get()
+            ->map->responsavel
+            ->filter()
+            ->unique('id')
+            ->sortBy('name');
     }
 
     public function gerarPdf()

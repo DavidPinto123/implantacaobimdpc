@@ -893,6 +893,24 @@
             line-height: 1.3;
             margin-bottom: 6px;
         }
+        .cr-kanban-card-resp {
+            font-size: 0.66rem;
+            color: rgba(255,255,255,.9);
+            font-weight: 600;
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .cr-kanban-card-resp::before {
+            content: '';
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: rgba(255,255,255,.6);
+            flex-shrink: 0;
+        }
         .cr-kanban-card-datas {
             font-size: 0.65rem;
             color: rgba(255,255,255,.82);
@@ -3969,6 +3987,19 @@
 
             @elseif($visualizacao === 'kanban')
             {{-- MODO KANBAN --}}
+            <div style="display:flex;align-items:center;gap:6px;padding:10px 16px 4px;">
+                <span style="font-size:0.72rem;color:var(--vo-text-muted);font-weight:600;">Agrupar por:</span>
+                <button wire:click="$set('kanbanAgrupamento','status')"
+                        style="font-size:0.72rem;padding:3px 10px;border-radius:1rem;border:1px solid var(--vo-border);cursor:pointer;{{ $kanbanAgrupamento === 'status' ? 'background:var(--vo-accent);color:#111;border-color:var(--vo-accent);font-weight:700;' : 'background:transparent;color:var(--vo-text-secondary);' }}">
+                    Status
+                </button>
+                <button wire:click="$set('kanbanAgrupamento','profissional')"
+                        style="font-size:0.72rem;padding:3px 10px;border-radius:1rem;border:1px solid var(--vo-border);cursor:pointer;{{ $kanbanAgrupamento === 'profissional' ? 'background:var(--vo-accent);color:#111;border-color:var(--vo-accent);font-weight:700;' : 'background:transparent;color:var(--vo-text-secondary);' }}">
+                    Profissional
+                </button>
+            </div>
+
+            @if($kanbanAgrupamento === 'status')
             @php
                 $kanbanStatusCases = \App\Enums\StatusCronograma::cases();
                 $fasesPorStatus    = $fases->groupBy(fn($f) => $f->status->value);
@@ -3997,6 +4028,10 @@
                                 @php
                                     $kanbanTotal    = $kanbanFase->itens->count();
                                     $kanbanPct      = $kanbanFase->percentual_conclusao;
+                                    $respKanban     = $kanbanFase->itens->flatMap->responsaveis->unique('id')->take(2);
+                                    $duracaoKanban  = ($kanbanFase->data_prevista_inicio && $kanbanFase->data_prevista_fim)
+                                        ? (int)$kanbanFase->data_prevista_inicio->diffInDays($kanbanFase->data_prevista_fim) + 1
+                                        : null;
                                 @endphp
                                 <div class="cr-kanban-card"
                                      style="background:{{ $kanbanCor }};--kcard-cor:{{ $kanbanCor }};"
@@ -4004,12 +4039,17 @@
                                      @dragstart="draggingId = {{ $kanbanFase->id }}; draggingStatus = '{{ $kanbanStatus->value }}'"
                                      @dragend="draggingId = null; draggingStatus = null">
                                     <div class="cr-kanban-card-nome">{{ $kanbanFase->label_exibicao }}</div>
+                                    @if($respKanban->isNotEmpty())
+                                        <div class="cr-kanban-card-resp">
+                                            {{ $respKanban->pluck('name')->map(fn($n) => \Illuminate\Support\Str::before($n, ' '))->implode(', ') }}
+                                        </div>
+                                    @endif
                                     @if($kanbanTotal > 0)
                                         <div class="cr-kanban-card-progress">
                                             <div style="height:3px;border-radius:2px;background:rgba(255,255,255,.25);margin-bottom:3px;">
                                                 <div style="width:{{ $kanbanPct }}%;height:100%;border-radius:2px;background:rgba(255,255,255,.7);"></div>
                                             </div>
-                                            <span style="font-size:0.65rem;opacity:.85;">{{ $kanbanPct }}% concluído</span>
+                                            <span style="font-size:0.65rem;opacity:.85;">{{ $kanbanPct }}% · {{ $kanbanTotal }} {{ $kanbanTotal === 1 ? 'ativ.' : 'ativ.' }}</span>
                                         </div>
                                     @endif
                                     @if($kanbanFase->data_prevista_inicio || $kanbanFase->data_prevista_fim)
@@ -4017,10 +4057,10 @@
                                             {{ $kanbanFase->data_prevista_inicio?->format('d/m') ?? '—' }}
                                             →
                                             {{ $kanbanFase->data_prevista_fim?->format('d/m/y') ?? '—' }}
+                                            @if($duracaoKanban)
+                                                <span style="opacity:.7;margin-left:3px;">({{ $duracaoKanban }}d)</span>
+                                            @endif
                                         </div>
-                                    @endif
-                                    @if($kanbanTotal > 0)
-                                        <div class="cr-kanban-card-itens">{{ $kanbanTotal }} {{ $kanbanTotal === 1 ? 'atividade' : 'atividades' }}</div>
                                     @endif
                                 </div>
                             @endforeach
@@ -4031,6 +4071,91 @@
                     </div>
                 @endforeach
             </div>
+            @else
+            {{-- KANBAN POR PROFISSIONAL: agrupa CronogramaFaseItens por responsável --}}
+            @php
+                $kanbanProfItens = $fases->flatMap(fn($f) => $f->itens
+                    ->filter(fn($i) => is_null($i->parent_id))
+                    ->map(fn($i) => [
+                        'id'       => $i->id,
+                        'titulo'   => $i->titulo,
+                        'faseNome' => $f->label_exibicao,
+                        'faseCor'  => $f->status->color(),
+                        'respId'   => $i->responsaveis->first()?->id ?? 0,
+                        'inicio'   => $i->data_prevista_inicio,
+                        'fim'      => $i->data_prevista_fim,
+                        'duracao'  => $i->duracao_dias,
+                    ])
+                );
+                $kanbanProfUsuarios = $fases->flatMap(fn($f) => $f->itens)
+                    ->flatMap->responsaveis->unique('id')->sortBy('name');
+                $kanbanProfPorUsuario = $kanbanProfItens->groupBy('respId');
+            @endphp
+            <div class="cr-kanban-board" x-data="{ draggingId: null, draggingUserId: null }">
+                {{-- Coluna: Sem Responsável --}}
+                @php $semRespItens = $kanbanProfPorUsuario->get(0, collect()); @endphp
+                <div class="cr-kanban-col"
+                     @dragover.prevent="draggingUserId = 0"
+                     @drop.prevent="if (draggingId !== null) { $wire.moverItemKanbanResponsavel(draggingId, null); draggingId = null; draggingUserId = null; }">
+                    <div class="cr-kanban-col-header" style="background:#6b728020;border-bottom:3px solid #6b7280;">
+                        <span style="color:#6b7280;font-weight:800;font-size:0.78rem;text-transform:uppercase;letter-spacing:.04em;">Sem Responsável</span>
+                        <span class="cr-kanban-count" style="background:#6b7280;color:#fff;">{{ $semRespItens->count() }}</span>
+                    </div>
+                    <div class="cr-kanban-cards" :class="draggingUserId === 0 ? 'cr-kanban-drop-target' : ''">
+                        @foreach($semRespItens as $kItem)
+                            <div class="cr-kanban-card" style="background:{{ $kItem['faseCor'] }};--kcard-cor:{{ $kItem['faseCor'] }};"
+                                 draggable="true"
+                                 @dragstart="draggingId = {{ $kItem['id'] }}; draggingUserId = 0"
+                                 @dragend="draggingId = null; draggingUserId = null">
+                                <div class="cr-kanban-card-nome">{{ $kItem['titulo'] }}</div>
+                                <div style="font-size:0.63rem;color:rgba(255,255,255,.72);margin-top:2px;">{{ $kItem['faseNome'] }}</div>
+                                @if($kItem['inicio'] || $kItem['fim'])
+                                    <div class="cr-kanban-card-datas">
+                                        {{ $kItem['inicio']?->format('d/m') ?? '—' }} → {{ $kItem['fim']?->format('d/m/y') ?? '—' }}
+                                        @if($kItem['duracao']) <span style="opacity:.7;">({{ $kItem['duracao'] }}d)</span> @endif
+                                    </div>
+                                @endif
+                            </div>
+                        @endforeach
+                        @if($semRespItens->isEmpty())
+                            <div class="cr-kanban-empty">Sem atividades</div>
+                        @endif
+                    </div>
+                </div>
+                {{-- Colunas: por usuário --}}
+                @foreach($kanbanProfUsuarios as $kUser)
+                    @php $kUserItens = $kanbanProfPorUsuario->get($kUser->id, collect()); @endphp
+                    <div class="cr-kanban-col"
+                         @dragover.prevent="draggingUserId = {{ $kUser->id }}"
+                         @drop.prevent="if (draggingId !== null) { $wire.moverItemKanbanResponsavel(draggingId, {{ $kUser->id }}); draggingId = null; draggingUserId = null; }">
+                        <div class="cr-kanban-col-header" style="background:#3b82f620;border-bottom:3px solid #3b82f6;">
+                            <span style="color:#3b82f6;font-weight:800;font-size:0.78rem;text-transform:uppercase;letter-spacing:.04em;">{{ \Illuminate\Support\Str::before($kUser->name, ' ') }}</span>
+                            <span class="cr-kanban-count" style="background:#3b82f6;color:#fff;">{{ $kUserItens->count() }}</span>
+                        </div>
+                        <div class="cr-kanban-cards" :class="draggingUserId === {{ $kUser->id }} ? 'cr-kanban-drop-target' : ''">
+                            @foreach($kUserItens as $kItem)
+                                <div class="cr-kanban-card" style="background:{{ $kItem['faseCor'] }};--kcard-cor:{{ $kItem['faseCor'] }};"
+                                     draggable="true"
+                                     @dragstart="draggingId = {{ $kItem['id'] }}; draggingUserId = {{ $kUser->id }}"
+                                     @dragend="draggingId = null; draggingUserId = null">
+                                    <div class="cr-kanban-card-nome">{{ $kItem['titulo'] }}</div>
+                                    <div style="font-size:0.63rem;color:rgba(255,255,255,.72);margin-top:2px;">{{ $kItem['faseNome'] }}</div>
+                                    @if($kItem['inicio'] || $kItem['fim'])
+                                        <div class="cr-kanban-card-datas">
+                                            {{ $kItem['inicio']?->format('d/m') ?? '—' }} → {{ $kItem['fim']?->format('d/m/y') ?? '—' }}
+                                            @if($kItem['duracao']) <span style="opacity:.7;">({{ $kItem['duracao'] }}d)</span> @endif
+                                        </div>
+                                    @endif
+                                </div>
+                            @endforeach
+                            @if($kUserItens->isEmpty())
+                                <div class="cr-kanban-empty">Sem atividades</div>
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+            @endif
 
             @else
             {{-- VISAO INDIVIDUAL: Tabela detalhada --}}
