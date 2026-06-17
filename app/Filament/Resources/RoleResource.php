@@ -161,18 +161,7 @@ FILTER;
         return Tab::make('custom_permissions')
             ->label(__('filament-shield::filament-shield.custom'))
             ->visible(fn (): bool => Utils::isCustomPermissionTabEnabled() && $total > 0)
-            ->deferBadge()
-            ->badge(function ($livewire) use ($total, $permNames) {
-                $record = static::resolveRoleFromLivewire($livewire);
-
-                if (! $record) {
-                    return $total;
-                }
-
-                $selected = $record->permissions()->whereIn('name', $permNames)->count();
-
-                return $selected > 0 ? "{$total} / {$selected}" : $total;
-            })
+            ->badge('TEST123')
             ->schema([
                 static::getCheckboxListFormComponent(
                     name: 'custom_permissions_tab',
