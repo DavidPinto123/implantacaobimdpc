@@ -30,13 +30,17 @@ class RoleResource extends ShieldRoleResource
 
     private static function roleFromRoute(): ?Role
     {
-        $id = request()->route('record');
+        $record = request()->route('record');
 
-        if (! $id) {
+        if (! $record) {
             return null;
         }
 
-        return Role::find($id);
+        if ($record instanceof Role) {
+            return $record;
+        }
+
+        return Role::find($record);
     }
 
     public static function getTabFormComponentForResources(): Component
