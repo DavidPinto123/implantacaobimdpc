@@ -188,6 +188,12 @@ class Cronograma extends Page
 
     public string $visualizacao = 'barras';
 
+    public int $calMes = 0;
+
+    public int $calAno = 0;
+
+    public ?int $calFiltroUser = null;
+
     public int $renderKey = 0;
 
     public bool $mostrarOcultas = false;
@@ -580,6 +586,35 @@ class Cronograma extends Page
             ->success()
             ->send();
 
+        $this->renderKey++;
+    }
+
+    public function calMesAnterior(): void
+    {
+        $mes = $this->calMes ?: (int) now()->format('n');
+        $ano = $this->calAno ?: (int) now()->format('Y');
+        $dt = \Carbon\Carbon::create($ano, $mes, 1)->subMonth();
+        $this->calMes = $dt->month;
+        $this->calAno = $dt->year;
+    }
+
+    public function calMesSeguinte(): void
+    {
+        $mes = $this->calMes ?: (int) now()->format('n');
+        $ano = $this->calAno ?: (int) now()->format('Y');
+        $dt = \Carbon\Carbon::create($ano, $mes, 1)->addMonth();
+        $this->calMes = $dt->month;
+        $this->calAno = $dt->year;
+    }
+
+    public function moverFaseKanban(int $faseId, string $novoStatus): void
+    {
+        $statusEnum = StatusCronograma::tryFrom($novoStatus);
+        if (! $statusEnum) return;
+        $fase = CronogramaFase::find($faseId);
+        if (! $fase) return;
+        $fase->status = $statusEnum;
+        $fase->save();
         $this->renderKey++;
     }
 

@@ -732,6 +732,156 @@
             color: var(--vo-text);
         }
 
+        /* Gantt: fix overflow com max-height calculado via JS */
+        .cr-container.cr-cal {
+            overflow-y: auto;
+            max-height: var(--cr-cal-max-h, calc(100dvh - 220px));
+        }
+
+        /* ── Modo Calendário ──────────────────────────────── */
+        .cr-calendar-view { padding: 0 16px 16px; }
+        .cr-calendar-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0 10px;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .cr-calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: var(--vo-border);
+            border: 1px solid var(--vo-border);
+            border-radius: .5rem;
+            overflow: hidden;
+        }
+        .cr-calendar-dow {
+            background: var(--vo-bg-subtle);
+            text-align: center;
+            padding: 8px 4px;
+            font-size: 0.63rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--vo-text-faint);
+            letter-spacing: .04em;
+        }
+        .cr-calendar-cell {
+            background: var(--vo-bg);
+            min-height: 90px;
+            padding: 4px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .cr-calendar-cell-off { background: var(--vo-bg-subtle); opacity: .5; }
+        .cr-calendar-cell-today { background: rgba(251,186,0,.07); }
+        .cr-calendar-day-num {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--vo-text-muted);
+            padding: 1px 3px;
+            align-self: flex-start;
+        }
+        .cr-calendar-day-num-today {
+            background: var(--vo-accent, #fbba00);
+            color: #111;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .cr-calendar-event {
+            font-size: 0.63rem;
+            padding: 2px 5px;
+            border-radius: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+            color: #fff;
+            line-height: 1.4;
+        }
+        .cr-calendar-event-more {
+            font-size: 0.6rem;
+            color: var(--vo-text-faint);
+            padding: 1px 4px;
+        }
+
+        /* ── Modo Kanban ──────────────────────────────────── */
+        .cr-kanban-board {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding: 16px;
+            min-height: calc(100dvh - 280px);
+            align-items: flex-start;
+        }
+        .cr-kanban-col {
+            flex-shrink: 0;
+            width: 240px;
+            border-radius: .75rem;
+            background: var(--vo-bg-subtle);
+            overflow: hidden;
+            border: 1px solid var(--vo-border);
+        }
+        .cr-kanban-col-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+        }
+        .cr-kanban-count {
+            border-radius: 1rem;
+            padding: 1px 8px;
+            font-size: 0.65rem;
+            font-weight: 700;
+        }
+        .cr-kanban-cards {
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-height: 50px;
+            transition: background .15s;
+        }
+        .cr-kanban-drop-target { background: rgba(0,0,0,.04); }
+        .cr-kanban-card {
+            border-radius: .5rem;
+            padding: 12px;
+            cursor: grab;
+            user-select: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,.22);
+            transition: transform .12s, opacity .12s;
+        }
+        .cr-kanban-card:active { cursor: grabbing; opacity: .85; transform: scale(.98); }
+        .cr-kanban-card-nome {
+            font-weight: 700;
+            font-size: 0.78rem;
+            color: #fff;
+            line-height: 1.3;
+            margin-bottom: 6px;
+        }
+        .cr-kanban-card-datas {
+            font-size: 0.65rem;
+            color: rgba(255,255,255,.82);
+            margin-top: 5px;
+        }
+        .cr-kanban-card-itens {
+            font-size: 0.65rem;
+            color: rgba(255,255,255,.7);
+            margin-top: 2px;
+        }
+        .cr-kanban-empty {
+            text-align: center;
+            padding: 18px;
+            font-size: 0.72rem;
+            color: var(--vo-text-faint);
+        }
+
         /* Tabela de resumo macro */
         .cr-table-wrap {
             overflow-x: auto;
@@ -2478,11 +2628,17 @@
                 @endif
 
                 <div style="display:flex;gap:2px;background:var(--vo-bg-subtle);border:1px solid var(--vo-border);border-radius:0.5rem;padding:2px;">
-                    <button class="vo-btn-outline" wire:click="$set('visualizacao', 'gantt')" style="padding:5px 10px;border:none;border-radius:0.375rem;{{ $visualizacao === 'gantt' ? 'background:var(--vo-accent);color:#111;' : '' }}">
+                    <button class="vo-btn-outline" wire:click="$set('visualizacao', 'gantt')" title="Gantt" style="padding:5px 10px;border:none;border-radius:0.375rem;{{ $visualizacao === 'gantt' ? 'background:var(--vo-accent);color:#111;' : '' }}">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><rect x="7" y="10" width="8" height="3" rx="1"/><rect x="7" y="5" width="12" height="3" rx="1"/><rect x="7" y="15" width="5" height="3" rx="1"/></svg>
                     </button>
-                    <button class="vo-btn-outline" wire:click="$set('visualizacao', 'barras')" style="padding:5px 10px;border:none;border-radius:0.375rem;{{ $visualizacao === 'barras' ? 'background:var(--vo-accent);color:#111;' : '' }}">
+                    <button class="vo-btn-outline" wire:click="$set('visualizacao', 'barras')" title="Planilha" style="padding:5px 10px;border:none;border-radius:0.375rem;{{ $visualizacao === 'barras' ? 'background:var(--vo-accent);color:#111;' : '' }}">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="16" y2="12"/><line x1="4" y1="18" x2="12" y2="18"/></svg>
+                    </button>
+                    <button class="vo-btn-outline" wire:click="$set('visualizacao', 'calendario')" title="Calendário" style="padding:5px 10px;border:none;border-radius:0.375rem;{{ $visualizacao === 'calendario' ? 'background:var(--vo-accent);color:#111;' : '' }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    </button>
+                    <button class="vo-btn-outline" wire:click="$set('visualizacao', 'kanban')" title="Kanban" style="padding:5px 10px;border:none;border-radius:0.375rem;{{ $visualizacao === 'kanban' ? 'background:var(--vo-accent);color:#111;' : '' }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="13" rx="1"/><rect x="17" y="3" width="5" height="16" rx="1"/></svg>
                     </button>
                 </div>
 
@@ -3591,6 +3747,171 @@
                     Marco
                 </div>
             </div>
+            @elseif($visualizacao === 'calendario')
+            {{-- MODO CALENDÁRIO --}}
+            @php
+                $calExibMes = $calMes ?: (int) now()->format('n');
+                $calExibAno = $calAno ?: (int) now()->format('Y');
+                $calData    = \Carbon\Carbon::create($calExibAno, $calExibMes, 1);
+                $calHoje    = now()->startOfDay();
+
+                $todosItens = collect();
+                foreach ($fases as $fase) {
+                    foreach ($fase->itens as $item) {
+                        if ($item->parent_id !== null) continue;
+                        $todosItens->push(['item' => $item, 'fase' => $fase]);
+                        foreach ($item->children as $sub) {
+                            $todosItens->push(['item' => $sub, 'fase' => $fase]);
+                        }
+                    }
+                }
+
+                if ($calFiltroUser) {
+                    $todosItens = $todosItens->filter(function ($e) use ($calFiltroUser) {
+                        $item = $e['item'];
+                        return $item->responsaveis->pluck('id')->contains($calFiltroUser)
+                            || $item->revisor_id === $calFiltroUser;
+                    });
+                }
+
+                $itensPorDia = $todosItens
+                    ->filter(fn($e) => $e['item']->data_prevista_fim
+                        && $e['item']->data_prevista_fim->month === $calExibMes
+                        && $e['item']->data_prevista_fim->year  === $calExibAno)
+                    ->groupBy(fn($e) => $e['item']->data_prevista_fim->day);
+
+                $calProfissionais = $fases->flatMap(fn($f) => $f->itens->flatMap(fn($i) => $i->responsaveis))
+                    ->merge($fases->flatMap(fn($f) => $f->itens->filter(fn($i) => $i->revisor)->map(fn($i) => $i->revisor)))
+                    ->unique('id')
+                    ->sortBy('name');
+
+                $primeiroDiaSemana = $calData->dayOfWeek;
+                $diasNoMes = $calData->daysInMonth;
+            @endphp
+            <div class="cr-calendar-view">
+                <div class="cr-calendar-toolbar">
+                    <div style="display:flex;align-items:center;gap:6px;">
+                        <button type="button" class="vo-btn-outline" wire:click="calMesAnterior" style="padding:5px 10px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                        </button>
+                        <span style="font-weight:700;font-size:0.85rem;min-width:170px;text-align:center;">
+                            {{ ucfirst($calData->locale('pt_BR')->isoFormat('MMMM [de] YYYY')) }}
+                        </span>
+                        <button type="button" class="vo-btn-outline" wire:click="calMesSeguinte" style="padding:5px 10px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                        </button>
+                        <button type="button" class="vo-btn-outline" wire:click="$set('calMes', 0); $set('calAno', 0)" style="padding:4px 10px;font-size:0.72rem;">
+                            Hoje
+                        </button>
+                    </div>
+                    <select wire:model.live="calFiltroUser" style="padding:5px 12px;border:1px solid var(--vo-border);border-radius:.375rem;background:var(--vo-bg);color:var(--vo-text);font-size:0.78rem;">
+                        <option value="">Todos os profissionais</option>
+                        @foreach($calProfissionais as $u)
+                            <option value="{{ $u->id }}">{{ $u->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="cr-calendar-grid">
+                    @foreach(['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'] as $nomeDia)
+                        <div class="cr-calendar-dow">{{ $nomeDia }}</div>
+                    @endforeach
+                    @for($i = 0; $i < $primeiroDiaSemana; $i++)
+                        <div class="cr-calendar-cell cr-calendar-cell-off"></div>
+                    @endfor
+                    @for($dia = 1; $dia <= $diasNoMes; $dia++)
+                        @php
+                            $ehHoje = $calData->copy()->setDay($dia)->isSameDay($calHoje);
+                            $itensNoDia = $itensPorDia->get($dia, collect());
+                        @endphp
+                        <div class="cr-calendar-cell {{ $ehHoje ? 'cr-calendar-cell-today' : '' }}">
+                            <div class="cr-calendar-day-num {{ $ehHoje ? 'cr-calendar-day-num-today' : '' }}">{{ $dia }}</div>
+                            @foreach($itensNoDia->take(4) as $entry)
+                                @php
+                                    $calItem = $entry['item'];
+                                    $calFase = $entry['fase'];
+                                    $calCor  = $calFase->status->color();
+                                    $calAtrasado = $calItem->data_prevista_fim && $calItem->data_prevista_fim->isPast()
+                                        && ! in_array($calFase->status->value, ['concluido','realizado','assinado','finalizado','pronto','na']);
+                                @endphp
+                                <div class="cr-calendar-event"
+                                     style="background:{{ $calAtrasado ? '#dc2626' : $calCor }};"
+                                     title="{{ $calFase->label_exibicao }}: {{ $calItem->titulo }}">
+                                    {{ \Illuminate\Support\Str::limit($calItem->titulo, 30) }}
+                                </div>
+                            @endforeach
+                            @if($itensNoDia->count() > 4)
+                                <div class="cr-calendar-event-more">+{{ $itensNoDia->count() - 4 }} mais</div>
+                            @endif
+                        </div>
+                    @endfor
+                </div>
+            </div>
+
+            @elseif($visualizacao === 'kanban')
+            {{-- MODO KANBAN --}}
+            @php
+                $kanbanStatusCases = \App\Enums\StatusCronograma::cases();
+                $fasesPorStatus    = $fases->groupBy(fn($f) => $f->status->value);
+                $principaisStatus  = ['nao_iniciado','em_andamento','atrasado','concluido'];
+                $statusComFases    = $fasesPorStatus->keys()->toArray();
+                $statusVisiveis    = collect(array_unique(array_merge($principaisStatus, $statusComFases)));
+                $kanbanColunas     = collect($kanbanStatusCases)->filter(fn($s) => $statusVisiveis->contains($s->value));
+            @endphp
+            <div class="cr-kanban-board"
+                 x-data="{ draggingId: null, draggingStatus: null }">
+                @foreach($kanbanColunas as $kanbanStatus)
+                    @php
+                        $kanbanFases = $fasesPorStatus->get($kanbanStatus->value, collect());
+                        $kanbanCor   = $kanbanStatus->color();
+                    @endphp
+                    <div class="cr-kanban-col"
+                         @dragover.prevent="draggingStatus = '{{ $kanbanStatus->value }}'"
+                         @drop.prevent="if (draggingId) { $wire.moverFaseKanban(draggingId, '{{ $kanbanStatus->value }}'); draggingId = null; draggingStatus = null; }">
+                        <div class="cr-kanban-col-header" style="background:{{ $kanbanCor }}20;border-bottom:3px solid {{ $kanbanCor }};">
+                            <span style="color:{{ $kanbanCor }};font-weight:800;font-size:0.78rem;text-transform:uppercase;letter-spacing:.04em;">{{ $kanbanStatus->label() }}</span>
+                            <span class="cr-kanban-count" style="background:{{ $kanbanCor }};color:#fff;">{{ $kanbanFases->count() }}</span>
+                        </div>
+                        <div class="cr-kanban-cards"
+                             :class="draggingStatus === '{{ $kanbanStatus->value }}' ? 'cr-kanban-drop-target' : ''">
+                            @foreach($kanbanFases as $kanbanFase)
+                                @php
+                                    $kanbanTotal    = $kanbanFase->itens->count();
+                                    $kanbanPct      = $kanbanFase->percentual_conclusao;
+                                @endphp
+                                <div class="cr-kanban-card"
+                                     style="background:{{ $kanbanCor }};--kcard-cor:{{ $kanbanCor }};"
+                                     draggable="true"
+                                     @dragstart="draggingId = {{ $kanbanFase->id }}; draggingStatus = '{{ $kanbanStatus->value }}'"
+                                     @dragend="draggingId = null; draggingStatus = null">
+                                    <div class="cr-kanban-card-nome">{{ $kanbanFase->label_exibicao }}</div>
+                                    @if($kanbanTotal > 0)
+                                        <div class="cr-kanban-card-progress">
+                                            <div style="height:3px;border-radius:2px;background:rgba(255,255,255,.25);margin-bottom:3px;">
+                                                <div style="width:{{ $kanbanPct }}%;height:100%;border-radius:2px;background:rgba(255,255,255,.7);"></div>
+                                            </div>
+                                            <span style="font-size:0.65rem;opacity:.85;">{{ $kanbanPct }}% concluído</span>
+                                        </div>
+                                    @endif
+                                    @if($kanbanFase->data_prevista_inicio || $kanbanFase->data_prevista_fim)
+                                        <div class="cr-kanban-card-datas">
+                                            {{ $kanbanFase->data_prevista_inicio?->format('d/m') ?? '—' }}
+                                            →
+                                            {{ $kanbanFase->data_prevista_fim?->format('d/m/y') ?? '—' }}
+                                        </div>
+                                    @endif
+                                    @if($kanbanTotal > 0)
+                                        <div class="cr-kanban-card-itens">{{ $kanbanTotal }} {{ $kanbanTotal === 1 ? 'atividade' : 'atividades' }}</div>
+                                    @endif
+                                </div>
+                            @endforeach
+                            @if($kanbanFases->isEmpty())
+                                <div class="cr-kanban-empty">Sem fases</div>
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
             @else
             {{-- VISAO INDIVIDUAL: Tabela detalhada --}}
             <div
@@ -5966,6 +6287,22 @@
                             setTimeout(aplicarAlturaTabela, 600);
                             setTimeout(aplicarAlturaTabela, 1500);
                             window.addEventListener('resize', () => setTimeout(aplicarAlturaTabela, 150), { passive: true });
+                        }
+
+                        const ganttCalContainer = this.$el.querySelector('.cr-container.cr-cal');
+                        if (ganttCalContainer) {
+                            const aplicarAlturaGantt = () => {
+                                const rect = ganttCalContainer.getBoundingClientRect();
+                                if (rect.top > 60) {
+                                    const h = Math.max(window.innerHeight - rect.top - 8, 200);
+                                    ganttCalContainer.style.setProperty('--cr-cal-max-h', h + 'px');
+                                }
+                            };
+                            aplicarAlturaGantt();
+                            setTimeout(aplicarAlturaGantt, 150);
+                            setTimeout(aplicarAlturaGantt, 600);
+                            setTimeout(aplicarAlturaGantt, 1500);
+                            window.addEventListener('resize', () => setTimeout(aplicarAlturaGantt, 150), { passive: true });
                         }
                     });
                 },
