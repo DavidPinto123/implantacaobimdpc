@@ -22,6 +22,9 @@ class ListTasks extends ListRecords
     #[Url]
     public ?string $status_card = null;
 
+    #[Url]
+    public ?int $filtroProjetoId = null;
+
     public string $visualizacao = 'tabela';
 
     public string $kanbanAgrupamento = 'status';
@@ -49,6 +52,35 @@ class ListTasks extends ListRecords
         'futuras',
     ];
 
+    public function getFiltroProjetosOptions(): array
+    {
+        $user = auth()->user();
+        if (! $user) {
+            return [];
+        }
+
+        $taskQuery = \App\Models\Task::query()->whereNotNull('projeto_id');
+
+        if (! $user->hasAnyRole(['super_admin', 'admin', 'PMO', 'Planejamento Estratégico'])) {
+            $setorIds = $user->setores()->pluck('setores.id')->toArray();
+            if ($user->hasAnyRole(['Coordenador', 'Gestor', 'Diretor'])) {
+                $taskQuery->where(function ($q) use ($setorIds, $user) {
+                    $q->whereIn('setor_id', $setorIds)
+                      ->orWhere(fn ($s) => $s->whereNull('setor_id')->where('assigned_to', $user->id));
+                });
+            } else {
+                $taskQuery->where('assigned_to', $user->id);
+            }
+        }
+
+        $projetoIds = $taskQuery->pluck('projeto_id')->unique();
+
+        return \App\Models\Projeto::whereIn('id', $projetoIds)
+            ->orderBy('nome')
+            ->pluck('nome', 'id')
+            ->toArray();
+    }
+
     protected function getHeaderActions(): array
     {
         return [
@@ -58,11 +90,9 @@ class ListTasks extends ListRecords
                 ->color('gray')
                 ->url(ListTasks::getUrl())
                 ->visible(function () {
-                    $hasStatusCard = filled($this->status_card);
-
-                    $hasAssignedTo = filled($this->tableFilters['assigned_to']['value'] ?? null);
-
-                    return $hasStatusCard || $hasAssignedTo;
+                    return filled($this->status_card)
+                        || filled($this->filtroProjetoId)
+                        || filled($this->tableFilters['assigned_to']['value'] ?? null);
                 }),
             Actions\CreateAction::make()
                 ->label('Criar tarefa')
@@ -91,6 +121,10 @@ class ListTasks extends ListRecords
     public function getTableQuery(): Builder
     {
         return parent::getTableQuery()
+            ->when(
+                $this->filtroProjetoId,
+                fn (Builder $query) => $query->where('projeto_id', $this->filtroProjetoId)
+            )
             ->when(
                 $this->status_card && ! $this->isStatsQuery,
                 function (Builder $query) {
@@ -144,7 +178,7 @@ class ListTasks extends ListRecords
     public function getKanbanTarefas(): \Illuminate\Support\Collection
     {
         $tasks = $this->getTableQuery()
-            ->with(['responsavel'])
+            ->with(['responsavel', 'projeto'])
             ->get();
 
         if ($this->kanbanAgrupamento === 'profissional') {

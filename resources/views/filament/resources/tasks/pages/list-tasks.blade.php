@@ -1,7 +1,10 @@
 <x-filament-panels::page>
 
-    {{-- ── Toggle Tabela / Kanban ──────────────────────────────────── --}}
+    {{-- ── Toolbar: Toggle + Filtro Projeto + Agrupamento ─────────────── --}}
+    @php $filtroProjetosOpcoes = $this->getFiltroProjetosOptions(); @endphp
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+
+        {{-- Toggle Tabela / Kanban --}}
         <div style="display:flex;gap:2px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:0.5rem;padding:2px;">
             <button wire:click="$set('visualizacao','tabela')"
                     style="padding:5px 14px;border:none;border-radius:0.375rem;cursor:pointer;font-size:0.78rem;font-family:inherit;{{ $visualizacao === 'tabela' ? 'background:#f59e0b;color:#111;font-weight:700;' : 'background:transparent;color:#6b7280;' }}">
@@ -14,6 +17,22 @@
                 Kanban
             </button>
         </div>
+
+        {{-- Filtro por Planejamento / Projeto (sempre visível) --}}
+        @if(count($filtroProjetosOpcoes) > 0)
+        <div style="display:flex;align-items:center;gap:5px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2.5" style="flex-shrink:0;"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+            <select x-on:change="$wire.set('filtroProjetoId', $event.target.value ? parseInt($event.target.value) : null)"
+                    style="font-size:0.78rem;padding:4px 8px;border:1px solid #e5e7eb;border-radius:0.375rem;background:#fff;color:#374151;cursor:pointer;font-family:inherit;max-width:220px;">
+                <option value="" {{ !$filtroProjetoId ? 'selected' : '' }}>Todos os planejamentos</option>
+                @foreach($filtroProjetosOpcoes as $pid => $pnome)
+                    <option value="{{ $pid }}" {{ $filtroProjetoId == $pid ? 'selected' : '' }}>{{ $pnome }}</option>
+                @endforeach
+            </select>
+        </div>
+        @endif
+
+        {{-- Agrupamento Kanban --}}
         @if($visualizacao === 'kanban')
         <div style="display:flex;align-items:center;gap:5px;">
             <span style="font-size:0.72rem;color:#9ca3af;font-weight:600;">Agrupar:</span>
@@ -59,6 +78,7 @@
         .tk-kanban-card { border-radius:.5rem;padding:11px 12px;cursor:grab;user-select:none;box-shadow:0 2px 8px rgba(0,0,0,.2);transition:transform .12s,opacity .12s; }
         .tk-kanban-card:active { cursor:grabbing;opacity:.85;transform:scale(.98); }
         .tk-kanban-card-nome { font-weight:700;font-size:0.78rem;color:#fff;line-height:1.3;margin-bottom:5px; }
+        .tk-kanban-card-projeto { display:inline-block;font-size:0.6rem;font-weight:700;color:rgba(255,255,255,.95);background:rgba(0,0,0,.22);border-radius:3px;padding:1px 5px;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%; }
         .tk-kanban-card-resp { font-size:0.66rem;color:rgba(255,255,255,.9);font-weight:600;display:flex;align-items:center;gap:3px; }
         .tk-kanban-card-resp::before { content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.6);flex-shrink:0; }
         .tk-kanban-card-datas { font-size:0.63rem;color:rgba(255,255,255,.78);margin-top:5px; }
@@ -88,6 +108,9 @@
                              draggable="true"
                              @dragstart="draggingId = {{ $tkCard->id }}; draggingStatus = '{{ $tkStatus }}'"
                              @dragend="draggingId = null; draggingStatus = null">
+                            @if($tkCard->projeto)
+                                <div class="tk-kanban-card-projeto">{{ $tkCard->projeto->nome }}</div>
+                            @endif
                             <div class="tk-kanban-card-nome">{{ $tkCard->title }}</div>
                             @if($tkCard->responsavel)
                                 <div class="tk-kanban-card-resp">{{ \Illuminate\Support\Str::before($tkCard->responsavel->name, ' ') }}</div>
@@ -127,6 +150,9 @@
                          draggable="true"
                          @dragstart="draggingId = {{ $tkCard->id }}; draggingUserId = 0"
                          @dragend="draggingId = null; draggingUserId = null">
+                        @if($tkCard->projeto)
+                            <div class="tk-kanban-card-projeto">{{ $tkCard->projeto->nome }}</div>
+                        @endif
                         <div class="tk-kanban-card-nome">{{ $tkCard->title }}</div>
                         <div class="tk-kanban-card-status">{{ $tkLabels[$tkCard->status] ?? $tkCard->status }}</div>
                         @if($tkCard->termino_programado)
@@ -156,6 +182,9 @@
                              draggable="true"
                              @dragstart="draggingId = {{ $tkCard->id }}; draggingUserId = {{ $tkUser->id }}"
                              @dragend="draggingId = null; draggingUserId = null">
+                            @if($tkCard->projeto)
+                                <div class="tk-kanban-card-projeto">{{ $tkCard->projeto->nome }}</div>
+                            @endif
                             <div class="tk-kanban-card-nome">{{ $tkCard->title }}</div>
                             <div class="tk-kanban-card-status">{{ $tkLabels[$tkCard->status] ?? $tkCard->status }}</div>
                             @if($tkCard->termino_programado)
