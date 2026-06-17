@@ -988,6 +988,10 @@
         .cr-table-detalhada {
             table-layout: auto;
             min-width: calc(var(--cr-fase-col-width, 220px) + 1228px);
+            font-size: calc(0.8rem * var(--cr-planilha-scale, 1));
+        }
+        .cr-table-detalhada th {
+            font-size: calc(0.72rem * var(--cr-planilha-scale, 1));
         }
         .cr-table-detalhada col.cr-col-fase {
             width: var(--cr-fase-col-width, 220px);
@@ -2696,6 +2700,49 @@
                         </label>
                     </div>
                 </div>
+                @elseif($visualizacao === 'barras')
+                <div style="position:relative;" @click.outside="planilhaColPanel = false">
+                    <button type="button" class="vo-btn-outline"
+                            @click="planilhaColPanel = !planilhaColPanel"
+                            style="padding:5px 10px;display:inline-flex;align-items:center;gap:5px;font-size:0.75rem;"
+                            :style="planilhaColPanel ? 'background:var(--vo-accent);color:#111;border-color:var(--vo-accent);' : ''">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                        Colunas
+                    </button>
+                    <div x-show="planilhaColPanel" x-cloak
+                         style="position:absolute;top:calc(100% + 6px);left:0;z-index:60;background:var(--vo-bg);border:1px solid var(--vo-border);border-radius:.5rem;padding:10px 14px;min-width:175px;box-shadow:0 8px 24px rgba(0,0,0,.12);display:flex;flex-direction:column;gap:8px;">
+                        <span style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--vo-text-faint);margin-bottom:2px;">Colunas da Planilha</span>
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.78rem;color:var(--vo-text-secondary);">
+                            <input type="checkbox" x-model="cols.planejado"    @change="salvarCols()"> Planejado
+                        </label>
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.78rem;color:var(--vo-text-secondary);">
+                            <input type="checkbox" x-model="cols.durplan"      @change="salvarCols()"> Dur. Plan.
+                        </label>
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.78rem;color:var(--vo-text-secondary);">
+                            <input type="checkbox" x-model="cols.realizado"    @change="salvarCols()"> Realizado
+                        </label>
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.78rem;color:var(--vo-text-secondary);">
+                            <input type="checkbox" x-model="cols.pct"          @change="salvarCols()"> Percentual
+                        </label>
+                        @can('ver_valores_planejamento')
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.78rem;color:var(--vo-text-secondary);">
+                            <input type="checkbox" x-model="cols.valor"        @change="salvarCols()"> Valor
+                        </label>
+                        @endcan
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.78rem;color:var(--vo-text-secondary);">
+                            <input type="checkbox" x-model="cols.responsaveis" @change="salvarCols()"> Responsáveis
+                        </label>
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.78rem;color:var(--vo-text-secondary);">
+                            <input type="checkbox" x-model="cols.revisor"      @change="salvarCols()"> Revisor
+                        </label>
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.78rem;color:var(--vo-text-secondary);">
+                            <input type="checkbox" x-model="cols.deps"         @change="salvarCols()"> Dependência
+                        </label>
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.78rem;color:var(--vo-text-secondary);">
+                            <input type="checkbox" x-model="cols.comentarios"  @change="salvarCols()"> Comentários
+                        </label>
+                    </div>
+                </div>
                 @endif
 
                 <button class="vo-btn-outline" wire:click="abrirHistorico" title="Histórico de alterações"
@@ -2870,6 +2917,19 @@
                         <svg x-show="isFullscreen" x-cloak xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M9 4v6H3M21 10h-6V4M9 20v-6H3M21 14h-6v6"/>
                         </svg>
+                    </button>
+                </div>
+            @elseif($modoIndividual && $visualizacao === 'barras')
+                <div class="cr-zoom-controls">
+                    <button class="vo-btn-outline" @click="zoomOutPlanilha()" title="Zoom Out" style="padding:7px 10px">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                    </button>
+                    <span style="font-size:0.7rem;color:var(--vo-text-muted);min-width:36px;text-align:center" x-text="Math.round(planilhaScale * 100) + '%'"></span>
+                    <button class="vo-btn-outline" @click="zoomInPlanilha()" title="Zoom In" style="padding:7px 10px">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                    </button>
+                    <button class="vo-btn-outline" @click="zoomResetPlanilha()" title="Resetar Zoom" style="padding:7px 10px;font-size:0.65rem;">
+                        1:1
                     </button>
                 </div>
             @endif
@@ -3967,8 +4027,6 @@
                      revisorW:      parseInt(localStorage.getItem('cr:col:revisor')        || '160'),
                      depsW:         parseInt(localStorage.getItem('cr:col:deps')          || '260'),
                      comentariosW:  parseInt(localStorage.getItem('cr:col:comentarios')   || '200'),
-                     cols: (function() { var d={planejado:true,durplan:true,realizado:true,pct:true,valor:true,responsaveis:true,revisor:true,deps:false,comentarios:true}; try { return JSON.parse(localStorage.getItem('cr:cols:vis')) || d; } catch(e) { return d; } })(),
-                     mostrarColPanel: false,
                      resizing: false,
                      // ─── Multi-seleção ─────────────────────────────────────
                      selItemIds: [],
@@ -4110,7 +4168,6 @@
                          document.addEventListener('mousemove', onMove);
                          document.addEventListener('mouseup', onUp);
                      },
-                     salvarCols() { localStorage.setItem('cr:cols:vis', JSON.stringify(this.cols)); },
                  }"
                  >
                 {{-- Toolbar: busca, filtro, colunas --}}
@@ -4125,27 +4182,8 @@
                         <option value="{{ $opt->value }}">{{ $opt->label() }}</option>
                         @endforeach
                     </select>
-                    <div style="position:relative;margin-left:auto;">
-                        <button type="button" class="cr-tbl-cols-btn" @click.stop="mostrarColPanel = !mostrarColPanel">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
-                            Colunas
-                        </button>
-                        <div class="cr-tbl-cols-panel" x-show="mostrarColPanel" x-cloak x-transition.opacity.duration.100ms @click.outside="mostrarColPanel = false">
-                            <label class="cr-tbl-cols-item"><input type="checkbox" x-model="cols.planejado"    @change="salvarCols()"> Planejado</label>
-                            <label class="cr-tbl-cols-item"><input type="checkbox" x-model="cols.durplan"      @change="salvarCols()"> Dur. Plan.</label>
-                            <label class="cr-tbl-cols-item"><input type="checkbox" x-model="cols.realizado"    @change="salvarCols()"> Realizado</label>
-                            <label class="cr-tbl-cols-item"><input type="checkbox" x-model="cols.pct"          @change="salvarCols()"> Percentual</label>
-                            @can('ver_valores_planejamento')
-                            <label class="cr-tbl-cols-item"><input type="checkbox" x-model="cols.valor"        @change="salvarCols()"> Valor</label>
-                            @endcan
-                            <label class="cr-tbl-cols-item"><input type="checkbox" x-model="cols.responsaveis" @change="salvarCols()"> Responsáveis</label>
-                            <label class="cr-tbl-cols-item"><input type="checkbox" x-model="cols.revisor"      @change="salvarCols()"> Revisor</label>
-                            <label class="cr-tbl-cols-item"><input type="checkbox" x-model="cols.deps"         @change="salvarCols()"> Dependência</label>
-                            <label class="cr-tbl-cols-item"><input type="checkbox" x-model="cols.comentarios"  @change="salvarCols()"> Comentários</label>
-                        </div>
-                    </div>
                 </div>
-                <div class="cr-table-wrap" :class="{ 'cr-fase-resizing': resizing }">
+                <div class="cr-table-wrap" :class="{ 'cr-fase-resizing': resizing }" :style="`--cr-planilha-scale: ${planilhaScale}`">
                 <table class="cr-table cr-table-detalhada">
                     <colgroup>
                         <col class="cr-col-fase">
@@ -6260,6 +6298,17 @@
                     try { return JSON.parse(localStorage.getItem('cr:gantt:cols')) || d; }
                     catch(e) { return d; }
                 })(),
+                planilhaColPanel: false,
+                cols: (function() {
+                    var d = { planejado:true, durplan:true, realizado:true, pct:true, valor:true, responsaveis:true, revisor:true, deps:false, comentarios:true };
+                    try { return JSON.parse(localStorage.getItem('cr:cols:vis')) || d; }
+                    catch(e) { return d; }
+                })(),
+                planilhaScale: (function() {
+                    var v = parseFloat(localStorage.getItem('cr:planilha:scale'));
+                    return isNaN(v) ? 1.0 : Math.max(0.7, Math.min(1.3, v));
+                })(),
+                planilhaScaleSteps: [0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3],
 
                 get ganttLeftW() {
                     let w = 360; // cr-col-fase base
@@ -6284,6 +6333,9 @@
                     });
                     this.$watch('ganttCols', (val) => {
                         localStorage.setItem('cr:gantt:cols', JSON.stringify(val));
+                    });
+                    this.$watch('planilhaScale', (val) => {
+                        localStorage.setItem('cr:planilha:scale', val);
                     });
                     this.$nextTick(() => {
                         this.scrollParaInicio();
@@ -6424,6 +6476,18 @@
                     this.ppd = this.ppdDefault;
                     this.$nextTick(() => this.scrollParaInicio());
                 },
+
+                salvarCols() { localStorage.setItem('cr:cols:vis', JSON.stringify(this.cols)); },
+
+                zoomInPlanilha() {
+                    var idx = this.planilhaScaleSteps.findIndex(s => s >= this.planilhaScale - 0.001);
+                    if (idx < this.planilhaScaleSteps.length - 1) this.planilhaScale = this.planilhaScaleSteps[idx + 1];
+                },
+                zoomOutPlanilha() {
+                    var idx = this.planilhaScaleSteps.findIndex(s => s >= this.planilhaScale - 0.001);
+                    if (idx > 0) this.planilhaScale = this.planilhaScaleSteps[idx - 1];
+                },
+                zoomResetPlanilha() { this.planilhaScale = 1.0; },
 
                 labelVisivel(diasMes, idx) {
                     const larguraPx = diasMes * this.ppd;
