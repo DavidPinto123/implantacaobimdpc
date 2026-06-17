@@ -32,7 +32,7 @@ class RoleResource extends ShieldRoleResource
     {
         $raw = property_exists($livewire, 'record') ? $livewire->record : null;
 
-        \Log::debug('[RoleResource badge] livewire class=' . get_class($livewire)
+        \Log::error('[RoleResource badge] livewire class=' . get_class($livewire)
             . ' record_type=' . gettype($raw)
             . ' record_class=' . (is_object($raw) ? get_class($raw) : 'n/a')
             . ' record_id=' . (is_numeric($raw) ? $raw : (is_object($raw) && isset($raw->id) ? $raw->id : 'n/a')));
