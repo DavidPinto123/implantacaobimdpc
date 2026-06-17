@@ -16,7 +16,6 @@ use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Html;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Model;
 use Spatie\Permission\Models\Role;
 
 class RoleResource extends ShieldRoleResource
@@ -45,21 +44,13 @@ class RoleResource extends ShieldRoleResource
 FILTER;
 
         $total = static::getResourceTabBadgeCount();
-
-        $allResourcePermNames = collect(FilamentShield::getResources())
-            ->flatMap(fn (array $r) => collect($r['permissions'])->pluck('key'))
-            ->unique()
-            ->values()
-            ->all();
+        $resourceFqcns = array_keys(FilamentShield::getResources() ?? []);
 
         return Tab::make('resources')
             ->label(__('filament-shield::filament-shield.resources'))
             ->visible(fn (): bool => Utils::isResourceTabEnabled())
-            ->badge(function (?Model $record) use ($total, $allResourcePermNames) {
-                if (! $record?->exists) {
-                    return $total;
-                }
-                $selected = $record->permissions()->whereIn('name', $allResourcePermNames)->count();
+            ->badge(function (callable $get) use ($total, $resourceFqcns) {
+                $selected = collect($resourceFqcns)->sum(fn ($fqcn) => count($get($fqcn) ?? []));
 
                 return $selected > 0 ? "{$total} / {$selected}" : $total;
             })
@@ -75,16 +66,12 @@ FILTER;
     {
         $options = static::getPageOptions();
         $total   = count($options);
-        $permNames = array_keys($options);
 
         return Tab::make('pages')
             ->label(__('filament-shield::filament-shield.pages'))
             ->visible(fn (): bool => Utils::isPageTabEnabled() && $total > 0)
-            ->badge(function (?Model $record) use ($total, $permNames) {
-                if (! $record?->exists) {
-                    return $total;
-                }
-                $selected = $record->permissions()->whereIn('name', $permNames)->count();
+            ->badge(function (callable $get) use ($total) {
+                $selected = count($get('pages_tab') ?? []);
 
                 return $selected > 0 ? "{$total} / {$selected}" : $total;
             })
@@ -100,16 +87,12 @@ FILTER;
     {
         $options = static::getWidgetOptions();
         $total   = count($options);
-        $permNames = array_keys($options);
 
         return Tab::make('widgets')
             ->label(__('filament-shield::filament-shield.widgets'))
             ->visible(fn (): bool => Utils::isWidgetTabEnabled() && $total > 0)
-            ->badge(function (?Model $record) use ($total, $permNames) {
-                if (! $record?->exists) {
-                    return $total;
-                }
-                $selected = $record->permissions()->whereIn('name', $permNames)->count();
+            ->badge(function (callable $get) use ($total) {
+                $selected = count($get('widgets_tab') ?? []);
 
                 return $selected > 0 ? "{$total} / {$selected}" : $total;
             })
@@ -125,16 +108,12 @@ FILTER;
     {
         $options = FilamentShield::getCustomPermissions(static::shield()->hasLocalizedPermissionLabels());
         $total   = count($options);
-        $permNames = array_keys($options);
 
         return Tab::make('custom_permissions')
             ->label(__('filament-shield::filament-shield.custom'))
             ->visible(fn (): bool => Utils::isCustomPermissionTabEnabled() && $total > 0)
-            ->badge(function (?Model $record) use ($total, $permNames) {
-                if (! $record?->exists) {
-                    return $total;
-                }
-                $selected = $record->permissions()->whereIn('name', $permNames)->count();
+            ->badge(function (callable $get) use ($total) {
+                $selected = count($get('custom_permissions_tab') ?? []);
 
                 return $selected > 0 ? "{$total} / {$selected}" : $total;
             })
