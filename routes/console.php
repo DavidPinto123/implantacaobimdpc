@@ -17,3 +17,6 @@ Schedule::command('whatsapp:notificar-atrasos')->dailyAt('08:00');
 
 // WhatsApp: resumo semanal toda segunda-feira às 9h
 Schedule::command('whatsapp:agenda-semanal')->weeklyOn(1, '09:00');
+
+// Email: resumo semanal de planejamentos para cada Gerente Geral (segunda-feira às 8h30)
+Schedule::command('resumo:semanal')->weeklyOn(1, '08:30');

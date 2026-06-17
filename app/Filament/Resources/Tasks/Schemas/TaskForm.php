@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Tasks\Schemas;
 
+use App\Models\CronogramaFaseItem;
 use App\Models\Task;
 use App\Models\TaskCategory;
 use App\Models\User;
@@ -54,7 +55,6 @@ class TaskForm
                                     : null;
                             })
                             ->columnSpan(1)
-                            ->required()
                             ->live()
                             ->afterStateUpdated(fn (Set $set) => $set('assigned_to', null)),
 
@@ -66,10 +66,10 @@ class TaskForm
                         Select::make('status')
                             ->label('Status')
                             ->options([
-                                'pendente' => 'Pendente',
+                                'pendente'     => 'Pendente',
                                 'em_andamento' => 'Em andamento',
-                                'concluida' => 'Concluída',
-                                'cancelada' => 'Cancelada',
+                                'concluida'    => 'Concluída',
+                                'cancelada'    => 'Cancelada',
                             ])
                             ->required()
                             ->hidden(fn (?Model $record) => $record === null)
@@ -92,8 +92,7 @@ class TaskForm
                                 ->pluck('name', 'id')
                                 ->all())
                             ->searchable()
-                            ->preload()
-                            ->required(),
+                            ->preload(),
 
                         TextInput::make('sigla')
                             ->label('Sigla')
@@ -103,30 +102,48 @@ class TaskForm
                             ->label('Unidade')
                             ->relationship('marca', 'nome')
                             ->searchable()
-                            ->preload()
-                            ->required(),
+                            ->preload(),
 
                         Select::make('assigned_to')
                             ->label('Responsável')
                             ->searchable()
                             ->preload()
-                            ->required()
                             ->options(function (Get $get) {
                                 $setorId = $get('setor_id');
 
-                                if (! $setorId) {
-                                    return [];
+                                $query = User::query()
+                                    ->where('is_active', true)
+                                    ->orderBy('name');
+
+                                if ($setorId) {
+                                    $query->whereHas('setores', function ($q) use ($setorId) {
+                                        $q->where('setores.id', $setorId);
+                                    });
                                 }
 
-                                return User::query()
-                                    ->whereHas('setores', function ($query) use ($setorId) {
-                                        $query->where('setores.id', $setorId);
-                                    })
-                                    ->orderBy('name')
-                                    ->pluck('name', 'id')
-                                    ->toArray();
+                                return $query->pluck('name', 'id')->toArray();
                             })
                             ->getOptionLabelUsing(fn ($value): ?string => User::find($value)?->name),
+
+                        Select::make('revisor_id')
+                            ->label('Revisor')
+                            ->searchable()
+                            ->preload()
+                            ->options(fn () => User::where('is_active', true)
+                                ->orderBy('name')
+                                ->pluck('name', 'id')
+                                ->toArray())
+                            ->getOptionLabelUsing(fn ($value): ?string => User::find($value)?->name),
+
+                        TextInput::make('valor')
+                            ->label('Valor (R$)')
+                            ->numeric()
+                            ->prefix('R$')
+                            ->placeholder('0,00')
+                            ->helperText(fn (?Model $record) => $record?->cronograma_fase_item_id
+                                ? 'Vinculado ao planejamento'
+                                : null)
+                            ->default(fn (?Model $record) => $record?->cronograma_fase_item?->valor),
                     ]),
                 ]),
 
@@ -137,7 +154,6 @@ class TaskForm
 
                         DatePicker::make('inicio')
                             ->label('Data de início')
-                            ->required()
                             ->default(today())
                             ->live()
                             ->afterStateUpdated(function (Set $set, Get $get, $state) {
@@ -146,7 +162,6 @@ class TaskForm
 
                         TextInput::make('prazo')
                             ->label('Prazo (dias)')
-                            ->required()
                             ->numeric()
                             ->minValue(0)
                             ->live()

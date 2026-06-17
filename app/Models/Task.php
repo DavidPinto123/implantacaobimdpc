@@ -18,6 +18,8 @@ class Task extends Model
         'marca_id',
         'created_by',
         'assigned_to',
+        'revisor_id',
+        'valor',
         'prazo',
         'inicio',
         'termino_programado',
@@ -36,6 +38,7 @@ class Task extends Model
         'data_entrega' => 'datetime',
         'dias_corridos' => 'boolean',
         'eh_revisor' => 'boolean',
+        'valor' => 'decimal:2',
     ];
 
     public function category(): BelongsTo
@@ -56,6 +59,11 @@ class Task extends Model
     public function responsavel(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_to');
+    }
+
+    public function revisor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'revisor_id');
     }
 
     public function marca(): BelongsTo

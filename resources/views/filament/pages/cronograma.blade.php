@@ -3912,11 +3912,33 @@
                     });
                 }
 
-                $itensPorDia = $todosItens
-                    ->filter(fn($e) => $e['item']->data_prevista_fim
-                        && $e['item']->data_prevista_fim->month === $calExibMes
-                        && $e['item']->data_prevista_fim->year  === $calExibAno)
-                    ->groupBy(fn($e) => $e['item']->data_prevista_fim->day);
+                // Marca período completo: cada item aparece em todos os dias do seu range no mês
+                $calDiasNoMes = $calData->daysInMonth;
+                $calMesInicio = $calData->copy()->startOfDay();
+                $calMesFim    = $calData->copy()->setDay($calDiasNoMes)->endOfDay();
+                $itensPorDia  = collect();
+                foreach ($todosItens as $calEntry) {
+                    $calItemLoop = $calEntry['item'];
+                    $calFim = $calItemLoop->data_prevista_fim;
+                    if (! $calFim) continue;
+                    $calIni = $calItemLoop->data_prevista_inicio ?? $calFim;
+                    $rStart = $calIni->copy()->startOfDay()->lt($calMesInicio) ? $calMesInicio->copy() : $calIni->copy()->startOfDay();
+                    $rEnd   = $calFim->copy()->endOfDay()->gt($calMesFim)      ? $calMesFim->copy()   : $calFim->copy()->endOfDay();
+                    if ($rStart->gt($rEnd)) continue;
+                    $dStart = (int) $rStart->format('j');
+                    $dEnd   = (int) $rEnd->format('j');
+                    for ($calD = $dStart; $calD <= $dEnd; $calD++) {
+                        if (! $itensPorDia->has($calD)) {
+                            $itensPorDia->put($calD, collect());
+                        }
+                        $itensPorDia[$calD]->push([
+                            'item'    => $calItemLoop,
+                            'fase'    => $calEntry['fase'],
+                            'isStart' => $calD === $dStart,
+                            'isEnd'   => $calD === $dEnd,
+                        ]);
+                    }
+                }
 
                 $calProfissionais = $fases->flatMap(fn($f) => $f->itens->flatMap(fn($i) => $i->responsaveis))
                     ->merge($fases->flatMap(fn($f) => $f->itens->filter(fn($i) => $i->revisor)->map(fn($i) => $i->revisor)))
@@ -3965,16 +3987,33 @@
                             <div class="cr-calendar-day-num {{ $ehHoje ? 'cr-calendar-day-num-today' : '' }}">{{ $dia }}</div>
                             @foreach($itensNoDia->take(4) as $entry)
                                 @php
-                                    $calItem = $entry['item'];
-                                    $calFase = $entry['fase'];
-                                    $calCor  = $calFase->status->color();
+                                    $calItem     = $entry['item'];
+                                    $calFase     = $entry['fase'];
+                                    $calIsStart  = $entry['isStart'] ?? true;
+                                    $calIsEnd    = $entry['isEnd'] ?? true;
+                                    $calCor      = $calFase->status->color();
                                     $calAtrasado = $calItem->data_prevista_fim && $calItem->data_prevista_fim->isPast()
                                         && ! in_array($calFase->status->value, ['concluido','realizado','assinado','finalizado','pronto','na']);
+                                    $calCorFinal = $calAtrasado ? '#dc2626' : $calCor;
+                                    $calResp     = $calItem->responsaveis->first();
+                                    $borderRadius = match(true) {
+                                        $calIsStart && $calIsEnd  => '.3rem',
+                                        $calIsStart               => '.3rem 0 0 .3rem',
+                                        $calIsEnd                 => '0 .3rem .3rem 0',
+                                        default                   => '0',
+                                    };
                                 @endphp
                                 <div class="cr-calendar-event"
-                                     style="background:{{ $calAtrasado ? '#dc2626' : $calCor }};"
-                                     title="{{ $calFase->label_exibicao }}: {{ $calItem->titulo }}">
-                                    {{ \Illuminate\Support\Str::limit($calItem->titulo, 30) }}
+                                     style="background:{{ $calCorFinal }};border-radius:{{ $borderRadius }};{{ ! $calIsStart ? 'margin-left:-4px;padding-left:6px;opacity:.85;' : '' }}{{ ! $calIsEnd ? 'margin-right:-4px;padding-right:6px;' : '' }}"
+                                     title="{{ $calFase->label_exibicao }}: {{ $calItem->titulo }}{{ $calResp ? ' · ' . $calResp->name : '' }}">
+                                    @if($calIsStart)
+                                        {{ \Illuminate\Support\Str::limit($calItem->titulo, 26) }}
+                                        @if($calResp)
+                                            <span style="opacity:.75;font-size:.58rem;margin-left:2px;">· {{ \Illuminate\Support\Str::before($calResp->name, ' ') }}</span>
+                                        @endif
+                                    @else
+                                        <span style="opacity:.6;">↪</span>
+                                    @endif
                                 </div>
                             @endforeach
                             @if($itensNoDia->count() > 4)

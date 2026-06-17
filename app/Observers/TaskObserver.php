@@ -80,6 +80,16 @@ class TaskObserver
         }
 
         $this->notificarGerenteGeral($task, "Tarefa *{$task->title}* atualizada para {$statusLabel}");
+
+        // Cascata: quando tarefa é concluída, marca o item do cronograma como recebido
+        if ($task->status === 'concluida' && $task->cronograma_fase_item_id) {
+            $item = \App\Models\CronogramaFaseItem::find($task->cronograma_fase_item_id);
+            if ($item && ! $item->recebido) {
+                $item->recebido = true;
+                $item->data_realizada_fim ??= today();
+                $item->save(); // CronogramaFaseItemObserver propaga percentual e status da fase
+            }
+        }
     }
 
     private function notificarGerenteGeral(Task $task, string $evento): void
