@@ -16,7 +16,6 @@ use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Html;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Model;
 use Spatie\Permission\Models\Role;
 
 class RoleResource extends ShieldRoleResource
@@ -29,19 +28,15 @@ class RoleResource extends ShieldRoleResource
         return $pages;
     }
 
-    private static function resolveEditRecord($livewire): ?Model
+    private static function roleFromRoute(): ?Role
     {
-        if (! method_exists($livewire, 'getRecord')) {
+        $id = request()->route('record');
+
+        if (! $id) {
             return null;
         }
 
-        try {
-            $record = $livewire->getRecord();
-        } catch (\Throwable) {
-            return null;
-        }
-
-        return ($record instanceof Model && $record->exists) ? $record : null;
+        return Role::find($id);
     }
 
     public static function getTabFormComponentForResources(): Component
@@ -70,8 +65,8 @@ FILTER;
         return Tab::make('resources')
             ->label(__('filament-shield::filament-shield.resources'))
             ->visible(fn (): bool => Utils::isResourceTabEnabled())
-            ->badge(function ($livewire) use ($total, $allResourcePermNames) {
-                $record = static::resolveEditRecord($livewire);
+            ->badge(function () use ($total, $allResourcePermNames) {
+                $record = static::roleFromRoute();
 
                 if (! $record) {
                     return $total;
@@ -98,8 +93,8 @@ FILTER;
         return Tab::make('pages')
             ->label(__('filament-shield::filament-shield.pages'))
             ->visible(fn (): bool => Utils::isPageTabEnabled() && $total > 0)
-            ->badge(function ($livewire) use ($total, $permNames) {
-                $record = static::resolveEditRecord($livewire);
+            ->badge(function () use ($total, $permNames) {
+                $record = static::roleFromRoute();
 
                 if (! $record) {
                     return $total;
@@ -126,8 +121,8 @@ FILTER;
         return Tab::make('widgets')
             ->label(__('filament-shield::filament-shield.widgets'))
             ->visible(fn (): bool => Utils::isWidgetTabEnabled() && $total > 0)
-            ->badge(function ($livewire) use ($total, $permNames) {
-                $record = static::resolveEditRecord($livewire);
+            ->badge(function () use ($total, $permNames) {
+                $record = static::roleFromRoute();
 
                 if (! $record) {
                     return $total;
@@ -154,8 +149,8 @@ FILTER;
         return Tab::make('custom_permissions')
             ->label(__('filament-shield::filament-shield.custom'))
             ->visible(fn (): bool => Utils::isCustomPermissionTabEnabled() && $total > 0)
-            ->badge(function ($livewire) use ($total, $permNames) {
-                $record = static::resolveEditRecord($livewire);
+            ->badge(function () use ($total, $permNames) {
+                $record = static::roleFromRoute();
 
                 if (! $record) {
                     return $total;
