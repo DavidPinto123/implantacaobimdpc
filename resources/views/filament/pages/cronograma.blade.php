@@ -2886,6 +2886,7 @@
                             'inicio'         => 'Início',
                             'termino'        => 'Término',
                             'duracao'        => 'Duração',
+                            'gerente'        => 'Gerente Geral',
                         ] as $colKey => $colLabel)
                             <label class="cr-col-option">
                                 <input type="checkbox"
@@ -3079,6 +3080,21 @@
                             <span class="cr-detail-value">{{ \Carbon\Carbon::parse($projeto->inauguracao)->format('d/m/Y') }}</span>
                         </div>
                     @endif
+
+                    <div class="cr-detail-item">
+                        <span class="cr-detail-label">Gerente Geral</span>
+                        @if($podeEditar)
+                            <select x-on:change="$wire.salvarGerenteGeral($event.target.value || null)"
+                                    style="font-size:0.78rem;border:1px solid var(--vo-border);border-radius:.25rem;background:var(--vo-bg);color:var(--vo-text);padding:2px 6px;cursor:pointer;max-width:160px;">
+                                <option value="">— Nenhum —</option>
+                                @foreach($usuarios as $u)
+                                    <option value="{{ $u->id }}" {{ $projeto->gerente_geral_id == $u->id ? 'selected' : '' }}>{{ $u->name }}</option>
+                                @endforeach
+                            </select>
+                        @else
+                            <span class="cr-detail-value">{{ $projeto->gerenteGeral?->name ?? '—' }}</span>
+                        @endif
+                    </div>
                 </div>
 
                 <div class="cr-stats-row">
@@ -3204,6 +3220,7 @@
                             <th x-show="mostrarColuna('inicio')">Início</th>
                             <th x-show="mostrarColuna('termino')">Término</th>
                             <th x-show="mostrarColuna('duracao')">Duração</th>
+                            <th x-show="mostrarColuna('gerente')">Gerente</th>
                             <th style="width:48px;text-align:center;">Hist.</th>
                         </tr>
                     </thead>
@@ -3299,6 +3316,9 @@
                                     @else
                                         -
                                     @endif
+                                </td>
+                                <td x-show="mostrarColuna('gerente')" style="font-size:0.73rem;color:var(--vo-text-secondary);white-space:nowrap;">
+                                    {{ $projetoItem->gerenteGeral?->name ?? '—' }}
                                 </td>
                                 <td style="text-align:center;white-space:nowrap;" wire:click.stop>
                                     @if($podeEditar)
@@ -4821,6 +4841,16 @@
                     </select>
                 </label>
                 @endif
+                <label style="display:block;font-size:0.78rem;color:var(--vo-text-secondary);margin-bottom:14px;">
+                    Gerente Geral <span style="font-weight:400;color:var(--vo-text-muted)">(opcional)</span>
+                    <select wire:model.number="novoPlanejamentoGerenteGeral"
+                            style="display:block;width:100%;margin-top:4px;border:1px solid var(--vo-border);border-radius:.375rem;background:var(--vo-bg);color:var(--vo-text);padding:7px 10px;font-size:0.82rem;">
+                        <option value="">— Nenhum —</option>
+                        @foreach($usuarios as $u)
+                            <option value="{{ $u->id }}">{{ $u->name }}</option>
+                        @endforeach
+                    </select>
+                </label>
                 <div class="cr-modal-actions">
                     <button type="button" class="cr-batch-btn cr-batch-btn--cancel"
                             wire:click="$set('mostrarModalNovoPlanejamento', false)">Cancelar</button>

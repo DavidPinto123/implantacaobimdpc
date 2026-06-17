@@ -17,15 +17,20 @@ class CronogramaTemplateFaseItem extends Model
         'depende_de_template_fase_id',
         'titulo',
         'valor',
+        'revisor_id',
         'descricao',
+        'observacoes',
         'ordem',
+        'duracao_dias',
     ];
 
     protected $casts = [
         'parent_id' => 'integer',
         'depende_de_item_id' => 'integer',
         'depende_de_template_fase_id' => 'integer',
+        'revisor_id' => 'integer',
         'ordem' => 'integer',
+        'duracao_dias' => 'integer',
     ];
 
     public function templateFase(): BelongsTo
@@ -61,5 +66,20 @@ class CronogramaTemplateFaseItem extends Model
     public function dependentes(): HasMany
     {
         return $this->hasMany(CronogramaTemplateFaseItem::class, 'depende_de_item_id')->orderBy('ordem');
+    }
+
+    public function revisor(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(\App\Models\User::class, 'revisor_id');
+    }
+
+    public function responsaveis(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(
+            \App\Models\User::class,
+            'cronograma_template_fase_item_responsaveis',
+            'cronograma_template_fase_item_id',
+            'user_id'
+        );
     }
 }

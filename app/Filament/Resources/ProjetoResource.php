@@ -796,6 +796,16 @@ class ProjetoResource extends Resource
 
                         Section::make('Squad')
                             ->schema([
+                                Select::make('gerente_geral_id')
+                                    ->label('Gerente Geral')
+                                    ->options(fn (): array => \App\Models\User::where('is_active', true)
+                                        ->orderBy('name')
+                                        ->pluck('name', 'id')
+                                        ->toArray())
+                                    ->searchable()
+                                    ->preload()
+                                    ->placeholder('Selecione o Gerente Geral')
+                                    ->columnSpan(['default' => 2, 'lg' => 2]),
                                 Select::make('resp_pmo')
                                     ->label('Responsável PMO')
                                     ->options(fn (): array => self::squadUserOptions('PMO'))
@@ -4308,6 +4318,12 @@ TextInput::make('imp_prazo_planejado')
                     ]),
 
                 ColumnGroup::make('SQUAD', [
+                    TextColumn::make('gerenteGeral.name')
+                        ->label('GERENTE GERAL')
+                        ->searchable()
+                        ->alignCenter()
+                        ->sortable()
+                        ->toggleable(isToggledHiddenByDefault: false),
                     SelectColumn::make('resp_pmo')
                         ->label('PMO')
                         ->searchable()

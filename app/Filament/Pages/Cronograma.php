@@ -256,6 +256,7 @@ class Cronograma extends Page
     public bool $mostrarModalNovoPlanejamento = false;
 
     public string $novoPlanejamentoNome = '';
+    public ?int $novoPlanejamentoGerenteGeral = null;
 
     public bool $mostrarModalNovaFase = false;
 
@@ -312,7 +313,7 @@ class Cronograma extends Page
     {
         $cronogramaService = new CronogramaService;
 
-        $query = Projeto::with(['cronogramaFases.template', 'cronogramaFases.templateFase', 'estado', 'obras']);
+        $query = Projeto::with(['cronogramaFases.template', 'cronogramaFases.templateFase', 'estado', 'obras', 'gerenteGeral']);
 
         $this->filtrarProjetosPorParticipacao($query);
 
@@ -392,6 +393,7 @@ class Cronograma extends Page
             'templatesDisponiveis' => CronogramaTemplate::ativos()->orderBy('nome')->get(),
             'podeEditar' => auth()->user()?->can('Update:Cronograma') ?? false,
             'modoIndividual' => false,
+            'usuarios' => \App\Models\User::select('id', 'name')->where('is_active', true)->orderBy('name')->get(),
         ];
     }
 
@@ -417,6 +419,7 @@ class Cronograma extends Page
             'responsavelCom',
             'responsavelEng',
             'respPmo',
+            'gerenteGeral',
             'estado',
             'obras.construtoras',
         ])->find($this->projetoSelecionado);
@@ -2798,9 +2801,10 @@ class Cronograma extends Page
         );
 
         $projeto = \App\Models\Projeto::create([
-            'nome'          => trim($this->novoPlanejamentoNome),
-            'user_id'       => auth()->id(),
-            'sem_fases_auto' => true,
+            'nome'               => trim($this->novoPlanejamentoNome),
+            'user_id'            => auth()->id(),
+            'sem_fases_auto'     => true,
+            'gerente_geral_id'   => $this->novoPlanejamentoGerenteGeral,
         ]);
 
         if ($this->novoPlanejamentoTemplateId) {
@@ -2822,6 +2826,7 @@ class Cronograma extends Page
         $this->mostrarModalNovoPlanejamento = false;
         $this->novoPlanejamentoNome = '';
         $this->novoPlanejamentoTemplateId = null;
+        $this->novoPlanejamentoGerenteGeral = null;
 
         $this->redirect(static::getUrl(['projeto' => $projeto->id]));
     }
@@ -3258,6 +3263,31 @@ class Cronograma extends Page
         $this->renderKey++;
 
         Notification::make()->title('Nome do projeto atualizado')->success()->send();
+    }
+
+    public function salvarGerenteGeral(string|int|null $userId): void
+    {
+        if (! $this->projetoSelecionado) {
+            return;
+        }
+
+        $projeto = Projeto::find($this->projetoSelecionado);
+        if (! $projeto) {
+            return;
+        }
+
+        if (! auth()->user()->can('update', $projeto)) {
+            Notification::make()->title('Sem permissão para editar o projeto')->danger()->send();
+
+            return;
+        }
+
+        $projeto->gerente_geral_id = $userId ? (int) $userId : null;
+        $projeto->save();
+
+        $this->renderKey++;
+
+        Notification::make()->title('Gerente Geral atualizado')->success()->send();
     }
 
     /**

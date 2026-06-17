@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use App\Models\Projeto;
 
 class Task extends Model
 {
@@ -66,6 +67,11 @@ class Task extends Model
     {
         return $this->belongsToMany(User::class, 'task_user')
             ->withTimestamps();
+    }
+
+    public function projeto(): BelongsTo
+    {
+        return $this->belongsTo(Projeto::class);
     }
 
     protected static function booted()

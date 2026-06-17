@@ -28,7 +28,7 @@ class CronogramaTemplates extends Page
 
     protected string $view = 'filament.pages.cronograma-templates';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Planejamento';
+    protected static UnitEnum|string|null $navigationGroup = 'Outros';
 
     protected static ?int $navigationSort = 4;
 
@@ -210,7 +210,7 @@ class CronogramaTemplates extends Page
             : ModoAncoraCronograma::POSSE;
 
         $candidatosPareamento = CronogramaTemplate::where('id', '!=', $template->id)
-            ->where('tipo_obra', $template->tipo_obra->value)
+            ->when($template->tipo_obra, fn ($q) => $q->where('tipo_obra', $template->tipo_obra->value))
             ->where('modo_ancora', $modoOpostoTpl->value)
             ->whereNull('template_pareado_id')
             ->orderBy('nome')
@@ -279,8 +279,8 @@ class CronogramaTemplates extends Page
         $tpl = CronogramaTemplate::find($id);
         if ($tpl) {
             $this->tplNome = $tpl->nome;
-            $this->tplTipoObra = $tpl->tipo_obra->value;
-            $this->tplAncoraCampo = $tpl->ancora_campo;
+            $this->tplTipoObra = $tpl->tipo_obra?->value ?? '';
+            $this->tplAncoraCampo = $tpl->ancora_campo ?? '';
             $this->tplModoAncora = $tpl->modo_ancora?->value ?? 'posse';
             $this->tplPareadoId = $tpl->template_pareado_id;
             $this->tplAtivo = (bool) $tpl->ativo;
@@ -326,9 +326,9 @@ class CronogramaTemplates extends Page
 
         $tpl->update([
             'nome' => $this->tplNome,
-            'tipo_obra' => $this->tplTipoObra,
-            'ancora_campo' => $this->tplAncoraCampo,
-            'modo_ancora' => $this->tplModoAncora,
+            'tipo_obra' => $this->tplTipoObra ?: null,
+            'ancora_campo' => $this->tplAncoraCampo ?: null,
+            'modo_ancora' => $this->tplModoAncora ?: null,
             'ativo' => $this->tplAtivo,
             'observacoes' => $this->tplObservacoes ?: null,
         ]);
@@ -577,7 +577,7 @@ class CronogramaTemplates extends Page
             'exportado_em' => now()->toIso8601String(),
             'template' => [
                 'nome' => $tpl->nome,
-                'tipo_obra' => $tpl->tipo_obra->value,
+                'tipo_obra' => $tpl->tipo_obra?->value,
                 'ancora_campo' => $tpl->ancora_campo,
                 'ativo' => (bool) $tpl->ativo,
                 'observacoes' => $tpl->observacoes,
@@ -770,6 +770,87 @@ class CronogramaTemplates extends Page
         $tpl->delete();
         $this->voltarParaMacro();
         Notification::make()->title('Template excluído')->success()->send();
+    }
+
+    public function duplicarTemplatePorId(int $id): void
+    {
+        $tpl = CronogramaTemplate::with([
+            'fases.dependencias',
+            'fases.itens.responsaveis',
+        ])->find($id);
+        if (! $tpl) {
+            return;
+        }
+
+        $novo = $tpl->replicate();
+        $novo->nome = $tpl->nome.' (cópia)';
+        $novo->save();
+
+        $faseIdMap = [];
+        $itemIdMap = [];
+
+        foreach ($tpl->fases as $fase) {
+            $faseNova = $fase->replicate();
+            $faseNova->cronograma_template_id = $novo->id;
+            $faseNova->save();
+            $faseIdMap[$fase->id] = $faseNova->id;
+
+            $itensRaiz = $fase->itens->whereNull('parent_id');
+            $this->copiarItensTemplateParaTemplate($itensRaiz, $faseNova->id, null, $fase->itens, $itemIdMap);
+        }
+
+        foreach ($tpl->fases as $fase) {
+            foreach ($fase->dependencias as $dep) {
+                $depNova = $dep->replicate();
+                $depNova->cronograma_template_fase_id = $faseIdMap[$fase->id];
+                if (isset($faseIdMap[$dep->depende_de_template_fase_id])) {
+                    $depNova->depende_de_template_fase_id = $faseIdMap[$dep->depende_de_template_fase_id];
+                }
+                $depNova->save();
+            }
+        }
+
+        foreach ($itemIdMap as $origId => $novoId) {
+            $origItem = CronogramaTemplateFaseItem::find($origId);
+            if ($origItem?->depende_de_item_id && isset($itemIdMap[$origItem->depende_de_item_id])) {
+                CronogramaTemplateFaseItem::where('id', $novoId)
+                    ->update(['depende_de_item_id' => $itemIdMap[$origItem->depende_de_item_id]]);
+            }
+        }
+
+        Notification::make()->title('Template duplicado')->success()->send();
+    }
+
+    public function excluirTemplatePorId(int $id): void
+    {
+        $tpl = CronogramaTemplate::find($id);
+        if (! $tpl) {
+            return;
+        }
+        $tpl->delete();
+        Notification::make()->title('Template excluído')->success()->send();
+    }
+
+    private function copiarItensTemplateParaTemplate($itens, int $faseId, ?int $parentId, $todosItens, array &$itemIdMap): void
+    {
+        foreach ($itens->sortBy('ordem') as $item) {
+            $novoItem = $item->replicate();
+            $novoItem->cronograma_template_fase_id = $faseId;
+            $novoItem->parent_id = $parentId;
+            $novoItem->depende_de_item_id = null;
+            $novoItem->save();
+
+            $itemIdMap[$item->id] = $novoItem->id;
+
+            if ($item->responsaveis->isNotEmpty()) {
+                $novoItem->responsaveis()->sync($item->responsaveis->pluck('id'));
+            }
+
+            $filhos = $todosItens->where('parent_id', $item->id);
+            if ($filhos->isNotEmpty()) {
+                $this->copiarItensTemplateParaTemplate($filhos, $faseId, $novoItem->id, $todosItens, $itemIdMap);
+            }
+        }
     }
 
     // =====================================================================

@@ -41,7 +41,7 @@ class MatterportResource extends Resource
 
     protected static ?int $navigationSort = 5;
 
-    protected static string|null|UnitEnum $navigationGroup = 'Tour 360°';
+    protected static string|null|UnitEnum $navigationGroup = null;
 
     protected static ?string $pluralModelLabel = 'Tour 360°';
 

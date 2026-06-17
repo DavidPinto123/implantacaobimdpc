@@ -131,6 +131,7 @@ class Projeto extends Model
         'resp_arq',
         'resp_eng',
         'resp_pmo',
+        'gerente_geral_id',
         'pmo_nome',
         'status_comite',
         'status_imovel',
@@ -463,6 +464,11 @@ class Projeto extends Model
     public function respPmo()
     {
         return $this->belongsTo(User::class, 'resp_pmo');
+    }
+
+    public function gerenteGeral()
+    {
+        return $this->belongsTo(User::class, 'gerente_geral_id');
     }
 
     // 🔹 OI

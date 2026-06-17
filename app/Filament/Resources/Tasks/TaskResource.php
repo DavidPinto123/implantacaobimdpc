@@ -31,7 +31,9 @@ class TaskResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static string|null|UnitEnum $navigationGroup = 'Tarefas';
+    protected static string|null|UnitEnum $navigationGroup = null;
+
+    protected static ?int $navigationSort = 2;
 
     protected static ?string $recordTitleAttribute = 'title';
 

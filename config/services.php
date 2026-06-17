@@ -49,9 +49,14 @@ return [
     // Os credentials (phone_number_id + token) ficam na tabela po_whatsapp_config (via /admin/whatsapp-config)
     'whatsapp' => [
         'templates' => [
-            'tarefa_atrasada' => env('WHATSAPP_TEMPLATE_ATRASO', 'tarefa_atrasada'),
-            'status_tarefa'   => env('WHATSAPP_TEMPLATE_STATUS', 'status_tarefa'),
-            'agenda_semanal'  => env('WHATSAPP_TEMPLATE_AGENDA', 'agenda_semanal'),
+            'tarefa_atrasada'     => env('WHATSAPP_TEMPLATE_ATRASO',    'tarefa_atrasada'),
+            'status_tarefa'       => env('WHATSAPP_TEMPLATE_STATUS',     'status_tarefa'),
+            'agenda_semanal'      => env('WHATSAPP_TEMPLATE_AGENDA',     'agenda_semanal'),
+            'nova_tarefa'         => env('WHATSAPP_TEMPLATE_NOVA',       'nova_tarefa'),
+            'prazo_proximo'       => env('WHATSAPP_TEMPLATE_PRAZO',      'prazo_proximo'),
+            'tarefa_comentario'   => env('WHATSAPP_TEMPLATE_COMENTARIO', 'tarefa_comentario'),
+            'cronograma_atualizado' => env('WHATSAPP_TEMPLATE_CRONO',   'cronograma_atualizado'),
+            'gerente_notificacao' => env('WHATSAPP_TEMPLATE_GERENTE',    'gerente_notificacao'),
         ],
     ],
 

@@ -28,7 +28,7 @@ class AgendaGeral extends Page
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-calendar-days';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Agenda Geral';
+    protected static UnitEnum|string|null $navigationGroup = null;
 
     protected static ?string $navigationLabel = 'Agenda Geral';
 
@@ -36,7 +36,7 @@ class AgendaGeral extends Page
 
     protected static ?string $slug = 'agenda-geral';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 20;
 
     protected string $view = 'filament.pages.agenda-geral';
 

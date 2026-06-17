@@ -30,21 +30,6 @@ class RoleResource extends ShieldRoleResource
         return $pages;
     }
 
-    private static function resolveRoleFromLivewire(mixed $livewire): ?Role
-    {
-        $raw = property_exists($livewire, 'record') ? $livewire->record : null;
-
-        if ($raw instanceof Role && $raw->exists) {
-            return $raw;
-        }
-
-        if (is_numeric($raw) && $raw > 0) {
-            return Role::find((int) $raw);
-        }
-
-        return null;
-    }
-
     public static function getTabFormComponentForResources(): Component
     {
         if (static::shield()->hasSimpleResourcePermissionView()) {
@@ -61,25 +46,15 @@ class RoleResource extends ShieldRoleResource
 FILTER;
 
         $total = static::getResourceTabBadgeCount();
-
-        $allResourcePermNames = collect(FilamentShield::getResources())
-            ->flatMap(fn (array $r) => collect($r['permissions'])->pluck('key'))
-            ->unique()
-            ->values()
-            ->all();
+        $resourceFqcns = collect(FilamentShield::getResources())->pluck('resourceFqcn')->toArray();
 
         return Tab::make('resources')
             ->label(__('filament-shield::filament-shield.resources'))
             ->visible(fn (): bool => Utils::isResourceTabEnabled())
             ->deferBadge()
-            ->badge(function ($livewire) use ($total, $allResourcePermNames) {
-                $record = static::resolveRoleFromLivewire($livewire);
-
-                if (! $record) {
-                    return $total;
-                }
-
-                $selected = $record->permissions()->whereIn('name', $allResourcePermNames)->count();
+            ->badge(function ($livewire) use ($total, $resourceFqcns) {
+                $selected = (int) collect($resourceFqcns)
+                    ->sum(fn ($fqcn) => count((array) ($livewire->data[$fqcn] ?? [])));
 
                 return $selected > 0 ? "{$total} / {$selected}" : $total;
             })
@@ -93,22 +68,15 @@ FILTER;
 
     public static function getTabFormComponentForPage(): Component
     {
-        $options   = static::getPageOptions();
-        $total     = count($options);
-        $permNames = array_keys($options);
+        $options = static::getPageOptions();
+        $total   = count($options);
 
         return Tab::make('pages')
             ->label(__('filament-shield::filament-shield.pages'))
             ->visible(fn (): bool => Utils::isPageTabEnabled() && $total > 0)
             ->deferBadge()
-            ->badge(function ($livewire) use ($total, $permNames) {
-                $record = static::resolveRoleFromLivewire($livewire);
-
-                if (! $record) {
-                    return $total;
-                }
-
-                $selected = $record->permissions()->whereIn('name', $permNames)->count();
+            ->badge(function ($livewire) use ($total) {
+                $selected = count((array) ($livewire->data['pages_tab'] ?? []));
 
                 return $selected > 0 ? "{$total} / {$selected}" : $total;
             })
@@ -122,22 +90,15 @@ FILTER;
 
     public static function getTabFormComponentForWidget(): Component
     {
-        $options   = static::getWidgetOptions();
-        $total     = count($options);
-        $permNames = array_keys($options);
+        $options = static::getWidgetOptions();
+        $total   = count($options);
 
         return Tab::make('widgets')
             ->label(__('filament-shield::filament-shield.widgets'))
             ->visible(fn (): bool => Utils::isWidgetTabEnabled() && $total > 0)
             ->deferBadge()
-            ->badge(function ($livewire) use ($total, $permNames) {
-                $record = static::resolveRoleFromLivewire($livewire);
-
-                if (! $record) {
-                    return $total;
-                }
-
-                $selected = $record->permissions()->whereIn('name', $permNames)->count();
+            ->badge(function ($livewire) use ($total) {
+                $selected = count((array) ($livewire->data['widgets_tab'] ?? []));
 
                 return $selected > 0 ? "{$total} / {$selected}" : $total;
             })
@@ -151,22 +112,15 @@ FILTER;
 
     public static function getTabFormComponentForCustomPermissions(): Component
     {
-        $options   = FilamentShield::getCustomPermissions(static::shield()->hasLocalizedPermissionLabels());
-        $total     = count($options);
-        $permNames = array_keys($options);
+        $options = FilamentShield::getCustomPermissions(static::shield()->hasLocalizedPermissionLabels());
+        $total   = count($options);
 
         return Tab::make('custom_permissions')
             ->label(__('filament-shield::filament-shield.custom'))
             ->visible(fn (): bool => Utils::isCustomPermissionTabEnabled() && $total > 0)
             ->deferBadge()
-            ->badge(function ($livewire) use ($total, $permNames) {
-                $record = static::resolveRoleFromLivewire($livewire);
-
-                if (! $record) {
-                    return $total;
-                }
-
-                $selected = $record->permissions()->whereIn('name', $permNames)->count();
+            ->badge(function ($livewire) use ($total) {
+                $selected = count((array) ($livewire->data['custom_permissions_tab'] ?? []));
 
                 return $selected > 0 ? "{$total} / {$selected}" : $total;
             })

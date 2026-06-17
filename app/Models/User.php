@@ -10,10 +10,8 @@ use Filament\Facades\Filament;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasAvatar;
 use Filament\Panel;
-use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
 use Illuminate\Auth\Passwords\CanResetPassword as CanResetPasswordTrait;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
-use Illuminate\Contracts\Auth\MustVerifyEmail as MustVerifyEmailContract;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -24,7 +22,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable implements CanResetPasswordContract, FilamentUser, HasAvatar, MustVerifyEmailContract
+class User extends Authenticatable implements CanResetPasswordContract, FilamentUser, HasAvatar
 {
     use CanResetPasswordTrait;
     use HasDatabaseNotifications;
@@ -33,7 +31,6 @@ class User extends Authenticatable implements CanResetPasswordContract, Filament
     use HasFactory, Notifiable;
 
     use HasRoles;
-    use MustVerifyEmailTrait;
 
     /**
      * The attributes that are mass assignable.

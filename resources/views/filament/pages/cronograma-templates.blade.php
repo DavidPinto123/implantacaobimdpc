@@ -276,6 +276,25 @@
             cursor: pointer;
         }
 
+        .ct-row-action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: transparent;
+            border: 1px solid var(--vo-border);
+            border-radius: .3rem;
+            padding: 3px 9px;
+            font-size: 0.72rem;
+            font-weight: 500;
+            color: var(--vo-text-secondary);
+            cursor: pointer;
+            transition: background .15s, color .15s;
+            white-space: nowrap;
+        }
+        .ct-row-action-btn:hover { background: var(--vo-border-light); color: var(--vo-text); }
+        .ct-row-action-btn-danger { color: #b91c1c; border-color: #fca5a5; }
+        .ct-row-action-btn-danger:hover { background: #fef2f2; color: #991b1b; }
+
         .ct-form-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -706,6 +725,7 @@
                                 <th style="text-align:center;">Fases</th>
                                 <th style="text-align:center;">Duração total</th>
                                 <th style="text-align:center;">Ativo</th>
+                                <th style="width:1px;white-space:nowrap;"></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -724,7 +744,7 @@
                                             <span>{{ $tpl->nome }}</span>
                                         </div>
                                     </td>
-                                    <td><span class="ct-badge">{{ $tpl->tipo_obra->label() }}</span></td>
+                                    <td>@if($tpl->tipo_obra)<span class="ct-badge">{{ $tpl->tipo_obra->label() }}</span>@else<span class="ct-badge" style="opacity:.5">Manual</span>@endif</td>
                                     <td style="font-family:monospace;font-size:0.72rem;color:var(--vo-text-muted);">
                                         {{ $tpl->ancora_campo }}
                                     </td>
@@ -762,6 +782,20 @@
                                             <span class="ct-badge ct-badge-muted">Inativo</span>
                                         @endif
                                     </td>
+                                    <td style="text-align:right;white-space:nowrap;padding-right:8px;" wire:click.stop>
+                                        <button type="button" wire:click.stop="selecionarTemplate({{ $tpl->id }})" class="ct-row-action-btn" title="Editar template">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                            Editar
+                                        </button>
+                                        <button type="button" wire:click.stop="duplicarTemplatePorId({{ $tpl->id }})" class="ct-row-action-btn" title="Duplicar template" style="margin-left:4px;">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                            Duplicar
+                                        </button>
+                                        <button type="button" wire:click.stop="excluirTemplatePorId({{ $tpl->id }})" wire:confirm="Excluir o template '{{ $tpl->nome }}'? Esta ação não pode ser desfeita." class="ct-row-action-btn ct-row-action-btn-danger" title="Excluir template" style="margin-left:4px;">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                                            Excluir
+                                        </button>
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -780,7 +814,7 @@
                     <span style="color:var(--vo-text);font-weight:800;font-size:1.15rem;letter-spacing:-0.02em;">
                         {{ $template->nome }}
                     </span>
-                    <span class="ct-badge">{{ $template->tipo_obra->label() }}</span>
+                    @if($template->tipo_obra)<span class="ct-badge">{{ $template->tipo_obra->label() }}</span>@endif
                     <span class="ct-badge ct-badge-accent" title="Duração total calculada do cronograma">
                         ⏱ {{ $duracaoTotalDias }} dias
                     </span>

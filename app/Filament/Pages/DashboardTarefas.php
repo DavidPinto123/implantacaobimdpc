@@ -33,7 +33,7 @@ class DashboardTarefas extends Page implements HasTable
 
     protected static ?string $title = 'Dashboard de Tarefas';
 
-    protected static string|null|\UnitEnum $navigationGroup = 'Tarefas';
+    protected static string|null|\UnitEnum $navigationGroup = 'Outros';
 
     protected static ?int $navigationSort = 1;
 
@@ -78,12 +78,10 @@ class DashboardTarefas extends Page implements HasTable
         $this->loadCharts();
     }
 
-    public function updated($name, $value): void
+    public function refreshDashboard(): void
     {
-        if (str_starts_with($name, 'data.')) {
-            $this->resetTable();
-            $this->loadCharts();
-        }
+        $this->resetTable();
+        $this->loadCharts();
     }
 
     public function form(Schema $schema): Schema
@@ -95,11 +93,13 @@ class DashboardTarefas extends Page implements HasTable
 
                         DatePicker::make('data_inicial')
                             ->label('Data inicial')
-                            ->live(),
+                            ->live()
+                            ->afterStateUpdated(fn () => $this->refreshDashboard()),
 
                         DatePicker::make('data_final')
                             ->label('Data final')
-                            ->live(),
+                            ->live()
+                            ->afterStateUpdated(fn () => $this->refreshDashboard()),
 
                         Select::make('assigned_to')
                             ->label('Responsável')
@@ -112,19 +112,20 @@ class DashboardTarefas extends Page implements HasTable
 
                                 $setorIds = $user->setores()->pluck('setores.id')->toArray();
 
-                                return User::query()
-                                    ->whereHas('setores', function ($query) use ($setorIds) {
+                                $q = User::query()->orderBy('name');
+
+                                if (! empty($setorIds)) {
+                                    $q->whereHas('setores', function ($query) use ($setorIds) {
                                         $query->whereIn('setores.id', $setorIds);
-                                    })
-                                    ->orderBy('name')
-                                    ->pluck('name', 'id')
-                                    ->all();
+                                    });
+                                }
+
+                                return $q->pluck('name', 'id')->all();
                             })
-                            ->searchable()
-                            ->preload()
                             ->placeholder('Todos')
                             ->live()
-                            ->visible(fn () => auth()->user()?->hasAnyRole(['Coordenador', 'Gestor', 'Diretor'])),
+                            ->afterStateUpdated(fn () => $this->refreshDashboard())
+                            ->visible(fn () => auth()->user()?->hasAnyRole(['super_admin', 'Coordenador', 'Gestor', 'Diretor'])),
 
                     ]),
                 ]),
@@ -297,15 +298,24 @@ class DashboardTarefas extends Page implements HasTable
         $assignedTo = $filtros['assigned_to'] ?? null;
 
         $setorIds = $user->setores()->pluck('setores.id')->toArray();
+        $isSuperAdmin = $user->hasRole('super_admin');
 
-        $query = User::query()
-            ->whereHas('setores', function ($query) use ($setorIds) {
-                $query->whereIn('setores.id', $setorIds);
-            })
-            ->leftJoin('tasks', function ($join) use ($dataInicial, $dataFinal, $setorIds) {
+        $query = User::query();
+
+        if (! $isSuperAdmin && ! empty($setorIds)) {
+            $query->whereHas('setores', function ($q) use ($setorIds) {
+                $q->whereIn('setores.id', $setorIds);
+            });
+        }
+
+        if (! empty($assignedTo)) {
+            $query->where('users.id', $assignedTo);
+        }
+
+        $query->leftJoin('tasks', function ($join) use ($dataInicial, $dataFinal, $setorIds, $isSuperAdmin) {
                 $join->on('tasks.assigned_to', '=', 'users.id');
 
-                if (! empty($setorIds)) {
+                if (! $isSuperAdmin && ! empty($setorIds)) {
                     $join->whereIn('tasks.setor_id', $setorIds);
                 }
 
@@ -318,16 +328,7 @@ class DashboardTarefas extends Page implements HasTable
                 }
             });
 
-        // Se selecionou um responsável, conta só as tarefas dele,
-        // mas mantém todos os usuários do setor no gráfico.
-        if (! empty($assignedTo)) {
-            $query->selectRaw(
-                'users.name as responsavel_nome, SUM(CASE WHEN tasks.assigned_to = ? THEN 1 ELSE 0 END) as total',
-                [$assignedTo]
-            );
-        } else {
-            $query->selectRaw('users.name as responsavel_nome, COUNT(tasks.id) as total');
-        }
+        $query->selectRaw('users.name as responsavel_nome, COUNT(tasks.id) as total');
 
         $rows = $query
             ->groupBy('users.id', 'users.name')
@@ -385,8 +386,15 @@ class DashboardTarefas extends Page implements HasTable
 
         $setorIds = $user->setores()->pluck('setores.id')->toArray();
 
-        if ($user->hasAnyRole(['Coordenador', 'Gestor', 'Diretor'])) {
-            $query->whereIn('tasks.setor_id', $setorIds);
+        if ($user->hasRole('super_admin')) {
+            // Super admin vê tudo de todos, sem filtro de setor
+            if (! empty($assignedTo)) {
+                $query->where('tasks.assigned_to', $assignedTo);
+            }
+        } elseif ($user->hasAnyRole(['Coordenador', 'Gestor', 'Diretor'])) {
+            if (! empty($setorIds)) {
+                $query->whereIn('tasks.setor_id', $setorIds);
+            }
 
             if (! empty($assignedTo)) {
                 $query->where('tasks.assigned_to', $assignedTo);

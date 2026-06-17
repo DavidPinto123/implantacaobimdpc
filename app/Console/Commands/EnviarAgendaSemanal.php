@@ -94,7 +94,8 @@ class EnviarAgendaSemanal extends Command
                 }
             }
 
-            $resumo = implode("\n", $linhas);
+            // Meta não permite \n em parâmetros de template — usa separador inline
+            $resumo = implode(' | ', array_filter($linhas, fn ($l) => $l !== ''));
 
             // Limite de segurança para variável de template (~1024 chars)
             if (mb_strlen($resumo) > 900) {
