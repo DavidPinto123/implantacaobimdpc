@@ -4473,8 +4473,13 @@
                         @foreach($fases as $fase)
                             @php $faseNum = $loop->iteration; @endphp
                             @php
-                                $duracaoPlan = ($fase->data_prevista_inicio && $fase->data_prevista_fim)
-                                    ? $fase->data_prevista_inicio->diffInDays($fase->data_prevista_fim) + 1
+                                // Datas da fase: usa as próprias; fallback = min/max dos itens
+                                $fasePlanInicio = $fase->data_prevista_inicio
+                                    ?? $fase->itens->whereNotNull('data_prevista_inicio')->min('data_prevista_inicio');
+                                $fasePlanFim    = $fase->data_prevista_fim
+                                    ?? $fase->itens->whereNotNull('data_prevista_fim')->max('data_prevista_fim');
+                                $duracaoPlan = ($fasePlanInicio && $fasePlanFim)
+                                    ? \Carbon\Carbon::parse($fasePlanInicio)->diffInDays(\Carbon\Carbon::parse($fasePlanFim)) + 1
                                     : null;
                             @endphp
                             @php
@@ -4616,9 +4621,13 @@
                                 </td>
                                 <td x-show="cols.planejado" style="font-variant-numeric:tabular-nums;color:var(--vo-text-secondary);">
                                     <div style="display:flex;gap:4px;align-items:center;">
-                                        <span>{{ $fase->data_prevista_inicio?->format('d/m/Y') ?? '—' }}</span>
-                                        <span style="color:var(--vo-text-faint);">—</span>
-                                        <span>{{ $fase->data_prevista_fim?->format('d/m/Y') ?? '—' }}</span>
+                                        @if($fasePlanInicio)
+                                            <span>{{ \Carbon\Carbon::parse($fasePlanInicio)->format('d/m/Y') }}</span>
+                                            <span style="color:var(--vo-text-faint);">—</span>
+                                            <span>{{ $fasePlanFim ? \Carbon\Carbon::parse($fasePlanFim)->format('d/m/Y') : '—' }}</span>
+                                        @else
+                                            <span style="color:var(--vo-text-faint)">——</span>
+                                        @endif
                                     </div>
                                 </td>
                                 <td x-show="cols.durplan" class="cr-td-center" style="font-variant-numeric:tabular-nums;">

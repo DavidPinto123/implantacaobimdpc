@@ -2715,10 +2715,16 @@ class Cronograma extends Page
             $datas = null;
 
             if ($dependencia->depende_de_fase_id && $dependencia->dependeDeFase) {
-                $datas = [
-                    'inicio' => $dependencia->dependeDeFase->data_prevista_inicio,
-                    'fim' => $dependencia->dependeDeFase->data_prevista_fim,
-                ];
+                $fDep = $dependencia->dependeDeFase;
+                $fDepInicio = $fDep->data_prevista_inicio;
+                $fDepFim    = $fDep->data_prevista_fim;
+                // Fallback: se a fase não tem datas próprias, agrega dos seus itens
+                if (! $fDepInicio) {
+                    $itensF = $fDep->itens()->whereNotNull('data_prevista_inicio')->get();
+                    $fDepInicio = $itensF->min('data_prevista_inicio');
+                    $fDepFim    = $fDep->itens()->whereNotNull('data_prevista_fim')->get()->max('data_prevista_fim');
+                }
+                $datas = ['inicio' => $fDepInicio, 'fim' => $fDepFim];
             } elseif ($dependencia->depende_de_item_id && $dependencia->dependeDeItem) {
                 $datas = [
                     'inicio' => $dependencia->dependeDeItem->data_prevista_inicio,
