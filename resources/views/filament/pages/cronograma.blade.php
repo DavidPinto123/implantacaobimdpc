@@ -2847,6 +2847,11 @@
                     <option value="sem_template">Sem template</option>
                 </select>
 
+                <label style="display:inline-flex;align-items:center;gap:5px;font-size:0.72rem;color:var(--vo-text-muted);cursor:pointer;white-space:nowrap;">
+                    <input type="checkbox" wire:model.live="mostrarArquivados" style="cursor:pointer;">
+                    Mostrar arquivados
+                </label>
+
                 @if($busca || $filtroEstado || $filtroStatusObra || $filtroStatus || $filtroPeriodo || $filtroTemplate)
                     <button type="button" wire:click="limparFiltrosMacro"
                             style="background:transparent;border:1px solid var(--vo-border);border-radius:.5rem;cursor:pointer;color:var(--vo-text-muted);font-size:0.72rem;padding:6px 10px;white-space:nowrap;font-family:inherit;line-height:1;">
@@ -3273,6 +3278,9 @@
                                 </td>
                                 <td class="cr-td-unidade">
                                     {{ $projetoItem->nome ?? 'Projeto #'.$projetoItem->id }}
+                                    @if($projetoItem->trashed())
+                                        <span style="font-size:0.6rem;background:#f97316;color:#fff;border-radius:3px;padding:1px 4px;margin-left:4px;vertical-align:middle;font-weight:600;letter-spacing:.5px;">ARQUIVADO</span>
+                                    @endif
                                 </td>
                                 <td x-show="mostrarColuna('marca')" style="font-size:0.73rem;color:var(--vo-text-secondary)">
                                     {{ $projetoItem->marca ?? '-' }}
@@ -3352,12 +3360,28 @@
                                             style="padding:3px 5px;border:1px solid var(--vo-border);background:transparent;border-radius:.25rem;cursor:pointer;color:var(--vo-text-muted);line-height:1;margin-right:3px;">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
                                     </button>
+                                    @if(! $projetoItem->trashed())
+                                    <button type="button"
+                                            wire:click.stop="arquivarPlanejamento({{ $projetoItem->id }})"
+                                            wire:confirm="Arquivar este planejamento? Ele ficará oculto das listas e poderá ser restaurado depois."
+                                            title="Arquivar este planejamento"
+                                            style="padding:3px 5px;border:1px solid var(--vo-border);background:transparent;border-radius:.25rem;cursor:pointer;color:var(--vo-text-muted);line-height:1;margin-right:3px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+                                    </button>
                                     <button type="button"
                                             wire:click.stop="confirmarExcluirPlanejamento({{ $projetoItem->id }})"
                                             title="Excluir este planejamento"
                                             style="padding:3px 5px;border:1px solid var(--vo-border);background:transparent;border-radius:.25rem;cursor:pointer;color:var(--vo-text-muted);line-height:1;margin-right:3px;">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
                                     </button>
+                                    @else
+                                    <button type="button"
+                                            wire:click.stop="restaurarPlanejamento({{ $projetoItem->id }})"
+                                            title="Restaurar planejamento arquivado"
+                                            style="padding:3px 5px;border:1px solid #16a34a;background:transparent;border-radius:.25rem;cursor:pointer;color:#16a34a;line-height:1;margin-right:3px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.35"/></svg>
+                                    </button>
+                                    @endif
                                     @endif
                                     <button type="button"
                                             wire:click.stop="abrirHistoricoProjeto({{ $projetoItem->id }})"

@@ -265,6 +265,8 @@ class Cronograma extends Page
 
     public ?int $projetoParaExcluir = null;
 
+    public bool $mostrarArquivados = false;
+
     /**
      * Edição em lote das datas de todas as fases da obra selecionada.
      * Indexado por id da fase: ['prev_i','prev_f','real_i','real_f'].
@@ -315,6 +317,10 @@ class Cronograma extends Page
         $cronogramaService = new CronogramaService;
 
         $query = Projeto::with(['cronogramaFases.template', 'cronogramaFases.templateFase', 'estado', 'obras', 'gerenteGeral']);
+
+        if ($this->mostrarArquivados) {
+            $query->onlyTrashed();
+        }
 
         $this->filtrarProjetosPorParticipacao($query);
 
@@ -423,7 +429,7 @@ class Cronograma extends Page
             'gerenteGeral',
             'estado',
             'obras.construtoras',
-        ])->find($this->projetoSelecionado);
+        ])->withTrashed()->find($this->projetoSelecionado);
 
         if (! $projeto) {
             $this->projetoSelecionado = null;
@@ -2976,6 +2982,35 @@ class Cronograma extends Page
 
         $this->adicionarFasePersonalizada();
         $this->mostrarModalNovaFase = false;
+    }
+
+    public function arquivarPlanejamento(int $projetoId): void
+    {
+        $projeto = \App\Models\Projeto::find($projetoId);
+        if (! $projeto) {
+            return;
+        }
+
+        $projeto->delete();
+
+        if ($this->projetoSelecionado === $projetoId) {
+            $this->projetoSelecionado = null;
+            $this->modoIndividual = false;
+        }
+
+        $this->dispatch('notify', type: 'success', message: 'Planejamento arquivado.');
+    }
+
+    public function restaurarPlanejamento(int $projetoId): void
+    {
+        $projeto = \App\Models\Projeto::withTrashed()->find($projetoId);
+        if (! $projeto) {
+            return;
+        }
+
+        $projeto->restore();
+
+        $this->dispatch('notify', type: 'success', message: 'Planejamento restaurado.');
     }
 
     public function confirmarExcluirPlanejamento(int $projetoId): void
