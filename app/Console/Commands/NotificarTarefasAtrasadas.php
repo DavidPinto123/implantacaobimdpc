@@ -25,18 +25,24 @@ class NotificarTarefasAtrasadas extends Command
             return self::FAILURE;
         }
 
-        // Apenas tarefas que venceram ontem — notifica só no primeiro dia de atraso
-        $ontem = now()->subDay()->toDateString();
+        $filtro  = $this->option('user');
+        $manual  = (bool) $filtro;
 
-        $query = Task::whereDate('termino_programado', $ontem)
-            ->whereNotIn('status', ['concluida', 'cancelada'])
+        $query = Task::whereNotIn('status', ['concluida', 'cancelada'])
             ->with(['responsavel', 'solicitante']);
 
-        if ($filtro = $this->option('user')) {
+        if ($manual) {
+            // Envio manual/teste: todas as tarefas atrasadas do usuário
             $usuario = User::where('email', $filtro)->orWhere('id', $filtro)->first();
-            if ($usuario) {
-                $query->where(fn ($q) => $q->where('assigned_to', $usuario->id)->orWhere('created_by', $usuario->id));
+            if (! $usuario) {
+                $this->warn("Usuário '{$filtro}' não encontrado.");
+                return self::FAILURE;
             }
+            $query->where('termino_programado', '<', now()->startOfDay())
+                ->where(fn ($q) => $q->where('assigned_to', $usuario->id)->orWhere('created_by', $usuario->id));
+        } else {
+            // Envio automático agendado: apenas tarefas que venceram ontem (evita spam)
+            $query->whereDate('termino_programado', now()->subDay()->toDateString());
         }
 
         $tarefas = $query->get();
