@@ -231,7 +231,7 @@ class WhatsAppNotificacoesPage extends Page
 
         $this->renderKey++;
         Notification::make()
-            ->title("{$adicionados} usuário(s) do perfil "{$roleName}" adicionado(s)")
+            ->title("{$adicionados} usuário(s) do perfil '{$roleName}' adicionado(s)")
             ->success()
             ->send();
     }
