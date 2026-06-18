@@ -10,7 +10,7 @@ use Illuminate\Console\Command;
 
 class EnviarAgendaSemanal extends Command
 {
-    protected $signature = 'whatsapp:agenda-semanal';
+    protected $signature = 'whatsapp:agenda-semanal {--user= : E-mail ou ID do usuário (para testar um único destinatário)}';
 
     protected $description = 'Envia resumo semanal de tarefas via WhatsApp (toda segunda-feira às 9h)';
 
@@ -32,10 +32,17 @@ class EnviarAgendaSemanal extends Command
         $hoje     = now()->startOfDay();
         $fimSemana = now()->endOfWeek(); // domingo da semana atual
 
-        $usuarios = User::whereNotNull('phone')
+        $query = User::whereNotNull('phone')
             ->where('phone', '!=', '')
-            ->where('is_active', true)
-            ->get();
+            ->where('is_active', true);
+
+        if ($filtro = $this->option('user')) {
+            $query->where(function ($q) use ($filtro) {
+                $q->where('email', $filtro)->orWhere('id', $filtro);
+            });
+        }
+
+        $usuarios = $query->get();
 
         $enviados = 0;
 
