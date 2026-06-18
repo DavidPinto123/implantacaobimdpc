@@ -30,6 +30,7 @@ use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Url;
 use UnitEnum;
 
@@ -625,6 +626,7 @@ class Cronograma extends Page
         if (! $fase) return;
         $fase->status = $statusEnum;
         $fase->save();
+        $this->propagarStatusFaseParaItens($fase);
         $this->renderKey++;
     }
 
@@ -3173,6 +3175,7 @@ class Cronograma extends Page
         if (in_array($statusEnum, self::STATUS_SEM_MODAL, true)) {
             $fase->status = $statusEnum;
             $fase->save();
+            $this->propagarStatusFaseParaItens($fase);
             $this->renderKey++;
 
             return;
@@ -3232,6 +3235,7 @@ class Cronograma extends Page
             $fase->data_realizada_fim = null;
             $fase->status = $statusEnum;
             $fase->save();
+            $this->propagarStatusFaseParaItens($fase);
 
             $this->cancelarFinalizacaoStatus();
             $this->renderKey++;
@@ -3275,6 +3279,7 @@ class Cronograma extends Page
         $fase->data_realizada_fim = $dataFim;
         $fase->status = $statusEnum;
         $fase->save();
+        $this->propagarStatusFaseParaItens($fase);
 
         $this->cancelarFinalizacaoStatus();
         $this->renderKey++;
@@ -3290,6 +3295,53 @@ class Cronograma extends Page
         $this->confirmacaoDataRealInicio = null;
         $this->confirmacaoDataRealFim = null;
         $this->confirmacaoApenasInicio = false;
+    }
+
+    /**
+     * Propaga o status da fase para todos os seus subitens (CronogramaFaseItem)
+     * e sincroniza também as Tasks vinculadas.
+     */
+    private function propagarStatusFaseParaItens(CronogramaFase $fase): void
+    {
+        $statusEnum = $fase->status;
+        $hoje       = today()->format('Y-m-d');
+
+        if (in_array($statusEnum, self::STATUS_FINAIS, true)) {
+            $dataInicio = $fase->data_realizada_inicio?->format('Y-m-d') ?? $hoje;
+            $dataFim    = $fase->data_realizada_fim?->format('Y-m-d') ?? $hoje;
+
+            $fase->itens()->update([
+                'recebido'              => true,
+                'data_realizada_inicio' => DB::raw("COALESCE(data_realizada_inicio, '{$dataInicio}')"),
+                'data_realizada_fim'    => DB::raw("COALESCE(data_realizada_fim, '{$dataFim}')"),
+            ]);
+
+            Task::whereIn('cronograma_fase_item_id', $fase->itens()->pluck('id'))
+                ->update(['status' => 'concluida']);
+
+        } elseif (in_array($statusEnum, self::STATUS_SEM_MODAL, true)) {
+            $fase->itens()->update([
+                'recebido'              => false,
+                'data_realizada_inicio' => null,
+                'data_realizada_fim'    => null,
+            ]);
+
+            Task::whereIn('cronograma_fase_item_id', $fase->itens()->pluck('id'))
+                ->update(['status' => 'pendente']);
+
+        } else {
+            // Status intermediário (Em andamento, etc.)
+            $dataInicio = $fase->data_realizada_inicio?->format('Y-m-d') ?? $hoje;
+
+            $fase->itens()->update([
+                'recebido'              => false,
+                'data_realizada_inicio' => DB::raw("COALESCE(data_realizada_inicio, '{$dataInicio}')"),
+                'data_realizada_fim'    => null,
+            ]);
+
+            Task::whereIn('cronograma_fase_item_id', $fase->itens()->pluck('id'))
+                ->update(['status' => 'em_andamento']);
+        }
     }
 
     public function abrirEdicaoFase(int $faseId): void
