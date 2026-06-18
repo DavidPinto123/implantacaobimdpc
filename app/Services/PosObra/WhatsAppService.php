@@ -179,7 +179,10 @@ class WhatsAppService
         );
 
         if (! $sucesso) {
-            Log::error('Falha ao enviar WhatsApp', ['response' => $response->json()]);
+            Log::error('Falha ao enviar WhatsApp', [
+                'payload'  => $payload,
+                'response' => $response->json(),
+            ]);
         }
 
         return $sucesso;
