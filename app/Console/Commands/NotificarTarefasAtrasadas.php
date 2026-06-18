@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Jobs\SendWhatsAppNotificationJob;
 use App\Models\Task;
 use App\Models\User;
+use App\Models\WhatsappTaskContext;
 use App\Services\PosObra\WhatsAppService;
 use Illuminate\Console\Command;
 
@@ -66,6 +67,12 @@ class NotificarTarefasAtrasadas extends Command
                     $tarefa->title,
                     $prazo,
                 ]);
+
+                // Salva contexto para capturar resposta como comentário na tarefa
+                WhatsappTaskContext::updateOrCreate(
+                    ['phone' => $tel, 'task_id' => $tarefa->id],
+                    ['task_title' => $tarefa->title, 'expires_at' => now()->addHours(72), 'replied_at' => null]
+                );
 
                 $enviados++;
             }

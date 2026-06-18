@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use App\Models\Projeto;
 
 class Task extends Model
@@ -80,6 +81,11 @@ class Task extends Model
     public function projeto(): BelongsTo
     {
         return $this->belongsTo(Projeto::class);
+    }
+
+    public function comentarios(): MorphMany
+    {
+        return $this->morphMany(Comentario::class, 'comentavel')->latest();
     }
 
     protected static function booted()

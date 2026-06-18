@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Tasks\Schemas;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\View as ViewComponent;
 use Filament\Schemas\Schema;
 
 class TaskInfolist
@@ -85,6 +86,9 @@ class TaskInfolist
                     ]),
 
                 ]),
+
+            ViewComponent::make('filament.resources.tasks.comentarios')
+                ->columnSpanFull(),
 
             Section::make('Datas')
                 ->schema([

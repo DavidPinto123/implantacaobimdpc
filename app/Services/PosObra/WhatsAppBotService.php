@@ -11,13 +11,16 @@ use App\Events\PosObra\PendenciaAprovada;
 use App\Events\PosObra\PendenciaRegistrada;
 use App\Events\PosObra\PendenciaRejeitada;
 use App\Events\PosObra\PrazoInformado;
+use App\Models\Comentario;
 use App\Models\Obras;
 use App\Models\PosObra\AnexoPendencia;
 use App\Models\PosObra\AprovacaoFinalizacao;
 use App\Models\PosObra\ConversaWhatsapp;
 use App\Models\PosObra\Pendencia;
 use App\Models\PosObra\WhatsappBotMensagem;
+use App\Models\Task;
 use App\Models\User;
+use App\Models\WhatsappTaskContext;
 
 class WhatsAppBotService
 {
@@ -35,6 +38,22 @@ class WhatsAppBotService
 
         $conversa->ultima_mensagem_at = now();
 
+        // Fluxo de justificativa de tarefa atrasada (tem prioridade quando em fase INICIO ou já no fluxo)
+        if ($conversa->fase === 'TAREFA_AGUARDA_JUSTIFICATIVA') {
+            $this->fluxoTarefaJustificativa($conversa, $texto, $buttonId);
+            $conversa->save();
+            return;
+        }
+
+        if ($conversa->fase === 'INICIO') {
+            $ctx = WhatsappTaskContext::ativo($telefone);
+            if ($ctx) {
+                $this->iniciarFluxoTarefa($conversa, $ctx);
+                $conversa->save();
+                return;
+            }
+        }
+
         match ($conversa->perfil) {
             'LIDER' => $this->fluxoLider($conversa, $texto, $midiaUrl, $tipoMidia, $buttonId),
             'CONSTRUTORA' => $this->fluxoConstrutora($conversa, $texto, $midiaUrl, $tipoMidia, $buttonId),
@@ -43,6 +62,93 @@ class WhatsAppBotService
         };
 
         $conversa->save();
+    }
+
+    // ─── Fluxo Justificativa de Tarefa Atrasada ─────────────────────────────────
+
+    private const OPCOES_ATRASO = [
+        ['id' => 'atraso_1', 'titulo' => '✅ Concluindo hoje'],
+        ['id' => 'atraso_2', 'titulo' => '📋 Concluída, só não registrada'],
+        ['id' => 'atraso_3', 'titulo' => '❓ Não tinha ciência da tarefa'],
+        ['id' => 'atraso_4', 'titulo' => '🤒 Estou doente'],
+        ['id' => 'atraso_5', 'titulo' => '📍 Problemas para localizar o endereço'],
+        ['id' => 'atraso_6', 'titulo' => '⚙️ Estou executando sem motivo direto'],
+        ['id' => 'atraso_7', 'titulo' => '📚 Excesso de tarefas'],
+        ['id' => 'atraso_livre', 'titulo' => '✏️ Outra justificativa (digitar)'],
+    ];
+
+    private function iniciarFluxoTarefa(ConversaWhatsapp $conversa, WhatsappTaskContext $ctx): void
+    {
+        $conversa->fase = 'TAREFA_AGUARDA_JUSTIFICATIVA';
+        $conversa->contexto = array_merge($conversa->contexto ?? [], [
+            'task_ctx_id' => $ctx->id,
+            'task_id'     => $ctx->task_id,
+            'task_title'  => $ctx->task_title,
+        ]);
+
+        $this->whatsApp->enviarLista(
+            telefone: $conversa->telefone,
+            corpo: "Você tem uma tarefa em atraso:\n\n*{$ctx->task_title}*\n\nSelecione uma justificativa ou escolha \"Outra justificativa\" para digitar livremente:",
+            textoBotao: 'Ver justificativas',
+            itens: self::OPCOES_ATRASO,
+            tituloSecao: 'Motivo do atraso',
+        );
+    }
+
+    private function fluxoTarefaJustificativa(ConversaWhatsapp $conversa, string $texto, ?string $buttonId): void
+    {
+        $ctx = $conversa->contexto ?? [];
+        $taskCtxId = $ctx['task_ctx_id'] ?? null;
+        $taskId    = $ctx['task_id'] ?? null;
+        $taskTitle = $ctx['task_title'] ?? 'tarefa';
+
+        $idResposta = $buttonId ?? $texto;
+
+        // Mapeia IDs predefinidos para texto legível
+        $mapaOpcoes = collect(self::OPCOES_ATRASO)->pluck('titulo', 'id')->toArray();
+        $justificativa = $mapaOpcoes[$idResposta] ?? null;
+
+        // "Outra justificativa (digitar)" → pedir texto livre
+        if ($idResposta === 'atraso_livre') {
+            $this->whatsApp->enviar($conversa->telefone, "Digite sua justificativa para a tarefa *{$taskTitle}*:");
+            return; // mantém fase para capturar próxima mensagem como texto livre
+        }
+
+        // Texto livre (não é um ID de opção) ou opção selecionada
+        if (! $justificativa) {
+            $justificativa = $texto;
+        }
+
+        // Salva comentário na tarefa
+        if ($taskId) {
+            $task = Task::find($taskId);
+            if ($task) {
+                $usuario = User::where('phone', 'like', "%{$conversa->telefone}%")
+                    ->orWhere('phone', ltrim($conversa->telefone, '55'))
+                    ->first();
+
+                Comentario::create([
+                    'comentavel_type' => Task::class,
+                    'comentavel_id'   => $task->id,
+                    'usuario_id'      => $usuario?->id ?? $task->assigned_to,
+                    'conteudo'        => "📱 *Via WhatsApp:* {$justificativa}",
+                ]);
+            }
+        }
+
+        // Marca contexto como respondido
+        if ($taskCtxId) {
+            WhatsappTaskContext::find($taskCtxId)?->marcarRespondido();
+        }
+
+        // Confirma e reseta conversa
+        $this->whatsApp->enviar(
+            $conversa->telefone,
+            "✅ Comentário registrado na tarefa *{$taskTitle}*.\n\nObrigado pelo retorno!"
+        );
+
+        $conversa->fase = 'INICIO';
+        $conversa->contexto = array_diff_key($ctx, array_flip(['task_ctx_id', 'task_id', 'task_title']));
     }
 
     // ─── Fluxo Líder ────────────────────────────────────────────────────────────
