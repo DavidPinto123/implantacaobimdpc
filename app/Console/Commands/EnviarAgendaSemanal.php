@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Jobs\SendWhatsAppNotificationJob;
 use App\Models\Task;
 use App\Models\User;
+use App\Models\WhatsappSubscricao;
 use App\Services\PosObra\WhatsAppService;
 use Illuminate\Console\Command;
 
@@ -37,9 +38,19 @@ class EnviarAgendaSemanal extends Command
             ->where('is_active', true);
 
         if ($filtro = $this->option('user')) {
+            // Filtro explícito por e-mail ou ID (teste pontual)
             $query->where(function ($q) use ($filtro) {
                 $q->where('email', $filtro)->orWhere('id', $filtro);
             });
+        } else {
+            // Se houver assinantes configurados, usa apenas eles
+            $assinantes = WhatsappSubscricao::where('template_key', 'agenda_semanal')
+                ->pluck('user_id');
+
+            if ($assinantes->isNotEmpty()) {
+                $query->whereIn('id', $assinantes);
+            }
+            // Sem assinantes → mantém a query original (todos com telefone)
         }
 
         $usuarios = $query->get();
