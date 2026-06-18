@@ -50,6 +50,7 @@ return [
     'whatsapp' => [
         'templates' => [
             'tarefa_atrasada'     => env('WHATSAPP_TEMPLATE_ATRASO',    'tarefa_atrasada'),
+            'resumo_atrasos'      => env('WHATSAPP_TEMPLATE_RESUMO_ATRASOS', 'resumo_atrasos'),
             'status_tarefa'       => env('WHATSAPP_TEMPLATE_STATUS',     'status_tarefa'),
             'agenda_semanal'      => env('WHATSAPP_TEMPLATE_AGENDA',     'agenda_semanal'),
             'nova_tarefa'         => env('WHATSAPP_TEMPLATE_NOVA',       'nova_tarefa'),

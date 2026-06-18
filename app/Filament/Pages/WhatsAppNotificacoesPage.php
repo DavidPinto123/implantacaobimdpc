@@ -32,10 +32,16 @@ class WhatsAppNotificacoesPage extends Page
             'comando'  => 'whatsapp:agenda-semanal',
         ],
         'tarefa_atrasada' => [
-            'label'    => 'Tarefas Atrasadas',
-            'descricao' => 'Alerta de tarefas vencidas — agendado todo dia às 8h',
+            'label'    => 'Tarefas Atrasadas (individual)',
+            'descricao' => 'Notifica cada responsável sobre sua própria tarefa vencida — agendado todo dia às 8h',
             'tipo'     => 'broadcast',
             'comando'  => 'whatsapp:notificar-atrasos',
+        ],
+        'resumo_atrasos' => [
+            'label'    => 'Resumo de Atrasos (gerencial)',
+            'descricao' => 'Envia lista consolidada de TODAS as tarefas atrasadas com o profissional responsável',
+            'tipo'     => 'broadcast',
+            'comando'  => 'whatsapp:resumo-atrasos',
         ],
         'nova_tarefa' => [
             'label'    => 'Nova Tarefa',
