@@ -98,8 +98,9 @@
                 <button class="wn-btn wn-btn-outline" wire:click="abrirPainel('{{ $tpl['key'] }}')">
                     {{ $painelAberto === $tpl['key'] ? '▲ Fechar' : '👥 Assinantes' }}
                 </button>
-                <button class="wn-btn wn-btn-green" wire:click="$set('envioTemplateKey','{{ $tpl['key'] }}')" onclick="document.getElementById('envio-manual').scrollIntoView({behavior:'smooth'})">
-                    ▶ Enviar agora
+                <button class="wn-btn wn-btn-green" wire:click="enviarParaTodos('{{ $tpl['key'] }}')" wire:loading.attr="disabled" wire:target="enviarParaTodos('{{ $tpl['key'] }}')">
+                    <span wire:loading.remove wire:target="enviarParaTodos('{{ $tpl['key'] }}')">▶ Enviar agora</span>
+                    <span wire:loading wire:target="enviarParaTodos('{{ $tpl['key'] }}')">Enviando...</span>
                 </button>
             @endif
         </div>
@@ -111,7 +112,22 @@
     <div class="wn-painel">
         <div class="wn-painel-header">
             <span class="wn-painel-title">Assinantes — {{ $tpl['label'] }}</span>
-            <div class="wn-painel-actions">
+            <div class="wn-painel-actions" style="flex-wrap:wrap;gap:6px;">
+                {{-- Seletor por perfil --}}
+                <div x-data="{ role: '' }" style="display:flex;gap:4px;align-items:center;">
+                    <select x-model="role" class="wn-select" style="padding:4px 8px;font-size:.72rem;min-width:150px;">
+                        <option value="">+ Perfil...</option>
+                        @foreach($this->getRoles() as $r)
+                            <option value="{{ $r }}">{{ $r }}</option>
+                        @endforeach
+                    </select>
+                    <button class="wn-btn wn-btn-outline"
+                            x-show="role"
+                            x-cloak
+                            @click="$wire.adicionarPorPerfil('{{ $tpl['key'] }}', role).then(() => role = '')">
+                        Adicionar
+                    </button>
+                </div>
                 <button class="wn-btn wn-btn-outline" wire:click="selecionarTodos('{{ $tpl['key'] }}')">Todos com tel.</button>
                 <button class="wn-btn wn-btn-red" wire:click="removerTodos('{{ $tpl['key'] }}')">Remover todos</button>
             </div>

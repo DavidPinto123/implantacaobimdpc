@@ -186,6 +186,61 @@ class WhatsAppNotificacoesPage extends Page
         $this->painelAberto = $this->painelAberto === $key ? null : $key;
     }
 
+    public function enviarParaTodos(string $key): void
+    {
+        $def = self::TEMPLATES[$key] ?? null;
+        if (! $def || $def['tipo'] !== 'broadcast') {
+            Notification::make()->title('Template inválido')->danger()->send();
+            return;
+        }
+
+        Artisan::call($def['comando']);
+        $output = trim(Artisan::output());
+
+        Notification::make()
+            ->title('Enviado — ' . $def['label'])
+            ->body($output ?: 'Mensagens enfileiradas para todos os assinantes.')
+            ->success()
+            ->send();
+
+        $this->renderKey++;
+    }
+
+    public function adicionarPorPerfil(string $key, string $roleName): void
+    {
+        if (! $roleName) {
+            return;
+        }
+
+        $usuarios = User::role($roleName)
+            ->where('is_active', true)
+            ->whereNotNull('phone')
+            ->where('phone', '!=', '')
+            ->pluck('id');
+
+        $adicionados = 0;
+        foreach ($usuarios as $userId) {
+            $entry = WhatsappSubscricao::firstOrCreate([
+                'user_id'      => $userId,
+                'template_key' => $key,
+            ]);
+            if ($entry->wasRecentlyCreated) {
+                $adicionados++;
+            }
+        }
+
+        $this->renderKey++;
+        Notification::make()
+            ->title("{$adicionados} usuário(s) do perfil "{$roleName}" adicionado(s)")
+            ->success()
+            ->send();
+    }
+
+    public function getRoles(): array
+    {
+        return \Spatie\Permission\Models\Role::orderBy('name')->pluck('name')->toArray();
+    }
+
     public function enviarManual(): void
     {
         if (! $this->envioTemplateKey) {
