@@ -24,8 +24,7 @@ class TaskInfolist
                     ->label('Status')
                     ->badge()
                     ->formatStateUsing(fn ($state) => match ($state) {
-                        // 'nao_iniciada' => 'Não iniciada',
-                        'pendente' => 'Pendente',
+                        'pendente' => 'Não iniciada',
                         'em_andamento' => 'Em andamento',
                         'concluida' => 'Concluída',
                         'cancelada' => 'Cancelada',

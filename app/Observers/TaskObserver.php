@@ -41,6 +41,12 @@ class TaskObserver
 
     public function updated(Task $task): void
     {
+        // ── Sync Planning ────────────────────────────────────────────────
+        if ($task->cronograma_fase_item_id) {
+            $this->syncPlanejamento($task);
+        }
+
+        // ── WhatsApp: só notifica quando status mudou ────────────────────
         if (! $task->wasChanged('status')) {
             return;
         }
@@ -51,7 +57,7 @@ class TaskObserver
         }
 
         $statusLabel = match ($task->status) {
-            'pendente'     => 'Pendente',
+            'pendente'     => 'Não iniciada',
             'em_andamento' => 'Em andamento',
             'concluida'    => 'Concluída',
             'cancelada'    => 'Cancelada',
@@ -80,14 +86,45 @@ class TaskObserver
         }
 
         $this->notificarGerenteGeral($task, "Tarefa *{$task->title}* atualizada para {$statusLabel}");
+    }
 
-        // Cascata: quando tarefa é concluída, marca o item do cronograma como recebido
-        if ($task->status === 'concluida' && $task->cronograma_fase_item_id) {
-            $item = \App\Models\CronogramaFaseItem::find($task->cronograma_fase_item_id);
-            if ($item && ! $item->recebido) {
+    private function syncPlanejamento(Task $task): void
+    {
+        $item = \App\Models\CronogramaFaseItem::find($task->cronograma_fase_item_id);
+        if (! $item) {
+            return;
+        }
+
+        // Campos que replicam diretamente sem disparar o observer de cronograma
+        $changes = [];
+
+        if ($task->wasChanged('revisor_id')) {
+            $changes['revisor_id'] = $task->revisor_id;
+        }
+
+        if ($task->wasChanged('termino_programado') && $task->termino_programado) {
+            $changes['data_prevista_fim'] = $task->termino_programado;
+        }
+
+        if ($changes) {
+            \App\Models\CronogramaFaseItem::withoutObservers(fn () => $item->update($changes));
+        }
+
+        // Responsável: mantém o assigned_to no pivot sem remover outros
+        if ($task->wasChanged('assigned_to') && $task->assigned_to) {
+            $item->responsaveis()->syncWithoutDetaching([$task->assigned_to]);
+        }
+
+        // Status → datas realizadas e recebido
+        if ($task->wasChanged('status')) {
+            if ($task->status === 'em_andamento' && ! $item->data_realizada_inicio) {
+                \App\Models\CronogramaFaseItem::withoutObservers(
+                    fn () => $item->update(['data_realizada_inicio' => today()])
+                );
+            } elseif ($task->status === 'concluida' && ! $item->recebido) {
                 $item->recebido = true;
                 $item->data_realizada_fim ??= today();
-                $item->save(); // CronogramaFaseItemObserver propaga percentual e status da fase
+                $item->save(); // observer propaga percentual e status da fase
             }
         }
     }

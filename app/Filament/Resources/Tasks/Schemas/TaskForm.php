@@ -66,7 +66,7 @@ class TaskForm
                         Select::make('status')
                             ->label('Status')
                             ->options([
-                                'pendente'     => 'Pendente',
+                                'pendente'     => 'Não iniciada',
                                 'em_andamento' => 'Em andamento',
                                 'concluida'    => 'Concluída',
                                 'cancelada'    => 'Cancelada',

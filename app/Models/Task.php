@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use App\Models\CronogramaFaseItem;
 use App\Models\Projeto;
 
 class Task extends Model
@@ -86,6 +87,11 @@ class Task extends Model
     public function comentarios(): MorphMany
     {
         return $this->morphMany(Comentario::class, 'comentavel')->latest();
+    }
+
+    public function cronogramaFaseItem(): BelongsTo
+    {
+        return $this->belongsTo(CronogramaFaseItem::class, 'cronograma_fase_item_id');
     }
 
     protected static function booted()

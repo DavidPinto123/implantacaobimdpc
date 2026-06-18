@@ -49,7 +49,7 @@ class ListTasks extends ListRecords
         'concluida',
         'cancelada',
         'atrasadas',
-        'futuras',
+        'previstas',
     ];
 
     public function getFiltroProjetosOptions(): array
@@ -141,8 +141,8 @@ class ListTasks extends ListRecords
                                 ->whereNotNull('termino_programado')
                                 ->whereDate('termino_programado', '<', today()),
 
-                        'futuras'
-                            => $query->whereDate('inicio', '>', today()),
+                        'previstas'
+                            => $query->where('status', 'pendente')->whereDate('inicio', '>', today()),
 
                         default => null,
                     };
@@ -157,6 +157,9 @@ class ListTasks extends ListRecords
 
     public function moverTarefaKanban(int $id, string $novoStatus): void
     {
+        if (! in_array($novoStatus, ['pendente', 'em_andamento', 'concluida', 'cancelada'], true)) {
+            return;
+        }
         $task = \App\Models\Task::find($id);
         if (! $task) {
             return;
@@ -178,14 +181,25 @@ class ListTasks extends ListRecords
     public function getKanbanTarefas(): \Illuminate\Support\Collection
     {
         $tasks = $this->getTableQuery()
-            ->with(['responsavel', 'projeto'])
+            ->with(['responsavel', 'projeto', 'cronogramaFaseItem.fase'])
             ->get();
 
         if ($this->kanbanAgrupamento === 'profissional') {
             return $tasks->groupBy(fn ($t) => $t->assigned_to ?? 0);
         }
 
-        return $tasks->groupBy('status');
+        return $tasks->groupBy(function ($t) {
+            $hoje = today();
+            if ($t->termino_programado
+                && $t->termino_programado->lt($hoje)
+                && ! in_array($t->status, ['concluida', 'cancelada'], true)) {
+                return 'atrasadas';
+            }
+            if ($t->inicio && $t->inicio->gt($hoje) && $t->status === 'pendente') {
+                return 'previstas';
+            }
+            return $t->status;
+        });
     }
 
     public function getKanbanUsuarios(): \Illuminate\Support\Collection

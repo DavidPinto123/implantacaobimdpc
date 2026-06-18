@@ -66,11 +66,12 @@ class TaskStats extends BaseWidget
             ->count();
 
         $futuras = (clone $base)
+            ->where('status', 'pendente')
             ->whereDate('inicio', '>', today())
             ->count();
 
         return [
-            Stat::make('Pendentes', $pendentes)
+            Stat::make('Não iniciadas', $pendentes)
                 ->color('warning')
                 ->chart([7, 2, 10, 3, 15, 4, 17])
                 ->extraAttributes([
@@ -110,12 +111,12 @@ class TaskStats extends BaseWidget
                     'x-on:click' => "\$wire.dispatch('task-status-card-selected', { status: 'cancelada' })",
                 ]),
 
-            Stat::make('Futuras', $futuras)
+            Stat::make('Previstas', $futuras)
                 ->color('primary')
                 ->chart([7, 2, 10, 3, 15, 4, 17])
                 ->extraAttributes([
-                    'class' => 'cursor-pointer stat-futuras',
-                    'x-on:click' => "\$wire.dispatch('task-status-card-selected', { status: 'futuras' })",
+                    'class' => 'cursor-pointer stat-previstas',
+                    'x-on:click' => "\$wire.dispatch('task-status-card-selected', { status: 'previstas' })",
                 ]),
         ];
     }

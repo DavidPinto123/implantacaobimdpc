@@ -52,19 +52,24 @@
     {{-- ── KANBAN ───────────────────────────────────────────────────── --}}
     @php
         $tkCores = [
+            'previstas'    => '#8b5cf6',
             'pendente'     => '#f59e0b',
             'em_andamento' => '#3b82f6',
+            'atrasadas'    => '#ef4444',
             'concluida'    => '#22c55e',
-            'cancelada'    => '#9ca3af',
+            'cancelada'    => '#6b7280',
         ];
         $tkLabels = [
-            'pendente'     => 'Pendente',
+            'previstas'    => 'Previstas',
+            'pendente'     => 'Não iniciada',
             'em_andamento' => 'Em andamento',
+            'atrasadas'    => 'Atrasadas',
             'concluida'    => 'Concluída',
             'cancelada'    => 'Cancelada',
         ];
-        $tkTarefas  = $this->getKanbanTarefas();
-        $tkUsuarios = $this->getKanbanUsuarios();
+        $tkDropTargets = ['pendente', 'em_andamento', 'concluida', 'cancelada'];
+        $tkTarefas     = $this->getKanbanTarefas();
+        $tkUsuarios    = $this->getKanbanUsuarios();
     @endphp
 
     <style>
@@ -83,33 +88,51 @@
         .tk-kanban-card-resp::before { content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.6);flex-shrink:0; }
         .tk-kanban-card-datas { font-size:0.63rem;color:rgba(255,255,255,.78);margin-top:5px; }
         .tk-kanban-card-status { font-size:0.6rem;color:rgba(255,255,255,.7);margin-top:3px;font-style:italic; }
+        .tk-kanban-card-fase { font-size:0.58rem;color:rgba(255,255,255,.65);font-style:italic;margin-bottom:3px; }
         .tk-kanban-empty { text-align:center;padding:18px;font-size:.72rem;color:#9ca3af; }
+        .tk-kanban-no-drop { cursor: default; }
     </style>
 
     @if($kanbanAgrupamento === 'status')
     {{-- KANBAN POR STATUS --}}
     <div class="tk-kanban-board" x-data="{ draggingId: null, draggingStatus: null }">
-        @foreach(['pendente','em_andamento','concluida','cancelada'] as $tkStatus)
+        @foreach(['previstas','pendente','em_andamento','atrasadas','concluida','cancelada'] as $tkStatus)
             @php
-                $tkCor   = $tkCores[$tkStatus];
-                $tkLabel = $tkLabels[$tkStatus];
-                $tkCards = $tkTarefas->get($tkStatus, collect());
+                $tkCor      = $tkCores[$tkStatus];
+                $tkLabel    = $tkLabels[$tkStatus];
+                $tkCards    = $tkTarefas->get($tkStatus, collect());
+                $isDrop     = in_array($tkStatus, $tkDropTargets);
             @endphp
-            <div class="tk-kanban-col"
-                 @dragover.prevent="draggingStatus = '{{ $tkStatus }}'"
-                 @drop.prevent="if (draggingId !== null) { $wire.moverTarefaKanban(draggingId, '{{ $tkStatus }}'); draggingId = null; draggingStatus = null; }">
+            <div class="tk-kanban-col{{ ! $isDrop ? ' tk-kanban-no-drop' : '' }}"
+                 @if($isDrop)
+                     @dragover.prevent="draggingStatus = '{{ $tkStatus }}'"
+                     @drop.prevent="if (draggingId !== null) { $wire.moverTarefaKanban(draggingId, '{{ $tkStatus }}'); draggingId = null; draggingStatus = null; }"
+                 @endif>
                 <div class="tk-kanban-col-header" style="background:{{ $tkCor }}22;border-bottom:3px solid {{ $tkCor }};">
                     <span style="color:{{ $tkCor }};font-weight:800;font-size:0.78rem;text-transform:uppercase;letter-spacing:.04em;">{{ $tkLabel }}</span>
                     <span class="tk-kanban-count" style="background:{{ $tkCor }};color:#fff;">{{ $tkCards->count() }}</span>
                 </div>
-                <div class="tk-kanban-cards" :class="draggingStatus === '{{ $tkStatus }}' ? 'tk-kanban-drop-target' : ''">
+                <div class="tk-kanban-cards"
+                     @if($isDrop):class="draggingStatus === '{{ $tkStatus }}' ? 'tk-kanban-drop-target' : ''"@endif>
                     @foreach($tkCards as $tkCard)
+                        @php
+                            $tkFaseLabel = null;
+                            if ($tkCard->cronogramaFaseItem?->fase) {
+                                $cf = $tkCard->cronogramaFaseItem->fase;
+                                $tkFaseLabel = ($cf->fase?->value === 'personalizada')
+                                    ? $cf->titulo_personalizado
+                                    : $cf->fase?->label();
+                            }
+                        @endphp
                         <div class="tk-kanban-card" style="background:{{ $tkCor }};"
                              draggable="true"
                              @dragstart="draggingId = {{ $tkCard->id }}; draggingStatus = '{{ $tkStatus }}'"
                              @dragend="draggingId = null; draggingStatus = null">
                             @if($tkCard->projeto)
                                 <div class="tk-kanban-card-projeto">{{ $tkCard->projeto->nome }}</div>
+                            @endif
+                            @if($tkFaseLabel)
+                                <div class="tk-kanban-card-fase">{{ $tkFaseLabel }}</div>
                             @endif
                             <div class="tk-kanban-card-nome">{{ $tkCard->title }}</div>
                             @if($tkCard->responsavel)
@@ -145,13 +168,23 @@
             </div>
             <div class="tk-kanban-cards" :class="draggingUserId === 0 ? 'tk-kanban-drop-target' : ''">
                 @foreach($tkSemResp as $tkCard)
-                    @php $tkCor = $tkCores[$tkCard->status] ?? '#9ca3af'; @endphp
+                    @php
+                        $tkCor = $tkCores[$tkCard->status] ?? '#9ca3af';
+                        $tkFaseLabel = null;
+                        if ($tkCard->cronogramaFaseItem?->fase) {
+                            $cf = $tkCard->cronogramaFaseItem->fase;
+                            $tkFaseLabel = ($cf->fase?->value === 'personalizada') ? $cf->titulo_personalizado : $cf->fase?->label();
+                        }
+                    @endphp
                     <div class="tk-kanban-card" style="background:{{ $tkCor }};"
                          draggable="true"
                          @dragstart="draggingId = {{ $tkCard->id }}; draggingUserId = 0"
                          @dragend="draggingId = null; draggingUserId = null">
                         @if($tkCard->projeto)
                             <div class="tk-kanban-card-projeto">{{ $tkCard->projeto->nome }}</div>
+                        @endif
+                        @if($tkFaseLabel)
+                            <div class="tk-kanban-card-fase">{{ $tkFaseLabel }}</div>
                         @endif
                         <div class="tk-kanban-card-nome">{{ $tkCard->title }}</div>
                         <div class="tk-kanban-card-status">{{ $tkLabels[$tkCard->status] ?? $tkCard->status }}</div>
@@ -177,13 +210,23 @@
                 </div>
                 <div class="tk-kanban-cards" :class="draggingUserId === {{ $tkUser->id }} ? 'tk-kanban-drop-target' : ''">
                     @foreach($tkUserCards as $tkCard)
-                        @php $tkCor = $tkCores[$tkCard->status] ?? '#9ca3af'; @endphp
+                        @php
+                            $tkCor = $tkCores[$tkCard->status] ?? '#9ca3af';
+                            $tkFaseLabel = null;
+                            if ($tkCard->cronogramaFaseItem?->fase) {
+                                $cf = $tkCard->cronogramaFaseItem->fase;
+                                $tkFaseLabel = ($cf->fase?->value === 'personalizada') ? $cf->titulo_personalizado : $cf->fase?->label();
+                            }
+                        @endphp
                         <div class="tk-kanban-card" style="background:{{ $tkCor }};"
                              draggable="true"
                              @dragstart="draggingId = {{ $tkCard->id }}; draggingUserId = {{ $tkUser->id }}"
                              @dragend="draggingId = null; draggingUserId = null">
                             @if($tkCard->projeto)
                                 <div class="tk-kanban-card-projeto">{{ $tkCard->projeto->nome }}</div>
+                            @endif
+                            @if($tkFaseLabel)
+                                <div class="tk-kanban-card-fase">{{ $tkFaseLabel }}</div>
                             @endif
                             <div class="tk-kanban-card-nome">{{ $tkCard->title }}</div>
                             <div class="tk-kanban-card-status">{{ $tkLabels[$tkCard->status] ?? $tkCard->status }}</div>

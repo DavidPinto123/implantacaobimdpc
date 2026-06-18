@@ -29,8 +29,7 @@ class TasksTable
                     ->label('Status')
                     ->badge()
                     ->formatStateUsing(fn ($state) => match ($state) {
-                        // 'nao_iniciada' => 'Não iniciada',
-                        'pendente' => 'Pendente',
+                        'pendente' => 'Não iniciada',
                         'em_andamento' => 'Em andamento',
                         'concluida' => 'Concluída',
                         'cancelada' => 'Cancelada',
@@ -135,7 +134,7 @@ class TasksTable
                     ->multiple()
                     ->options([
                         // 'nao_iniciada' => 'Não Iniciada',
-                        'pendente' => 'Pendente',
+                        'pendente' => 'Não iniciada',
                         'em_andamento' => 'Em andamento',
                         'concluida' => 'Concluída',
                         'cancelada' => 'Cancelada',
@@ -205,7 +204,7 @@ class TasksTable
                             ->label('Status')
                             ->options([
                                 // 'nao_iniciada' => 'Não iniciada',
-                                'pendente' => 'Pendente',
+                                'pendente' => 'Não iniciada',
                                 'em_andamento' => 'Em andamento',
                                 'concluida' => 'Concluída',
                                 'cancelada' => 'Cancelada',
