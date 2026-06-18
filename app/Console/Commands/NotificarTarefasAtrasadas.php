@@ -4,12 +4,13 @@ namespace App\Console\Commands;
 
 use App\Jobs\SendWhatsAppNotificationJob;
 use App\Models\Task;
+use App\Models\User;
 use App\Services\PosObra\WhatsAppService;
 use Illuminate\Console\Command;
 
 class NotificarTarefasAtrasadas extends Command
 {
-    protected $signature = 'whatsapp:notificar-atrasos';
+    protected $signature = 'whatsapp:notificar-atrasos {--user= : E-mail ou ID do usuário (para testar um único destinatário)}';
 
     protected $description = 'Envia WhatsApp para tarefas que venceram ontem (evita spam de re-notificação)';
 
@@ -26,10 +27,18 @@ class NotificarTarefasAtrasadas extends Command
         // Apenas tarefas que venceram ontem — notifica só no primeiro dia de atraso
         $ontem = now()->subDay()->toDateString();
 
-        $tarefas = Task::whereDate('termino_programado', $ontem)
+        $query = Task::whereDate('termino_programado', $ontem)
             ->whereNotIn('status', ['concluida', 'cancelada'])
-            ->with(['responsavel', 'solicitante'])
-            ->get();
+            ->with(['responsavel', 'solicitante']);
+
+        if ($filtro = $this->option('user')) {
+            $usuario = User::where('email', $filtro)->orWhere('id', $filtro)->first();
+            if ($usuario) {
+                $query->where(fn ($q) => $q->where('assigned_to', $usuario->id)->orWhere('created_by', $usuario->id));
+            }
+        }
+
+        $tarefas = $query->get();
 
         $enviados = 0;
 
