@@ -7,9 +7,13 @@ use App\Filament\Resources\Tasks\Schemas\TaskInfolist;
 use App\Models\Task;
 use App\Models\User;
 use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
@@ -355,6 +359,70 @@ class TasksTable
             // ->recordClasses('cursor-pointer hover:bg-gray-800 dark:hover:bg-gray-800')
             ->toolbarActions([
                 BulkActionGroup::make([
+                    BulkAction::make('editar_em_lote')
+                        ->label('Editar selecionadas')
+                        ->icon('heroicon-o-pencil-square')
+                        ->form([
+                            Select::make('status')
+                                ->label('Status')
+                                ->options([
+                                    'pendente'     => 'Não iniciada',
+                                    'em_andamento' => 'Em andamento',
+                                    'concluida'    => 'Concluída',
+                                    'cancelada'    => 'Cancelada',
+                                ])
+                                ->placeholder('— não alterar —'),
+                            Select::make('assigned_to')
+                                ->label('Responsável')
+                                ->options(fn () => User::where('is_active', true)->orderBy('name')->pluck('name', 'id'))
+                                ->searchable()
+                                ->placeholder('— não alterar —'),
+                            Select::make('revisor_id')
+                                ->label('Revisor')
+                                ->options(fn () => User::where('is_active', true)->orderBy('name')->pluck('name', 'id'))
+                                ->searchable()
+                                ->placeholder('— não alterar —'),
+                            DatePicker::make('inicio')
+                                ->label('Data de início'),
+                            TextInput::make('prazo')
+                                ->label('Prazo (dias)')
+                                ->numeric()
+                                ->minValue(1)
+                                ->helperText('Número de dias de duração. A data de término é calculada automaticamente.'),
+                        ])
+                        ->action(function (array $data, \Illuminate\Support\Collection $records) {
+                            $atualizados = 0;
+                            foreach ($records as $task) {
+                                $campos = array_filter([
+                                    'status'      => $data['status'] ?? null,
+                                    'assigned_to' => $data['assigned_to'] ?? null,
+                                    'revisor_id'  => $data['revisor_id'] ?? null,
+                                    'inicio'      => $data['inicio'] ?? null,
+                                    'prazo'       => $data['prazo'] ?? null,
+                                ], fn ($v) => $v !== null && $v !== '');
+
+                                if (empty($campos)) {
+                                    continue;
+                                }
+
+                                if (isset($campos['inicio']) || isset($campos['prazo'])) {
+                                    $campos['termino_programado'] = Task::calcularTerminoProgramadoData(
+                                        $campos['inicio'] ?? $task->inicio?->toDateString(),
+                                        $campos['prazo'] ?? $task->prazo,
+                                        (bool) $task->dias_corridos
+                                    );
+                                }
+
+                                $task->update($campos);
+                                $atualizados++;
+                            }
+
+                            Notification::make()
+                                ->title("{$atualizados} tarefa(s) atualizadas")
+                                ->success()
+                                ->send();
+                        })
+                        ->deselectRecordsAfterCompletion(),
                     DeleteBulkAction::make(),
                 ]),
             ]);

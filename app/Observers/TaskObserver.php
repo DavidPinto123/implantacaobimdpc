@@ -107,7 +107,7 @@ class TaskObserver
         }
 
         if ($changes) {
-            \App\Models\CronogramaFaseItem::withoutObservers(fn () => $item->update($changes));
+            $item->fill($changes)->saveQuietly();
         }
 
         // Responsável: mantém o assigned_to no pivot sem remover outros
@@ -118,9 +118,7 @@ class TaskObserver
         // Status → datas realizadas e recebido
         if ($task->wasChanged('status')) {
             if ($task->status === 'em_andamento' && ! $item->data_realizada_inicio) {
-                \App\Models\CronogramaFaseItem::withoutObservers(
-                    fn () => $item->update(['data_realizada_inicio' => today()])
-                );
+                $item->fill(['data_realizada_inicio' => today()])->saveQuietly();
             } elseif ($task->status === 'concluida' && ! $item->recebido) {
                 $item->recebido = true;
                 $item->data_realizada_fim ??= today();
