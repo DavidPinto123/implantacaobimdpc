@@ -2173,6 +2173,24 @@ class Cronograma extends Page
             default => null,
         };
 
+        // Sincronizar status com a Task vinculada
+        $taskStatus = match ($status) {
+            'pendente'    => 'pendente',
+            'em_andamento' => 'em_andamento',
+            'concluido'   => 'concluida',
+            default       => null,
+        };
+        if ($taskStatus) {
+            \App\Models\Task::where('cronograma_fase_item_id', $itemId)
+                ->get()
+                ->each(function ($task) use ($taskStatus) {
+                    if ($task->status !== $taskStatus) {
+                        $task->status = $taskStatus;
+                        $task->saveQuietly();
+                    }
+                });
+        }
+
         // Recalcular datas de itens que dependem deste
         $itemAtualizado = CronogramaFaseItem::with(['dependencias'])->find($itemId);
         if ($itemAtualizado) {

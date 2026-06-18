@@ -117,12 +117,24 @@ class TaskObserver
 
         // Status → datas realizadas e recebido
         if ($task->wasChanged('status')) {
-            if ($task->status === 'em_andamento' && ! $item->data_realizada_inicio) {
+            if ($task->status === 'pendente') {
+                $item->fill([
+                    'recebido'              => false,
+                    'data_realizada_inicio' => null,
+                    'data_realizada_fim'    => null,
+                ])->save();
+            } elseif ($task->status === 'em_andamento' && ! $item->data_realizada_inicio) {
                 $item->fill(['data_realizada_inicio' => today()])->saveQuietly();
             } elseif ($task->status === 'concluida' && ! $item->recebido) {
                 $item->recebido = true;
                 $item->data_realizada_fim ??= today();
                 $item->save(); // observer propaga percentual e status da fase
+            } elseif ($task->status === 'cancelada') {
+                $item->fill([
+                    'recebido'              => false,
+                    'data_realizada_inicio' => null,
+                    'data_realizada_fim'    => null,
+                ])->saveQuietly();
             }
         }
     }
