@@ -28,24 +28,45 @@ class NotificarTarefasAtrasadas extends Command
         $filtro  = $this->option('user');
         $manual  = (bool) $filtro;
 
-        $query = Task::whereNotIn('status', ['concluida', 'cancelada'])
-            ->with(['responsavel', 'solicitante']);
-
         if ($manual) {
-            // Envio manual/teste: todas as tarefas atrasadas do usuário
+            // Envio manual/teste: apenas as tarefas onde o usuário é RESPONSÁVEL
             $usuario = User::where('email', $filtro)->orWhere('id', $filtro)->first();
             if (! $usuario) {
                 $this->warn("Usuário '{$filtro}' não encontrado.");
                 return self::FAILURE;
             }
-            $query->where('termino_programado', '<', now()->startOfDay())
-                ->where(fn ($q) => $q->where('assigned_to', $usuario->id)->orWhere('created_by', $usuario->id));
-        } else {
-            // Envio automático agendado: apenas tarefas que venceram ontem (evita spam)
-            $query->whereDate('termino_programado', now()->subDay()->toDateString());
+
+            $tarefas = Task::where('assigned_to', $usuario->id)
+                ->where('termino_programado', '<', now()->startOfDay())
+                ->whereNotIn('status', ['concluida', 'cancelada'])
+                ->get();
+
+            $tel = WhatsAppService::formatarTelefone($usuario->phone ?? '');
+            if (! $tel) {
+                $this->warn("Usuário '{$usuario->name}' não tem telefone cadastrado.");
+                return self::FAILURE;
+            }
+
+            $enviados = 0;
+            foreach ($tarefas as $tarefa) {
+                $prazo = $tarefa->termino_programado?->format('d/m/Y') ?? '-';
+                SendWhatsAppNotificationJob::dispatch($tel, $template, [$usuario->name, $tarefa->title, $prazo]);
+                WhatsappTaskContext::updateOrCreate(
+                    ['phone' => $tel, 'task_id' => $tarefa->id],
+                    ['task_title' => $tarefa->title, 'expires_at' => now()->addHours(72), 'replied_at' => null]
+                );
+                $enviados++;
+            }
+
+            $this->info("Atrasos (manual): {$tarefas->count()} tarefa(s) → {$enviados} notificação(ões) para {$usuario->name}.");
+            return self::SUCCESS;
         }
 
-        $tarefas = $query->get();
+        // Envio automático agendado: tarefas que venceram ontem (evita spam de re-notificação)
+        $tarefas = Task::whereDate('termino_programado', now()->subDay()->toDateString())
+            ->whereNotIn('status', ['concluida', 'cancelada'])
+            ->with(['responsavel', 'solicitante'])
+            ->get();
 
         $enviados = 0;
 
@@ -62,24 +83,17 @@ class NotificarTarefasAtrasadas extends Command
                 $destinos->push($tarefa->solicitante);
             }
 
-            foreach ($destinos as $usuario) {
-                $tel = WhatsAppService::formatarTelefone($usuario->phone);
+            foreach ($destinos as $dest) {
+                $tel = WhatsAppService::formatarTelefone($dest->phone);
                 if (! $tel) {
                     continue;
                 }
 
-                SendWhatsAppNotificationJob::dispatch($tel, $template, [
-                    $usuario->name,
-                    $tarefa->title,
-                    $prazo,
-                ]);
-
-                // Salva contexto para capturar resposta como comentário na tarefa
+                SendWhatsAppNotificationJob::dispatch($tel, $template, [$dest->name, $tarefa->title, $prazo]);
                 WhatsappTaskContext::updateOrCreate(
                     ['phone' => $tel, 'task_id' => $tarefa->id],
                     ['task_title' => $tarefa->title, 'expires_at' => now()->addHours(72), 'replied_at' => null]
                 );
-
                 $enviados++;
             }
         }
