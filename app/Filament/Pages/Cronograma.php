@@ -2173,6 +2173,15 @@ class Cronograma extends Page
             default => null,
         };
 
+        // Recalcular datas de itens que dependem deste
+        $itemAtualizado = CronogramaFaseItem::with(['dependencias'])->find($itemId);
+        if ($itemAtualizado) {
+            CronogramaFaseItem::where('depende_de_item_id', $itemId)
+                ->with(['dependencias', 'fase'])
+                ->get()
+                ->each(fn ($dep) => $this->recalcularDatasSubitemPorDependencias($dep));
+        }
+
         $this->renderKey++;
     }
 

@@ -106,9 +106,10 @@ class CronogramaFaseItemObserver
             return;
         }
 
-        $total = $itens->count();
-        $recebidos = $itens->where('recebido', true)->count();
-        $percentual = (int) round(($recebidos / $total) * 100);
+        $total       = $itens->count();
+        $recebidos   = $itens->where('recebido', true)->count();
+        $emAndamento = $itens->where('recebido', false)->whereNotNull('data_realizada_inicio')->count();
+        $percentual  = (int) round(($recebidos * 100 + $emAndamento * 50) / $total);
 
         $update = ['percentual_conclusao' => $percentual];
 

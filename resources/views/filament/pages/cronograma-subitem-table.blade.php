@@ -11,11 +11,18 @@
         $durSubitem = $durFilhos ?: (($item->data_prevista_inicio && $item->data_prevista_fim)
             ? $item->data_prevista_inicio->diffInDays($item->data_prevista_fim) + 1
             : null);
+        // Datas agregadas dos filhos (pai não tem datas próprias)
+        $dataInicioSubitem = $item->data_prevista_inicio
+            ?? $filhosItem->whereNotNull('data_prevista_inicio')->min('data_prevista_inicio');
+        $dataFimSubitem    = $item->data_prevista_fim
+            ?? $filhosItem->whereNotNull('data_prevista_fim')->max('data_prevista_fim');
     } else {
         $durSubitem = $item->duracao_dias
             ?: (($item->data_prevista_inicio && $item->data_prevista_fim)
                 ? $item->data_prevista_inicio->diffInDays($item->data_prevista_fim) + 1
                 : null);
+        $dataInicioSubitem = $item->data_prevista_inicio;
+        $dataFimSubitem    = $item->data_prevista_fim;
     }
 
     // Status e percentual
@@ -200,8 +207,14 @@
     {{-- Planejado --}}
     <td x-show="cols.planejado" style="font-variant-numeric:tabular-nums;color:var(--vo-text-secondary);">
         @if($podeEditar ?? true)
+        @php
+            $piStr = $item->data_prevista_inicio?->toDateString()
+                ?? ($dataInicioSubitem instanceof \Carbon\Carbon ? $dataInicioSubitem->toDateString() : ($dataInicioSubitem ? \Carbon\Carbon::parse($dataInicioSubitem)->toDateString() : ''));
+            $pfStr = $item->data_prevista_fim?->toDateString()
+                ?? ($dataFimSubitem instanceof \Carbon\Carbon ? $dataFimSubitem->toDateString() : ($dataFimSubitem ? \Carbon\Carbon::parse($dataFimSubitem)->toDateString() : ''));
+        @endphp
         <div style="display:flex;gap:4px;align-items:center;"
-             x-data="{ pi: '{{ $item->data_prevista_inicio?->toDateString() }}', pf: '{{ $item->data_prevista_fim?->toDateString() }}' }">
+             x-data="{ pi: '{{ $piStr }}', pf: '{{ $pfStr }}' }">
             <input type="date" x-model="pi"
                    @blur="if (pi) $wire.salvarDataInlineSubitem({{ $item->id }}, 'data_prevista_inicio', pi)"
                    class="cr-inline-date">
@@ -214,9 +227,9 @@
         </div>
         @else
         <div style="display:flex;gap:4px;align-items:center;">
-            {{ $item->data_prevista_inicio?->format('d/m/Y') ?? '—' }}
+            {{ $dataInicioSubitem instanceof \Carbon\Carbon ? $dataInicioSubitem->format('d/m/Y') : ($dataInicioSubitem ? \Carbon\Carbon::parse($dataInicioSubitem)->format('d/m/Y') : '—') }}
             <span style="color:var(--vo-text-faint);">—</span>
-            {{ $item->data_prevista_fim?->format('d/m/Y') ?? '—' }}
+            {{ $dataFimSubitem instanceof \Carbon\Carbon ? $dataFimSubitem->format('d/m/Y') : ($dataFimSubitem ? \Carbon\Carbon::parse($dataFimSubitem)->format('d/m/Y') : '—') }}
         </div>
         @endif
     </td>

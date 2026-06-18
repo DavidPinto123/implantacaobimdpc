@@ -2998,6 +2998,13 @@
                         @php
                             $planInicio = $fases->whereNotNull('data_prevista_inicio')->min('data_prevista_inicio');
                             $planFim    = $fases->whereNotNull('data_prevista_fim')->max('data_prevista_fim');
+                            // Fallback: se a fase não tem datas, pega o min/max dos subitens
+                            if (! $planInicio) {
+                                $planInicio = $fases->flatMap(fn($f) => $f->itens)->whereNotNull('data_prevista_inicio')->min('data_prevista_inicio');
+                            }
+                            if (! $planFim) {
+                                $planFim = $fases->flatMap(fn($f) => $f->itens)->whereNotNull('data_prevista_fim')->max('data_prevista_fim');
+                            }
                             $planDias   = ($planInicio && $planFim)
                                 ? \Carbon\Carbon::parse($planInicio)->diffInDays(\Carbon\Carbon::parse($planFim)) + 1
                                 : null;
