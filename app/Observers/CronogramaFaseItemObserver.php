@@ -39,6 +39,9 @@ class CronogramaFaseItemObserver
 
     public function deleted(CronogramaFaseItem $item): void
     {
+        // Remove Tasks vinculadas a este item
+        \App\Models\Task::where('cronograma_fase_item_id', $item->id)->delete();
+
         $this->propagarParaItemPai($item);
         $this->recalcularFasePai($item->cronograma_fase_id);
     }

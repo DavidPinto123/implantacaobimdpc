@@ -725,6 +725,8 @@ class Cronograma extends Page
     {
         if ($this->acaoPendenteFase === 'excluir') {
             $fase->dependencias()->delete();
+            // Remove Tasks vinculadas a qualquer item desta fase antes do bulk delete
+            Task::whereIn('cronograma_fase_item_id', $fase->itens()->pluck('id'))->delete();
             $fase->itens()->delete();
             $fase->delete();
         } else {
@@ -2299,6 +2301,12 @@ class Cronograma extends Page
         if (! $item) {
             return;
         }
+
+        // Remove Tasks vinculadas antes de deletar o item
+        Task::where('cronograma_fase_item_id', $itemId)->delete();
+        $item->children()->each(function ($filho) {
+            Task::where('cronograma_fase_item_id', $filho->id)->delete();
+        });
 
         $item->delete();
 
