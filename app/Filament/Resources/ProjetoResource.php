@@ -54,6 +54,7 @@ use Filament\Tables\Columns\ViewColumn;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Enums\RecordActionsPosition;
 use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
@@ -5811,6 +5812,12 @@ TextInput::make('imp_prazo_planejado')
                         $data['status'] ? 'Status: '.implode(', ', $data['status']) : null,
                     ])),
 
+                TrashedFilter::make()
+                    ->label('Arquivados')
+                    ->placeholder('Todos')
+                    ->trueLabel('Somente arquivados')
+                    ->falseLabel('Ocultar arquivados'),
+
             ])->filtersLayout(FiltersLayout::AboveContent)->deferFilters(false)
             ->actions([
                 ViewAction::make()->label(''),
@@ -5846,6 +5853,24 @@ TextInput::make('imp_prazo_planejado')
                 AvancoEtapa::make(),
                 ReuniaoComiteAction::make('reuniao_comite'),
                 ViabilidadeAction::make('viabilidade'),
+                \Filament\Tables\Actions\Action::make('arquivar')
+                    ->label('')
+                    ->icon('heroicon-o-archive-box-x-mark')
+                    ->tooltip('Arquivar projeto')
+                    ->color('gray')
+                    ->requiresConfirmation()
+                    ->modalHeading('Arquivar projeto')
+                    ->modalDescription('O projeto será arquivado e não aparecerá nos dashboards. Pode ser restaurado a qualquer momento.')
+                    ->modalSubmitActionLabel('Arquivar')
+                    ->visible(fn ($record) => ! $record->trashed())
+                    ->action(fn ($record) => $record->delete()),
+                \Filament\Tables\Actions\Action::make('restaurar')
+                    ->label('')
+                    ->icon('heroicon-o-arrow-uturn-left')
+                    ->tooltip('Restaurar projeto')
+                    ->color('success')
+                    ->visible(fn ($record) => $record->trashed())
+                    ->action(fn ($record) => $record->restore()),
             ], position: RecordActionsPosition::BeforeCells)
             ->bulkActions([
                 BulkActionGroup::make([

@@ -142,6 +142,8 @@ class CronogramaTemplates extends Page
 
     public bool $mostrarImportacao = false;
 
+    public bool $mostrarArquivados = false;
+
     public $arquivoImportacao = null;
 
     public function getViewData(): array
@@ -155,11 +157,16 @@ class CronogramaTemplates extends Page
 
     private function getViewDataMacro(): array
     {
-        $templates = CronogramaTemplate::withCount('fases')
+        $query = CronogramaTemplate::withCount('fases')
             ->with(['fases.dependencias', 'pareado:id,nome,modo_ancora'])
             ->orderBy('tipo_obra')
-            ->orderBy('nome')
-            ->get();
+            ->orderBy('nome');
+
+        if ($this->mostrarArquivados) {
+            $query->withTrashed();
+        }
+
+        $templates = $query->get();
 
         $duracoes = $templates->mapWithKeys(fn (CronogramaTemplate $t) => [
             $t->id => $this->calcularDuracaoTotal($t),
@@ -769,7 +776,7 @@ class CronogramaTemplates extends Page
 
         $tpl->delete();
         $this->voltarParaMacro();
-        Notification::make()->title('Template excluído')->success()->send();
+        Notification::make()->title('Template arquivado')->success()->send();
     }
 
     public function duplicarTemplatePorId(int $id): void
@@ -828,7 +835,27 @@ class CronogramaTemplates extends Page
             return;
         }
         $tpl->delete();
-        Notification::make()->title('Template excluído')->success()->send();
+        Notification::make()->title('Template arquivado')->success()->send();
+    }
+
+    public function restaurarTemplatePorId(int $id): void
+    {
+        $tpl = CronogramaTemplate::withTrashed()->find($id);
+        if (! $tpl) {
+            return;
+        }
+        $tpl->restore();
+        Notification::make()->title('Template restaurado')->success()->send();
+    }
+
+    public function restaurarTemplate(): void
+    {
+        $tpl = CronogramaTemplate::withTrashed()->find($this->templateSelecionadoId);
+        if (! $tpl) {
+            return;
+        }
+        $tpl->restore();
+        Notification::make()->title('Template restaurado')->success()->send();
     }
 
     private function copiarItensTemplateParaTemplate($itens, int $faseId, ?int $parentId, $todosItens, array &$itemIdMap): void

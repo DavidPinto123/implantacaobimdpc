@@ -707,6 +707,12 @@
                 <span style="color:var(--vo-text-muted);font-size:0.75rem;">
                     {{ $templates->count() }} template(s)
                 </span>
+                <div style="margin-left:auto;display:flex;align-items:center;gap:6px;">
+                    <label style="display:flex;align-items:center;gap:5px;font-size:0.75rem;color:var(--vo-text-muted);cursor:pointer;">
+                        <input type="checkbox" wire:model.live="mostrarArquivados" style="width:14px;height:14px;accent-color:#f59e0b;">
+                        Mostrar arquivados
+                    </label>
+                </div>
             </div>
 
             @if($templates->isEmpty())
@@ -735,9 +741,12 @@
                                     $corModoTpl = $modoTpl === 'posse' ? '#f59e0b' : '#10b981';
                                     $corModoTplBg = $modoTpl === 'posse' ? 'rgba(245,158,11,.12)' : 'rgba(16,185,129,.12)';
                                 @endphp
-                                <tr class="ct-table-row" wire:click="selecionarTemplate({{ $tpl->id }})">
+                                <tr class="ct-table-row{{ $tpl->trashed() ? ' opacity-50' : '' }}" wire:click="selecionarTemplate({{ $tpl->id }})">
                                     <td class="ct-td-sticky">
                                         <div style="display:flex;align-items:center;gap:8px;">
+                                            @if($tpl->trashed())
+                                                <span style="display:inline-flex;align-items:center;padding:1px 7px;font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;border-radius:99px;background:rgba(107,114,128,.15);color:#6b7280;border:1px solid #6b7280;flex-shrink:0;">ARQUIVADO</span>
+                                            @endif
                                             <span style="display:inline-flex;align-items:center;padding:1px 7px;font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;border-radius:99px;background:{{ $corModoTplBg }};color:{{ $corModoTpl }};border:1px solid {{ $corModoTpl }};flex-shrink:0;">
                                                 {{ strtoupper($modoTpl) }}
                                             </span>
@@ -791,10 +800,17 @@
                                             <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                                             Duplicar
                                         </button>
-                                        <button type="button" wire:click.stop="excluirTemplatePorId({{ $tpl->id }})" wire:confirm="Excluir o template '{{ $tpl->nome }}'? Esta ação não pode ser desfeita." class="ct-row-action-btn ct-row-action-btn-danger" title="Excluir template" style="margin-left:4px;">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-                                            Excluir
-                                        </button>
+                                        @if($tpl->trashed())
+                                            <button type="button" wire:click.stop="restaurarTemplatePorId({{ $tpl->id }})" class="ct-row-action-btn" title="Restaurar template" style="margin-left:4px;color:#16a34a;border-color:#86efac;">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                                                Restaurar
+                                            </button>
+                                        @else
+                                            <button type="button" wire:click.stop="excluirTemplatePorId({{ $tpl->id }})" wire:confirm="Arquivar o template '{{ $tpl->nome }}'? Poderá ser restaurado depois." class="ct-row-action-btn ct-row-action-btn-danger" title="Arquivar template" style="margin-left:4px;">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 8-2-2H5L3 8h18z"/><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M9.5 13.5h5"/></svg>
+                                                Arquivar
+                                            </button>
+                                        @endif
                                     </td>
                                 </tr>
                             @endforeach
@@ -822,11 +838,19 @@
 
                 <div style="margin-left:auto;display:flex;gap:6px;">
                     <button class="vo-btn-outline" wire:click="duplicarTemplate">Duplicar</button>
-                    <button class="vo-btn-outline" wire:click="excluirTemplate"
-                            onclick="return confirm('Excluir este template?')"
-                            style="color:#b91c1c;border-color:#fca5a5;">
-                        Excluir
-                    </button>
+                    @if($template->trashed())
+                        <button class="vo-btn-outline" wire:click="restaurarTemplate" style="color:#16a34a;border-color:#86efac;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:3px;"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                            Restaurar
+                        </button>
+                    @else
+                        <button class="vo-btn-outline" wire:click="excluirTemplate"
+                                wire:confirm="Arquivar este template? Poderá ser restaurado depois."
+                                style="color:#b45309;border-color:#fcd34d;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:3px;"><path d="m21 8-2-2H5L3 8h18z"/><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M9.5 13.5h5"/></svg>
+                            Arquivar
+                        </button>
+                    @endif
                 </div>
             </div>
 

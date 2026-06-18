@@ -415,6 +415,12 @@ class DashboardTarefas extends Page implements HasTable
             $query->whereDate('tasks.created_at', '<=', $dataFinal);
         }
 
+        // Ocultar tarefas de projetos arquivados (whereHas usa o scope SoftDeletes do Projeto)
+        $query->where(function ($q) {
+            $q->whereNull('tasks.projeto_id')
+              ->orWhereHas('projeto');
+        });
+
         return $query;
     }
 
