@@ -94,7 +94,11 @@ class TaskResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery()
-            ->with(['category', 'solicitante', 'responsavel', 'marca', 'setor']);
+            ->with(['category', 'solicitante', 'responsavel', 'marca', 'setor'])
+            ->where(function ($q) {
+                // Oculta tarefas de projetos arquivados (soft-deleted)
+                $q->whereNull('projeto_id')->orWhereHas('projeto');
+            });
 
         $user = auth()->user();
 
