@@ -2136,6 +2136,46 @@ class Cronograma extends Page
      * O observer de CronogramaFaseItem sincroniza `recebido` automaticamente
      * (SIM=true; NAO/RISCO=false) para manter o cálculo de % conclusão consistente.
      */
+    public function alterarStatusSubitem(int $itemId, string $status): void
+    {
+        $item = CronogramaFaseItem::find($itemId);
+        if (! $item) {
+            return;
+        }
+
+        match ($status) {
+            'pendente' => (function () use ($item) {
+                $item->recebido = false;
+                $item->data_realizada_inicio = null;
+                $item->data_realizada_fim = null;
+                $item->save();
+            })(),
+            'em_andamento' => (function () use ($item) {
+                $item->recebido = false;
+                $item->data_realizada_inicio ??= today();
+                $item->data_realizada_fim = null;
+                $item->save();
+            })(),
+            'concluido' => (function () use ($item) {
+                if (! $this->subitemDependenciasConcluidas($item)) {
+                    Notification::make()
+                        ->title('Dependências não concluídas')
+                        ->body('Conclua primeiro os subitens que este item depende.')
+                        ->warning()
+                        ->send();
+                    return;
+                }
+                $item->recebido = true;
+                $item->data_realizada_inicio ??= today();
+                $item->data_realizada_fim ??= today();
+                $item->save();
+            })(),
+            default => null,
+        };
+
+        $this->renderKey++;
+    }
+
     public function alterarStatusLiberacao(int $itemId, string $status): void
     {
         $item = CronogramaFaseItem::find($itemId);

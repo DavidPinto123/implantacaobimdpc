@@ -24,11 +24,23 @@
         $recebFilhos    = $filhosItem->where('recebido', true)->count();
         $pctItem        = (int) round($recebFilhos / $totalFilhos * 100);
         $statusItemCor  = $pctItem === 100 ? 'var(--cr-concluido, #2dd67c)' : ($pctItem > 0 ? '#f59e0b' : 'var(--cr-nao-iniciado, #6b7280)');
-        $statusItemLabel = $pctItem === 100 ? 'Recebido' : ($pctItem > 0 ? 'Parcial' : 'Pendente');
+        $statusItemLabel = $pctItem === 100 ? 'Concluído' : ($pctItem > 0 ? 'Parcial' : 'Pendente');
+        $statusItemKey  = $pctItem === 100 ? 'concluido' : ($pctItem > 0 ? 'parcial' : 'pendente');
     } else {
-        $pctItem        = $item->recebido ? 100 : 0;
-        $statusItemCor  = $item->recebido ? 'var(--cr-concluido, #2dd67c)' : 'var(--cr-nao-iniciado, #6b7280)';
-        $statusItemLabel = $item->recebido ? 'Recebido' : 'Pendente';
+        if ($item->recebido) {
+            $statusItemKey   = 'concluido';
+            $statusItemCor   = 'var(--cr-concluido, #2dd67c)';
+            $statusItemLabel = 'Concluído';
+        } elseif ($item->data_realizada_inicio) {
+            $statusItemKey   = 'em_andamento';
+            $statusItemCor   = '#3b82f6';
+            $statusItemLabel = 'Em andamento';
+        } else {
+            $statusItemKey   = 'pendente';
+            $statusItemCor   = 'var(--cr-nao-iniciado, #6b7280)';
+            $statusItemLabel = 'Pendente';
+        }
+        $pctItem = $item->recebido ? 100 : ($item->data_realizada_inicio ? 50 : 0);
     }
 
     $usaTriEstado = $item->fase?->fase === \App\Enums\FaseCronograma::LIBERACAO_POSSE;
@@ -156,9 +168,33 @@
 
     {{-- Status --}}
     <td class="cr-td-sticky cr-col-status">
+        @if(($podeEditar ?? true) && ! $usaTriEstado && $filhosItem->isEmpty() && ! $mostrarFarolEntrega)
+        <div class="cr-status-dropdown cr-status-sm" x-data="{ open: false, pos: {top:0,left:0}, reposition() { const r = this.$refs.trigger.getBoundingClientRect(); this.pos = {top: r.bottom + 4, left: r.left}; } }" @click.stop @click.outside="open = false">
+            <button type="button" class="cr-status-trigger" style="background:{{ $statusItemCor }}" x-ref="trigger"
+                    @click="reposition(); open = !open" :aria-expanded="open">
+                <span class="cr-status-dot"></span>
+                {{ $statusItemLabel }}
+                <svg class="cr-status-chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+            </button>
+            <template x-teleport="body">
+            <div class="cr-status-menu" x-show="open" x-cloak x-transition.opacity.duration.150ms :style="`top:${pos.top}px;left:${pos.left}px`" @click.outside="open = false">
+                @foreach([['key'=>'pendente','label'=>'Pendente','cor'=>'#6b7280'],['key'=>'em_andamento','label'=>'Em andamento','cor'=>'#3b82f6'],['key'=>'concluido','label'=>'Concluído','cor'=>'#22c55e']] as $opt)
+                    <button type="button"
+                            class="cr-status-option {{ $statusItemKey === $opt['key'] ? 'cr-status-active' : '' }}"
+                            wire:click="alterarStatusSubitem({{ $item->id }}, '{{ $opt['key'] }}')"
+                            @click="open = false">
+                        <span class="cr-opt-dot" style="background:{{ $opt['cor'] }}"></span>
+                        {{ $opt['label'] }}
+                    </button>
+                @endforeach
+            </div>
+            </template>
+        </div>
+        @else
         <span class="cr-subitem-status-badge" style="background:{{ $statusItemCor }}">
             {{ $statusItemLabel }}
         </span>
+        @endif
     </td>
 
     {{-- Planejado --}}
