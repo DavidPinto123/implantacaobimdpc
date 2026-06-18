@@ -169,7 +169,10 @@
             <div class="tk-kanban-cards" :class="draggingUserId === 0 ? 'tk-kanban-drop-target' : ''">
                 @foreach($tkSemResp as $tkCard)
                     @php
-                        $tkCor = $tkCores[$tkCard->status] ?? '#9ca3af';
+                        $tkIsAtrasada = $tkCard->termino_programado
+                            && $tkCard->termino_programado->lt(today())
+                            && ! in_array($tkCard->status, ['concluida', 'cancelada']);
+                        $tkCor = $tkIsAtrasada ? $tkCores['atrasadas'] : ($tkCores[$tkCard->status] ?? '#9ca3af');
                         $tkFaseLabel = null;
                         if ($tkCard->cronogramaFaseItem?->fase) {
                             $cf = $tkCard->cronogramaFaseItem->fase;
@@ -187,7 +190,7 @@
                             <div class="tk-kanban-card-fase">{{ $tkFaseLabel }}</div>
                         @endif
                         <div class="tk-kanban-card-nome">{{ $tkCard->title }}</div>
-                        <div class="tk-kanban-card-status">{{ $tkLabels[$tkCard->status] ?? $tkCard->status }}</div>
+                        <div class="tk-kanban-card-status">{{ $tkIsAtrasada ? 'Atrasada' : ($tkLabels[$tkCard->status] ?? $tkCard->status) }}</div>
                         @if($tkCard->termino_programado)
                             <div class="tk-kanban-card-datas">Prazo: {{ $tkCard->termino_programado->format('d/m/y') }}</div>
                         @endif
@@ -211,7 +214,10 @@
                 <div class="tk-kanban-cards" :class="draggingUserId === {{ $tkUser->id }} ? 'tk-kanban-drop-target' : ''">
                     @foreach($tkUserCards as $tkCard)
                         @php
-                            $tkCor = $tkCores[$tkCard->status] ?? '#9ca3af';
+                            $tkIsAtrasada = $tkCard->termino_programado
+                                && $tkCard->termino_programado->lt(today())
+                                && ! in_array($tkCard->status, ['concluida', 'cancelada']);
+                            $tkCor = $tkIsAtrasada ? $tkCores['atrasadas'] : ($tkCores[$tkCard->status] ?? '#9ca3af');
                             $tkFaseLabel = null;
                             if ($tkCard->cronogramaFaseItem?->fase) {
                                 $cf = $tkCard->cronogramaFaseItem->fase;
@@ -229,7 +235,7 @@
                                 <div class="tk-kanban-card-fase">{{ $tkFaseLabel }}</div>
                             @endif
                             <div class="tk-kanban-card-nome">{{ $tkCard->title }}</div>
-                            <div class="tk-kanban-card-status">{{ $tkLabels[$tkCard->status] ?? $tkCard->status }}</div>
+                            <div class="tk-kanban-card-status">{{ $tkIsAtrasada ? 'Atrasada' : ($tkLabels[$tkCard->status] ?? $tkCard->status) }}</div>
                             @if($tkCard->termino_programado)
                                 <div class="tk-kanban-card-datas">Prazo: {{ $tkCard->termino_programado->format('d/m/y') }}</div>
                             @endif
