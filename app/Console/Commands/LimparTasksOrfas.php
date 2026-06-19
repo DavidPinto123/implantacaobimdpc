@@ -12,19 +12,18 @@ class LimparTasksOrfas extends Command
                             {--dry-run : Apenas lista, não deleta}
                             {--com-legado : Inclui tasks do sync antigo (sem FK) cujo item foi removido}';
 
-    protected $description = 'Deleta Tasks geradas pelo planejamento cujo subitem foi removido';
+    protected $description = 'Deleta Tasks geradas pelo planejamento cujo subitem foi removido ou responsável foi trocado';
 
     public function handle(): int
     {
         $dryRun = $this->option('dry-run');
         $total  = 0;
 
-        // ── Caso 1: tasks COM cronograma_fase_item_id apontando para item inexistente ──
+        // ── Caso 1: tasks COM FK apontando para item inexistente ──────────────
         $queryFk = Task::whereNotNull('cronograma_fase_item_id')
             ->whereDoesntHave('cronogramaFaseItem');
 
         $countFk = $queryFk->count();
-
         if ($countFk > 0) {
             $this->line("Órfãs com FK inválido: {$countFk}");
             if ($dryRun) {
@@ -37,31 +36,61 @@ class LimparTasksOrfas extends Command
             $total += $countFk;
         }
 
-        // ── Caso 2: tasks SEM FK, geradas pelo sync antigo, cujo item foi removido ──
+        // ── Caso 2: tasks de responsável removido do item ─────────────────────
+        $semResp = Task::whereNotNull('cronograma_fase_item_id')
+            ->where('eh_revisor', false)
+            ->whereHas('cronogramaFaseItem')
+            ->with('cronogramaFaseItem.responsaveis')
+            ->get()
+            ->filter(fn (Task $t) => ! $t->cronogramaFaseItem->responsaveis->contains('id', $t->assigned_to));
+
+        if ($semResp->isNotEmpty()) {
+            $this->line("Tasks de responsável removido: {$semResp->count()}");
+            if ($dryRun) {
+                $semResp->each(fn (Task $t) =>
+                    $this->line("  [RESP] ID {$t->id} | {$t->title} | assigned_to={$t->assigned_to}")
+                );
+            } else {
+                Task::whereIn('id', $semResp->pluck('id'))->delete();
+            }
+            $total += $semResp->count();
+        }
+
+        // ── Caso 3: tasks de revisor trocado no item ──────────────────────────
+        $semRev = Task::whereNotNull('cronograma_fase_item_id')
+            ->where('eh_revisor', true)
+            ->whereHas('cronogramaFaseItem')
+            ->with('cronogramaFaseItem')
+            ->get()
+            ->filter(fn (Task $t) => $t->cronogramaFaseItem->revisor_id !== $t->assigned_to);
+
+        if ($semRev->isNotEmpty()) {
+            $this->line("Tasks de revisor trocado: {$semRev->count()}");
+            if ($dryRun) {
+                $semRev->each(fn (Task $t) =>
+                    $this->line("  [REV] ID {$t->id} | {$t->title} | assigned_to={$t->assigned_to}")
+                );
+            } else {
+                Task::whereIn('id', $semRev->pluck('id'))->delete();
+            }
+            $total += $semRev->count();
+        }
+
+        // ── Caso 4: tasks legado sem FK (sync antigo) cujo item foi removido ──
         if ($this->option('com-legado')) {
-            // Identifica tasks sem FK que parecem vir do sync:
-            // description = "Projeto: X | Fase: Y | Atividade: Z"
-            // e não existe nenhum CronogramaFaseItem com o mesmo título no mesmo projeto.
             $semFk = Task::whereNull('cronograma_fase_item_id')
                 ->whereNotNull('projeto_id')
                 ->where('description', 'like', 'Projeto: % | Fase: %')
                 ->get();
 
-            // (variável reservada para uso futuro se necessário)
-
             $legados = $semFk->filter(function (Task $task) {
-                // Seguro: inclui se não existe NENHUM item de cronograma no projeto com o mesmo título
-                $itemExiste = CronogramaFaseItem::whereHas('fase', fn ($q) => $q->where('projeto_id', $task->projeto_id))
+                return ! CronogramaFaseItem::whereHas('fase', fn ($q) => $q->where('projeto_id', $task->projeto_id))
                     ->where('titulo', $task->title)
                     ->exists();
-
-                return ! $itemExiste;
             });
 
-            $countLeg = $legados->count();
-
-            if ($countLeg > 0) {
-                $this->line("Órfãs legado (sem FK, item removido): {$countLeg}");
+            if ($legados->isNotEmpty()) {
+                $this->line("Órfãs legado (sem FK, item removido): {$legados->count()}");
                 if ($dryRun) {
                     $legados->each(fn (Task $t) =>
                         $this->line("  [LEG] ID {$t->id} | {$t->title} | projeto_id={$t->projeto_id}")
@@ -69,7 +98,7 @@ class LimparTasksOrfas extends Command
                 } else {
                     Task::whereIn('id', $legados->pluck('id'))->delete();
                 }
-                $total += $countLeg;
+                $total += $legados->count();
             }
         }
 
