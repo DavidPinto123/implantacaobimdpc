@@ -33,6 +33,17 @@ class CronogramaFaseItemObserver
 
     public function saved(CronogramaFaseItem $item): void
     {
+        // Ao trocar ou remover revisor, deleta a task do revisor anterior
+        if ($item->wasChanged('revisor_id')) {
+            $revisorAnterior = $item->getOriginal('revisor_id');
+            if ($revisorAnterior && $revisorAnterior !== $item->revisor_id) {
+                \App\Models\Task::where('cronograma_fase_item_id', $item->id)
+                    ->where('assigned_to', $revisorAnterior)
+                    ->where('eh_revisor', true)
+                    ->delete();
+            }
+        }
+
         $this->propagarParaItemPai($item);
         $this->recalcularFasePai($item->cronograma_fase_id);
     }

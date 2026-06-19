@@ -20,3 +20,6 @@ Schedule::command('whatsapp:agenda-semanal')->weeklyOn(1, '09:00');
 
 // Email: resumo semanal de planejamentos para cada Gerente Geral (segunda-feira às 8h30)
 Schedule::command('resumo:semanal')->weeklyOn(1, '08:30');
+
+// Segurança: garante consistência entre Tasks e subitens de planejamento
+Schedule::command('tasks:limpar-orfas')->everyTenMinutes()->withoutOverlapping();

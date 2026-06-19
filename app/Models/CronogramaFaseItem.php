@@ -93,7 +93,8 @@ class CronogramaFaseItem extends Model
 
     public function responsaveis(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'cronograma_fase_item_responsaveis');
+        return $this->belongsToMany(User::class, 'cronograma_fase_item_responsaveis')
+            ->using(CronogramaFaseItemResponsavel::class);
     }
 
     public function revisor(): BelongsTo

@@ -637,22 +637,12 @@ class Cronograma extends Page
             return;
         }
 
-        $idsAntigos = $item->responsaveis()->pluck('users.id')->toArray();
-
         if ($userId) {
+            // sync() chama detach() internamente para os removidos →
+            // CronogramaFaseItemResponsavel.deleted() deleta as tasks automaticamente
             $item->responsaveis()->sync([$userId]);
-            $removidos = array_diff($idsAntigos, [$userId]);
         } else {
             $item->responsaveis()->detach();
-            $removidos = $idsAntigos;
-        }
-
-        // Deleta tasks dos responsáveis removidos
-        if (! empty($removidos)) {
-            Task::where('cronograma_fase_item_id', $itemId)
-                ->whereIn('assigned_to', $removidos)
-                ->where('eh_revisor', false)
-                ->delete();
         }
 
         $this->renderKey++;
@@ -4282,13 +4272,8 @@ class Cronograma extends Page
             return;
         }
 
+        // O Pivot CronogramaFaseItemResponsavel.deleted() deleta a Task automaticamente
         $item->responsaveis()->detach($userId);
-
-        // Deleta a task vinculada ao responsável removido
-        Task::where('cronograma_fase_item_id', $itemId)
-            ->where('assigned_to', $userId)
-            ->where('eh_revisor', false)
-            ->delete();
 
         $this->renderKey++;
     }
@@ -4380,21 +4365,11 @@ class Cronograma extends Page
             return;
         }
 
-        $revisorAnterior = $item->revisor_id;
-
         $item->revisor_id = $userId;
-        $item->save();
+        $item->save(); // CronogramaFaseItemObserver.saved() deleta task do revisor anterior
 
         if ($userId) {
             $this->criarTarefaDeSubitem($item, $userId, ehRevisor: true);
-        }
-
-        // Se o revisor foi removido ou trocado, deleta a task do revisor anterior
-        if ($revisorAnterior && $revisorAnterior !== $userId) {
-            Task::where('cronograma_fase_item_id', $itemId)
-                ->where('assigned_to', $revisorAnterior)
-                ->where('eh_revisor', true)
-                ->delete();
         }
 
         $this->renderKey++;
