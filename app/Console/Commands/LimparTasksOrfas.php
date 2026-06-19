@@ -47,18 +47,10 @@ class LimparTasksOrfas extends Command
                 ->where('description', 'like', 'Projeto: % | Fase: %')
                 ->get();
 
-            $existentesIds = CronogramaFaseItem::pluck('id')->toSet();
+            // (variável reservada para uso futuro se necessário)
 
-            $legados = $semFk->filter(function (Task $task) use ($existentesIds) {
-                // Se já existe alguma task COM FK para o mesmo projeto+título, esta é duplicata órfã
-                $linked = Task::where('projeto_id', $task->projeto_id)
-                    ->where('title', $task->title)
-                    ->whereNotNull('cronograma_fase_item_id')
-                    ->exists();
-
-                // Inclui: task sem FK E sem contraparte com FK (item foi deletado sem deixar nova task)
-                // Ou: task sem FK cujo projeto tem item com FK para outro responsável
-                // Critério seguro: inclui se não há NENHUM item de cronograma no projeto com título igual
+            $legados = $semFk->filter(function (Task $task) {
+                // Seguro: inclui se não existe NENHUM item de cronograma no projeto com o mesmo título
                 $itemExiste = CronogramaFaseItem::whereHas('fase', fn ($q) => $q->where('projeto_id', $task->projeto_id))
                     ->where('titulo', $task->title)
                     ->exists();
