@@ -4513,8 +4513,12 @@ class Cronograma extends Page
     {
         $original = Projeto::with([
             'cronogramaFases.itens.children.children.responsaveis',
+            'cronogramaFases.itens.children.children.dependencias',
             'cronogramaFases.itens.children.responsaveis',
+            'cronogramaFases.itens.children.dependencias',
             'cronogramaFases.itens.responsaveis',
+            'cronogramaFases.itens.dependencias',
+            'cronogramaFases.dependencias',
             'cronogramaFases.comentarios.usuario',
         ])->find($projetoId);
 
@@ -4527,7 +4531,9 @@ class Cronograma extends Page
             'ativo' => true,
         ]);
 
-        // mapa: CronogramaFaseItem.id => CronogramaTemplateFaseItem.id
+        // mapa: CronogramaFase.id      => CronogramaTemplateFase.id
+        // mapa: CronogramaFaseItem.id  => CronogramaTemplateFaseItem.id
+        $faseIdMap = [];
         $itemIdMap = [];
 
         foreach ($original->cronogramaFases->sortBy('ordem') as $fase) {
@@ -4536,7 +4542,6 @@ class Cronograma extends Page
                 $duracaoDias = max(0, (int) $fase->data_prevista_inicio->diffInDays($fase->data_prevista_fim, absolute: true));
             }
 
-            // Agregar comentários da fase no campo observacoes do template
             $comentariosTexto = $fase->comentarios
                 ->map(fn ($c) => '[' . ($c->usuario?->name ?? '?') . '] ' . $c->conteudo)
                 ->implode("\n");
@@ -4557,17 +4562,74 @@ class Cronograma extends Page
                 'tipo_dias'              => $fase->regra_tipo_dias ?? \App\Enums\TipoDiasTemplate::CORRIDOS,
             ]);
 
+            $faseIdMap[$fase->id] = $templateFase->id;
+
             $todosItens = $fase->itens;
             $itensRaiz  = $todosItens->whereNull('parent_id');
             $this->copiarItensParaTemplate($itensRaiz, $templateFase->id, null, $todosItens, $itemIdMap);
         }
 
-        // Segunda passagem: resolver depende_de_item_id no template
+        // Segunda passagem: resolver dependências dos itens
         foreach ($itemIdMap as $origItemId => $tplItemId) {
-            $origItem = \App\Models\CronogramaFaseItem::find($origItemId);
-            if ($origItem?->depende_de_item_id && isset($itemIdMap[$origItem->depende_de_item_id])) {
-                \App\Models\CronogramaTemplateFaseItem::where('id', $tplItemId)
-                    ->update(['depende_de_item_id' => $itemIdMap[$origItem->depende_de_item_id]]);
+            $origItem = \App\Models\CronogramaFaseItem::with('dependencias')->find($origItemId);
+            if (! $origItem) {
+                continue;
+            }
+
+            // Dependência direta no item (campo simples)
+            $depItemId = ($origItem->depende_de_item_id && isset($itemIdMap[$origItem->depende_de_item_id]))
+                ? $itemIdMap[$origItem->depende_de_item_id]
+                : null;
+            $depFaseId = ($origItem->depende_de_fase_id && isset($faseIdMap[$origItem->depende_de_fase_id]))
+                ? $faseIdMap[$origItem->depende_de_fase_id]
+                : null;
+
+            if ($depItemId || $depFaseId) {
+                \App\Models\CronogramaTemplateFaseItem::where('id', $tplItemId)->update([
+                    'depende_de_item_id'          => $depItemId,
+                    'depende_de_template_fase_id' => $depFaseId,
+                ]);
+            }
+
+            // Dependências completas (tabela separada com gatilho + gap_dias)
+            foreach ($origItem->dependencias as $dep) {
+                $tplDepItemId = ($dep->depende_de_item_id && isset($itemIdMap[$dep->depende_de_item_id]))
+                    ? $itemIdMap[$dep->depende_de_item_id]
+                    : null;
+                $tplDepFaseId = ($dep->depende_de_fase_id && isset($faseIdMap[$dep->depende_de_fase_id]))
+                    ? $faseIdMap[$dep->depende_de_fase_id]
+                    : null;
+
+                if ($tplDepItemId || $tplDepFaseId) {
+                    \App\Models\CronogramaTemplateFaseItemDependencia::create([
+                        'cronograma_template_fase_item_id' => $tplItemId,
+                        'depende_de_item_id'               => $tplDepItemId,
+                        'depende_de_template_fase_id'      => $tplDepFaseId,
+                        'gatilho'                          => $dep->gatilho,
+                        'gap_dias'                         => $dep->gap_dias ?? 0,
+                    ]);
+                }
+            }
+        }
+
+        // Terceira passagem: copiar dependências entre fases
+        foreach ($original->cronogramaFases as $fase) {
+            $tplFaseId = $faseIdMap[$fase->id] ?? null;
+            if (! $tplFaseId) {
+                continue;
+            }
+            foreach ($fase->dependencias as $dep) {
+                $tplDepItemId = ($dep->depende_de_item_id && isset($itemIdMap[$dep->depende_de_item_id]))
+                    ? $itemIdMap[$dep->depende_de_item_id]
+                    : null;
+
+                \App\Models\CronogramaTemplateFaseDependencia::create([
+                    'cronograma_template_fase_id' => $tplFaseId,
+                    'depende_de_fase'             => $dep->depende_de_fase,
+                    'depende_de_item_id'          => $tplDepItemId,
+                    'gatilho'                     => $dep->gatilho,
+                    'gap_dias'                    => $dep->gap_dias ?? 0,
+                ]);
             }
         }
 
