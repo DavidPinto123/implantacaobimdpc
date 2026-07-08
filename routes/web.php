@@ -95,3 +95,16 @@ Route::prefix('webhook/whatsapp')->name('whatsapp.webhook.')->group(function () 
     Route::get('/', [WhatsAppWebhookController::class, 'verify'])->name('verify');
     Route::post('/', [WhatsAppWebhookController::class, 'receive'])->name('receive');
 });
+
+// Cron externo — aciona o scheduler Laravel via HTTP (usado pelo cron-job.org)
+Route::get('/run-schedule', function (Request $request) {
+    $token = config('app.schedule_token');
+    if (! $token || $request->query('token') !== $token) {
+        abort(403);
+    }
+    $start = microtime(true);
+    Illuminate\Support\Facades\Artisan::call('schedule:run');
+    $elapsed = round((microtime(true) - $start) * 1000);
+    return response('OK ' . now()->toDateTimeString() . " ({$elapsed}ms)", 200)
+        ->header('Content-Type', 'text/plain');
+})->name('run-schedule');

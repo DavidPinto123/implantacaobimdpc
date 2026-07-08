@@ -5936,7 +5936,7 @@ TextInput::make('imp_prazo_planejado')
 
     public static function canViewAny(): bool
     {
-        if (auth()->user()?->hasRole('Planejamento')) {
+        if (auth()->user()?->hasAnyRole(['Planejamento Editor', 'Planejamento Visualizador'])) {
             return false;
         }
         return auth()->check();

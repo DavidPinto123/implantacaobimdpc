@@ -15,6 +15,8 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    'schedule_token' => env('SCHEDULE_TOKEN'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

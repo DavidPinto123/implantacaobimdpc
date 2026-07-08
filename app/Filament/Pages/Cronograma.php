@@ -310,7 +310,10 @@ class Cronograma extends Page
             ->distinct()
             ->pluck('cronograma_fases.projeto_id');
 
-        return $query->whereIn('id', $projetoIds);
+        return $query->where(function ($q) use ($userId, $projetoIds) {
+            $q->whereIn('id', $projetoIds)
+              ->orWhere('user_id', $userId);
+        });
     }
 
     private function getViewDataMacro(): array
@@ -2941,10 +2944,14 @@ class Cronograma extends Page
 
     private function aplicarTemplateSemAncora(CronogramaTemplate $template, Projeto $projeto): void
     {
-        $fasesTemplate = $template->fases()->with(['itens.responsaveis'])->get();
+        $fasesTemplate = $template->fases()
+            ->with(['itens.responsaveis', 'itens.dependencias'])
+            ->get();
 
-        // mapa: CronogramaTemplateFaseItem.id => CronogramaFaseItem.id (para dependências)
+        // mapas: CronogramaTemplateFaseItem.id  => CronogramaFaseItem.id
+        //        CronogramaTemplateFase.id       => CronogramaFase.id
         $itemIdMap = [];
+        $faseIdMap = [];
 
         foreach ($fasesTemplate->sortBy('ordem') as $tplFase) {
             $fase = \App\Models\CronogramaFase::firstOrCreate(
@@ -2961,17 +2968,58 @@ class Cronograma extends Page
                 ]
             );
 
+            $faseIdMap[$tplFase->id] = $fase->id;
+
             $todosItens = $tplFase->itens;
             $itensRaiz  = $todosItens->whereNull('parent_id');
             $this->copiarItensDeTemplate($itensRaiz, $fase->id, null, $todosItens, $itemIdMap);
         }
 
-        // Segunda passagem: resolver depende_de_item_id usando o mapa
+        // Segunda passagem: dependências diretas e tabela completa (gatilho + gap_dias)
         foreach ($itemIdMap as $tplItemId => $novoItemId) {
-            $tplItem = \App\Models\CronogramaTemplateFaseItem::find($tplItemId);
-            if ($tplItem?->depende_de_item_id && isset($itemIdMap[$tplItem->depende_de_item_id])) {
-                \App\Models\CronogramaFaseItem::where('id', $novoItemId)
-                    ->update(['depende_de_item_id' => $itemIdMap[$tplItem->depende_de_item_id]]);
+            $tplItem = \App\Models\CronogramaTemplateFaseItem::with('dependencias')->find($tplItemId);
+            if (! $tplItem) {
+                continue;
+            }
+
+            $novoItem = \App\Models\CronogramaFaseItem::find($novoItemId);
+            if (! $novoItem) {
+                continue;
+            }
+
+            // Dependência direta no campo do item
+            $depItemId = ($tplItem->depende_de_item_id && isset($itemIdMap[$tplItem->depende_de_item_id]))
+                ? $itemIdMap[$tplItem->depende_de_item_id]
+                : null;
+            $depFaseId = ($tplItem->depende_de_template_fase_id && isset($faseIdMap[$tplItem->depende_de_template_fase_id]))
+                ? $faseIdMap[$tplItem->depende_de_template_fase_id]
+                : null;
+
+            if ($depItemId || $depFaseId) {
+                $novoItem->depende_de_item_id = $depItemId;
+                $novoItem->depende_de_fase_id = $depFaseId;
+                $novoItem->saveQuietly();
+            }
+
+            // Dependências completas com gatilho e gap_dias
+            $novoItem->dependencias()->delete();
+            foreach ($tplItem->dependencias as $dep) {
+                $depItemIdFull = ($dep->depende_de_item_id && isset($itemIdMap[$dep->depende_de_item_id]))
+                    ? $itemIdMap[$dep->depende_de_item_id]
+                    : null;
+                $depFaseIdFull = ($dep->depende_de_template_fase_id && isset($faseIdMap[$dep->depende_de_template_fase_id]))
+                    ? $faseIdMap[$dep->depende_de_template_fase_id]
+                    : null;
+
+                if ($depItemIdFull || $depFaseIdFull) {
+                    \App\Models\CronogramaFaseItemDependencia::create([
+                        'cronograma_fase_item_id' => $novoItemId,
+                        'depende_de_item_id'      => $depItemIdFull,
+                        'depende_de_fase_id'      => $depFaseIdFull,
+                        'gatilho'                 => $dep->gatilho,
+                        'gap_dias'                => $dep->gap_dias ?? 0,
+                    ]);
+                }
             }
         }
     }

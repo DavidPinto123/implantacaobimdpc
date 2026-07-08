@@ -598,6 +598,16 @@ class Projeto extends Model
         return $this->hasOne(RelatorioVisitaTecnica::class, 'projeto_id');
     }
 
+    public function atas()
+    {
+        return $this->hasMany(\App\Models\Ata::class, 'projeto_id');
+    }
+
+    public function orcamentos()
+    {
+        return $this->hasMany(\App\Models\Orcamento::class, 'projeto_id');
+    }
+
     protected static function booted()
     {
         /*

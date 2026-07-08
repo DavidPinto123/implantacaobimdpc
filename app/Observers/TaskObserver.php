@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Jobs\SendWhatsAppNotificationJob;
 use App\Models\Task;
+use App\Models\WhatsappTemplateConfig;
 use App\Services\PosObra\WhatsAppService;
 
 class TaskObserver
@@ -11,7 +12,7 @@ class TaskObserver
     public function created(Task $task): void
     {
         $template = config('services.whatsapp.templates.nova_tarefa');
-        if (! $template) {
+        if (! $template || ! WhatsappTemplateConfig::isAtivo('nova_tarefa')) {
             return;
         }
 
@@ -52,7 +53,7 @@ class TaskObserver
         }
 
         $template = config('services.whatsapp.templates.status_tarefa');
-        if (! $template) {
+        if (! $template || ! WhatsappTemplateConfig::isAtivo('status_tarefa')) {
             return;
         }
 
@@ -142,7 +143,7 @@ class TaskObserver
     private function notificarGerenteGeral(Task $task, string $evento): void
     {
         $template = config('services.whatsapp.templates.gerente_notificacao');
-        if (! $template) {
+        if (! $template || ! WhatsappTemplateConfig::isAtivo('gerente_notificacao')) {
             return;
         }
 

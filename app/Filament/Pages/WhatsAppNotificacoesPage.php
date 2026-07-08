@@ -23,6 +23,21 @@ class WhatsAppNotificacoesPage extends Page
 
     protected string $view = 'filament.pages.whats-app-notificacoes-page';
 
+    private static function isPlanejamento(): bool
+    {
+        return (bool) auth()->user()?->hasAnyRole(['Planejamento Editor', 'Planejamento Visualizador']);
+    }
+
+    public static function canAccess(): bool
+    {
+        return auth()->check() && ! static::isPlanejamento();
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
+    }
+
     // Definição de todos os templates conhecidos
     const TEMPLATES = [
         'agenda_semanal' => [

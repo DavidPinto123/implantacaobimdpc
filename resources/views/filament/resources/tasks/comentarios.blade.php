@@ -1,7 +1,8 @@
 @php
-    $comentarios = $this->record->comentarios()->with('usuario')->get();
+    $hasRecord = isset($this->record) && $this->record;
+    $comentarios = $hasRecord ? $this->record->comentarios()->with('usuario')->get() : collect();
 @endphp
-
+@if($hasRecord)
 <style>
 .tk-comments { margin: 0 0 8px; }
 .tk-comments-title { font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin:0 0 12px; }
@@ -72,3 +73,4 @@
         </div>
     </div>
 </div>
+@endif

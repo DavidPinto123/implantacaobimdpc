@@ -18,6 +18,7 @@ class MenuPermissionsSeeder extends Seeder
             'View:MenuAtas',
             'View:MenuProjetosPiloto',
             'View:MenuWhatsApp',
+            'View:MenuOrcamentoObras',
         ];
 
         foreach ($permissions as $perm) {
