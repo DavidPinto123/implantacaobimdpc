@@ -35,6 +35,8 @@ class AmbientacaoResource extends Resource
 
     protected static ?string $modelLabel = 'Ambientação';
 
+    protected static ?string $slug = 'ambientacoes';
+
     protected static ?int $navigationSort = 6;
 
     protected static string|null|UnitEnum $navigationGroup = null;
