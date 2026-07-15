@@ -13,6 +13,8 @@ class Ambientacao extends Model
         'nome',
         'sigla',
         'nova_sigla',
+        'bloco_torre',
+        'departamento',
         'pais_id',
         'estado_id',
         'cidade_id',
