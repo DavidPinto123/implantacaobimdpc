@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Ambientacao extends Model
 {
@@ -21,6 +22,7 @@ class Ambientacao extends Model
         'pavimento',
         'ambiente',
         'link_render',
+        'pano_equirretangular',
     ];
 
     public function pais()
@@ -36,5 +38,10 @@ class Ambientacao extends Model
     public function cidade()
     {
         return $this->belongsTo(Cidade::class);
+    }
+
+    public function imagens(): HasMany
+    {
+        return $this->hasMany(AmbientacaoImagem::class);
     }
 }

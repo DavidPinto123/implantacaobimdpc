@@ -3,16 +3,16 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\AmbientacaoResource\Pages;
+use App\Filament\Resources\AmbientacaoResource\RelationManagers\ImagensRelationManager;
 use App\Models\Ambientacao;
-use App\Models\Cidade;
-use App\Models\Estado;
-use App\Models\Pais;
 use BackedEnum;
 use Filament\Actions\EditAction;
 use Filament\Forms;
-use Filament\Forms\Components\Select;
+use Filament\Forms\Components\FileUpload;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
@@ -45,71 +45,6 @@ class AmbientacaoResource extends Resource
     {
         return $schema
             ->schema([
-                Section::make('Identificação')
-                    ->description('Dados básicos da unidade/obra')
-                    ->schema([
-                        Forms\Components\TextInput::make('codigo')
-                            ->label('Código')
-                            ->required()
-                            ->maxLength(255),
-
-                        Forms\Components\TextInput::make('sigla')
-                            ->label('Sigla')
-                            ->maxLength(255),
-
-                        Forms\Components\TextInput::make('nova_sigla')
-                            ->label('Nova Sigla')
-                            ->maxLength(255),
-
-                        Forms\Components\TextInput::make('nome')
-                            ->label('Nome')
-                            ->maxLength(255),
-                    ])
-                    ->columns(2),
-
-                Section::make('Localização')
-                    ->description('Região da unidade/obra')
-                    ->schema([
-                        Select::make('pais_id')
-                            ->label('País')
-                            ->relationship('pais', 'nome', function ($query) {
-                                $query->orderBy('nome');
-                            })
-                            ->searchable()
-                            ->preload()
-                            ->reactive()
-                            ->afterStateUpdated(function (callable $set) {
-                                $set('estado_id', null);
-                                $set('cidade_id', null);
-                            }),
-
-                        Select::make('estado_id')
-                            ->label('Estado')
-                            ->searchable()
-                            ->reactive()
-                            ->disabled(fn (callable $get) => ! $get('pais_id'))
-                            ->options(function (callable $get) {
-                                $paisId = $get('pais_id');
-
-                                return $paisId ? Estado::where('pais_id', $paisId)->orderBy('nome')->pluck('nome', 'id') : [];
-                            })
-                            ->afterStateUpdated(function (callable $set) {
-                                $set('cidade_id', null);
-                            }),
-
-                        Select::make('cidade_id')
-                            ->label('Cidade')
-                            ->searchable()
-                            ->reactive()
-                            ->disabled(fn (callable $get) => ! $get('estado_id'))
-                            ->options(function (callable $get) {
-                                $estadoId = $get('estado_id');
-
-                                return $estadoId ? Cidade::where('estado_id', $estadoId)->orderBy('nome')->pluck('nome', 'id') : [];
-                            }),
-                    ])
-                    ->columns(2),
-
                 Section::make('Ambiente')
                     ->description('Localização e ambiente representados pelo render')
                     ->schema([
@@ -144,7 +79,29 @@ class AmbientacaoResource extends Resource
                             ->label('Link do Render 360°')
                             ->url()
                             ->required()
+                            ->live(onBlur: true)
                             ->placeholder('https://pano.autodesk.com/pano.html?...'),
+                    ]),
+
+                Section::make('Pré-visualização')
+                    ->description('Amostra do Render 360° direto na tela, com opção de tela cheia')
+                    ->schema([
+                        View::make('filament.components.ambientacao-pano-preview')
+                            ->viewData(fn (Get $get) => ['url' => $get('link_render')]),
+                    ]),
+
+                Section::make('Imagem 360° (equirretangular)')
+                    ->description('Arquivo-fonte do panorama (baixado da Autodesk Rendering), usado para escolher um ângulo e gerar um recorte estático')
+                    ->schema([
+                        FileUpload::make('pano_equirretangular')
+                            ->label('Imagem equirretangular')
+                            ->image()
+                            ->disk((string) config('filesystems.media_disk', 'r2'))
+                            ->directory(fn ($record) => filled($record?->id)
+                                ? "ambientacoes/{$record->id}/pano"
+                                : 'ambientacoes/tmp/pano')
+                            ->visibility('public')
+                            ->fetchFileInformation(false),
                     ]),
             ]);
     }
@@ -240,7 +197,7 @@ class AmbientacaoResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            ImagensRelationManager::class,
         ];
     }
 
@@ -251,6 +208,7 @@ class AmbientacaoResource extends Resource
             'create' => Pages\CreateAmbientacao::route('/create'),
             'view' => Pages\ViewAmbientacao::route('/{record}'),
             'edit' => Pages\EditAmbientacao::route('/{record}/edit'),
+            'angulo' => Pages\SelecionarAngulo::route('/{record}/angulo'),
         ];
     }
 }
