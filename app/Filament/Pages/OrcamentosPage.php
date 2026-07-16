@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Models\Orcamento;
 use App\Models\OrcamentoCategoria;
+use App\Models\OrcamentoRevitItem;
 use App\Models\Projeto;
 use App\Traits\HasMenuPermission;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -210,6 +211,89 @@ class OrcamentosPage extends Page
     {
         array_splice($this->formCategorias[$catIndex]['itens'], $itemIndex, 1);
         $this->formCategorias[$catIndex]['itens'] = array_values($this->formCategorias[$catIndex]['itens']);
+    }
+
+    // ─── Sincronização com o Revit ──────────────────────────────────────────
+
+    public function sincronizarRevit(): void
+    {
+        if (! $this->formProjetoId) {
+            Notification::make()->title('Selecione um projeto antes de sincronizar.')->warning()->send();
+
+            return;
+        }
+
+        $projeto = Projeto::find($this->formProjetoId);
+        $codigoObra = $projeto?->nova_sigla;
+
+        if (! $codigoObra) {
+            Notification::make()
+                ->title('Este projeto não tem "Nova Sigla" cadastrada')
+                ->body('Não é possível localizar itens do Revit sem esse código.')
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        $itensPorCategoria = OrcamentoRevitItem::where('codigo_obra', $codigoObra)
+            ->orderBy('categoria')
+            ->orderBy('ordem')
+            ->get()
+            ->groupBy('categoria');
+
+        if ($itensPorCategoria->isEmpty()) {
+            Notification::make()
+                ->title("Nenhum item do Revit encontrado para \"{$codigoObra}\"")
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        $adicionados = 0;
+        $atualizados = 0;
+
+        foreach ($itensPorCategoria as $nomeCategoria => $itensRevit) {
+            $catIndex = collect($this->formCategorias)->search(
+                fn ($cat) => mb_strtolower(trim($cat['nome'])) === mb_strtolower(trim($nomeCategoria))
+            );
+
+            if ($catIndex === false) {
+                $catIndex = count($this->formCategorias);
+                $this->formCategorias[] = ['id' => null, 'nome' => $nomeCategoria, 'itens' => []];
+            }
+
+            foreach ($itensRevit as $itemRevit) {
+                $itemIndex = collect($this->formCategorias[$catIndex]['itens'])->search(
+                    fn ($item) => filled($item['codigo']) && $item['codigo'] === $itemRevit->codigo
+                );
+
+                $dadosItem = [
+                    'codigo' => $itemRevit->codigo,
+                    'descricao' => $itemRevit->descricao,
+                    'unidade' => $itemRevit->unidade ?: 'un',
+                    'quantidade' => (string) $itemRevit->quantidade,
+                    'valor_mat' => (string) $itemRevit->valor_mat,
+                    'valor_mo' => (string) $itemRevit->valor_mo,
+                ];
+
+                if ($itemIndex !== false) {
+                    $idExistente = $this->formCategorias[$catIndex]['itens'][$itemIndex]['id'] ?? null;
+                    $this->formCategorias[$catIndex]['itens'][$itemIndex] = ['id' => $idExistente, ...$dadosItem];
+                    $atualizados++;
+                } else {
+                    $this->formCategorias[$catIndex]['itens'][] = ['id' => null, ...$dadosItem];
+                    $adicionados++;
+                }
+            }
+        }
+
+        Notification::make()
+            ->title('Sincronizado com o Revit')
+            ->body("{$adicionados} itens novos, {$atualizados} atualizados. Revise e clique em Salvar para confirmar.")
+            ->success()
+            ->send();
     }
 
     // ─── CRUD ────────────────────────────────────────────────────────────────

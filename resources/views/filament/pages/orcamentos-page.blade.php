@@ -384,11 +384,18 @@
                     <div>
                         <div class="flex items-center justify-between mb-2">
                             <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Categorias e Itens</h3>
-                            <button type="button" wire:click="adicionarCategoria"
-                                class="inline-flex items-center gap-1 text-xs text-primary-600 dark:text-primary-400 hover:underline">
-                                <x-heroicon-o-plus class="w-3.5 h-3.5" />
-                                Adicionar categoria
-                            </button>
+                            <div class="flex items-center gap-3">
+                                <button type="button" wire:click="sincronizarRevit" wire:loading.attr="disabled"
+                                    class="inline-flex items-center gap-1 text-xs text-primary-600 dark:text-primary-400 hover:underline disabled:opacity-50">
+                                    <x-heroicon-o-arrow-path class="w-3.5 h-3.5" />
+                                    Sincronizar Revit
+                                </button>
+                                <button type="button" wire:click="adicionarCategoria"
+                                    class="inline-flex items-center gap-1 text-xs text-primary-600 dark:text-primary-400 hover:underline">
+                                    <x-heroicon-o-plus class="w-3.5 h-3.5" />
+                                    Adicionar categoria
+                                </button>
+                            </div>
                         </div>
 
                         @if(count($formCategorias) === 0)
