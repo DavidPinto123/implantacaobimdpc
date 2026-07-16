@@ -18,9 +18,11 @@ use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ViewColumn;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 class AmbientacaoResource extends Resource
@@ -146,19 +148,19 @@ class AmbientacaoResource extends Resource
                         ->aligncenter(),
                 ]),
 
-                TextColumn::make('link_render')
-                    ->label('Render 360°')
-                    ->extraAttributes(['class' => 'text-base'])
-                    ->formatStateUsing(fn ($state) => 'Abrir Render 360º')
-                    ->icon('heroicon-o-arrow-top-right-on-square')
-                    ->color('primary')
-                    ->weight(FontWeight::Bold)
-                    ->url(fn ($record) => $record->link_render)
-                    ->openUrlInNewTab()
-                    ->aligncenter(),
+                ViewColumn::make('preview')
+                    ->label('Pré-visualização')
+                    ->view('filament.components.ambientacao-pano-preview')
+                    ->viewData(fn ($record) => ['url' => $record->link_render, 'height' => 260]),
+
+                ViewColumn::make('comentarios')
+                    ->label('Comentários')
+                    ->view('filament.components.ambientacao-comentarios-feed')
+                    ->viewData(fn ($record) => ['ambientacao' => $record]),
             ])->paginated(false)
             ->defaultSort('created_at', 'desc')
             ->recordUrl(fn () => null)
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['imagens.comentarios.autor']))
             ->contentGrid([
                 'md' => 2,
                 'xl' => 3,

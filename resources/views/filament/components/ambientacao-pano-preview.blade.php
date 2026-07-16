@@ -17,7 +17,7 @@
         <div
             x-ref="panoContainer"
             class="relative w-full overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700"
-            style="height: 480px;"
+            style="height: {{ $height ?? 480 }}px;"
         >
             <iframe :src="url" class="h-full w-full border-0" title="Pré-visualização do Render 360°" allowfullscreen></iframe>
 
