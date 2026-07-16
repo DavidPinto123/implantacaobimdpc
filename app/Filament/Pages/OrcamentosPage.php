@@ -50,6 +50,7 @@ class OrcamentosPage extends Page
     public ?int $formProjetoId = null;
     public string $formNome = '';
     public string $formNomeMkt = '';
+    public string $formArquivoRevit = '';
     public string $formData = '';
     public array $formCategorias = [];
 
@@ -128,12 +129,13 @@ class OrcamentosPage extends Page
 
     public function novoOrcamento(): void
     {
-        $this->editandoId     = null;
-        $this->formProjetoId  = $this->projetoId;
-        $this->formNome       = '';
-        $this->formNomeMkt    = '';
-        $this->formData       = now()->format('Y-m-d');
-        $this->formCategorias = [];
+        $this->editandoId       = null;
+        $this->formProjetoId    = $this->projetoId;
+        $this->formNome         = '';
+        $this->formNomeMkt      = '';
+        $this->formArquivoRevit = '';
+        $this->formData         = now()->format('Y-m-d');
+        $this->formCategorias   = [];
         $this->resetValidation();
         $this->modalFormAberto = true;
     }
@@ -142,11 +144,12 @@ class OrcamentosPage extends Page
     {
         $orcamento = Orcamento::with('categorias.itens')->findOrFail($id);
 
-        $this->editandoId    = $id;
-        $this->formProjetoId = $orcamento->projeto_id;
-        $this->formNome      = $orcamento->nome;
-        $this->formNomeMkt   = $orcamento->nome_mkt ?? '';
-        $this->formData      = $orcamento->data?->format('Y-m-d') ?? '';
+        $this->editandoId       = $id;
+        $this->formProjetoId    = $orcamento->projeto_id;
+        $this->formNome         = $orcamento->nome;
+        $this->formNomeMkt      = $orcamento->nome_mkt ?? '';
+        $this->formArquivoRevit = $orcamento->arquivo_revit ?? '';
+        $this->formData         = $orcamento->data?->format('Y-m-d') ?? '';
 
         $this->formCategorias = $orcamento->categorias
             ->map(fn (OrcamentoCategoria $categoria) => [
@@ -217,19 +220,11 @@ class OrcamentosPage extends Page
 
     public function sincronizarRevit(): void
     {
-        if (! $this->formProjetoId) {
-            Notification::make()->title('Selecione um projeto antes de sincronizar.')->warning()->send();
-
-            return;
-        }
-
-        $projeto = Projeto::find($this->formProjetoId);
-        $codigoObra = $projeto?->nova_sigla;
+        $codigoObra = trim($this->formArquivoRevit);
 
         if (! $codigoObra) {
             Notification::make()
-                ->title('Este projeto não tem "Nova Sigla" cadastrada')
-                ->body('Não é possível localizar itens do Revit sem esse código.')
+                ->title('Informe o nome do arquivo Revit antes de sincronizar.')
                 ->warning()
                 ->send();
 
@@ -304,6 +299,7 @@ class OrcamentosPage extends Page
             'formProjetoId'                        => 'required|exists:projetos,id',
             'formNome'                              => 'required|string|max:255',
             'formNomeMkt'                           => 'nullable|string|max:255',
+            'formArquivoRevit'                      => 'nullable|string|max:255',
             'formData'                              => 'required|date',
             'formCategorias.*.nome'                 => 'required|string|max:255',
             'formCategorias.*.itens.*.descricao'    => 'required|string',
@@ -322,10 +318,11 @@ class OrcamentosPage extends Page
         ]);
 
         $dados = [
-            'projeto_id' => $this->formProjetoId,
-            'nome'       => $this->formNome,
-            'nome_mkt'   => $this->formNomeMkt ?: null,
-            'data'       => $this->formData,
+            'projeto_id'    => $this->formProjetoId,
+            'nome'          => $this->formNome,
+            'nome_mkt'      => $this->formNomeMkt ?: null,
+            'arquivo_revit' => $this->formArquivoRevit ?: null,
+            'data'          => $this->formData,
         ];
 
         if ($this->editandoId) {

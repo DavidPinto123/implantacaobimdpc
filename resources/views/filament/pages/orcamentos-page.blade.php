@@ -378,6 +378,12 @@
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome MKT <span class="text-gray-400 font-normal">(opcional)</span></label>
                             <input type="text" wire:model="formNomeMkt" class="{{ $inputCls }}" />
                         </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome do arquivo Revit <span class="text-gray-400 font-normal">(opcional)</span></label>
+                            <input type="text" wire:model="formArquivoRevit" placeholder="Ex: Hospital" class="{{ $inputCls }}" />
+                            <p class="text-xs text-gray-400 dark:text-gray-600 mt-1">Usado para localizar os itens que a API do Revit gravou para este arquivo, ao clicar em "Sincronizar Revit".</p>
+                        </div>
                     </div>
 
                     {{-- Categorias e Itens --}}

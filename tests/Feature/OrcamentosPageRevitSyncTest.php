@@ -23,7 +23,7 @@ it('sincroniza itens do revit para um orcamento novo e depois atualiza sem dupli
 
     $this->actingAs($user);
 
-    $projeto = createProjetoRecord($user, ['nova_sigla' => 'SF-TESTE-REVIT']);
+    $projeto = createProjetoRecord($user);
 
     DB::connection('revit')->table('orcamento_revit_itens')->insert([
         'codigo_obra' => 'SF-TESTE-REVIT',
@@ -41,6 +41,7 @@ it('sincroniza itens do revit para um orcamento novo e depois atualiza sem dupli
         ->call('novoOrcamento')
         ->set('formProjetoId', $projeto->id)
         ->set('formNome', 'Orçamento via Revit')
+        ->set('formArquivoRevit', 'SF-TESTE-REVIT')
         ->set('formData', now()->format('Y-m-d'))
         ->call('sincronizarRevit');
 

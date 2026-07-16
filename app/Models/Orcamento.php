@@ -14,6 +14,7 @@ class Orcamento extends Model
         'projeto_id',
         'nome',
         'nome_mkt',
+        'arquivo_revit',
         'data',
         'criado_por',
     ];
