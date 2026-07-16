@@ -16,13 +16,14 @@ use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
-use Filament\Tables\Columns\Layout\Stack;
+use Filament\Tables\Columns\Layout\Split;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ViewColumn;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Storage;
 use UnitEnum;
 
 class AmbientacaoResource extends Resource
@@ -112,46 +113,51 @@ class AmbientacaoResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('ambiente')
-                    ->searchable()
-                    ->weight(FontWeight::Bold)
-                    ->extraAttributes(['class' => 'text-lg'])
-                    ->aligncenter()
-                    ->grow(false)
-                    ->limit(30),
-                TextColumn::make('pavimento')
-                    ->searchable()
-                    ->grow(false)
-                    ->extraAttributes(['class' => 'text-lg'])
-                    ->aligncenter()
-                    ->limit(20),
-                TextColumn::make('nome')
-                    ->searchable()
-                    ->label('Unidade')
-                    ->grow(false)
-                    ->extraAttributes(['class' => 'text-lg'])
-                    ->aligncenter()
-                    ->limit(20),
-
-                Stack::make([
+                Split::make([
+                    TextColumn::make('ambiente')
+                        ->searchable()
+                        ->weight(FontWeight::Bold)
+                        ->extraAttributes(['class' => 'text-lg'])
+                        ->grow(false)
+                        ->limit(30),
+                    TextColumn::make('pavimento')
+                        ->searchable()
+                        ->grow(false)
+                        ->limit(20),
+                    TextColumn::make('nome')
+                        ->searchable()
+                        ->label('Unidade')
+                        ->grow(false)
+                        ->limit(20),
                     TextColumn::make('bloco_torre')
                         ->label('Bloco/Torre')
-                        ->extraAttributes(['class' => 'text-base'])
-                        ->aligncenter(),
+                        ->grow(false),
                     TextColumn::make('departamento')
-                        ->label('Departamento')
-                        ->extraAttributes(['class' => 'text-base'])
-                        ->aligncenter(),
+                        ->grow(false),
                     TextColumn::make('codigo')
                         ->label('Código')
-                        ->extraAttributes(['class' => 'text-base'])
-                        ->aligncenter(),
+                        ->grow(false),
                 ]),
 
-                ViewColumn::make('preview')
-                    ->label('Pré-visualização')
-                    ->view('filament.components.ambientacao-pano-preview')
-                    ->viewData(fn ($record) => ['url' => $record->link_render, 'height' => 260]),
+                Split::make([
+                    ViewColumn::make('preview')
+                        ->label('Pré-visualização')
+                        ->view('filament.components.ambientacao-pano-preview')
+                        ->viewData(fn ($record) => ['url' => $record->link_render, 'height' => 260]),
+
+                    ViewColumn::make('imagem_destaque')
+                        ->label('Imagem estática')
+                        ->view('filament.components.ambientacao-imagem-destaque')
+                        ->viewData(function ($record) {
+                            $imagem = $record->imagens->sortByDesc('created_at')->first();
+
+                            return [
+                                'url' => $imagem
+                                    ? Storage::disk((string) config('filesystems.media_disk', 'r2'))->url($imagem->arquivo)
+                                    : null,
+                            ];
+                        }),
+                ]),
 
                 ViewColumn::make('comentarios')
                     ->label('Comentários')
