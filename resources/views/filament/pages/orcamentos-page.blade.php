@@ -221,74 +221,173 @@
                         @endif
                     </div>
 
-                    {{-- Resumo do Orçamento --}}
-                    <div>
-                        <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1.5">
-                            <x-heroicon-o-calculator class="w-4 h-4 text-primary-500" />
-                            Resumo do Orçamento
-                        </h3>
-                        <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
-                            <table class="w-full text-sm">
-                                <thead class="bg-gray-50 dark:bg-gray-800">
-                                    <tr>
-                                        <th class="text-left px-3 py-2 font-semibold text-gray-700 dark:text-gray-300">Categoria</th>
-                                        <th class="text-right px-3 py-2 font-semibold text-gray-700 dark:text-gray-300">Total Mat</th>
-                                        <th class="text-right px-3 py-2 font-semibold text-gray-700 dark:text-gray-300">Total MO</th>
-                                        <th class="text-right px-3 py-2 font-semibold text-gray-700 dark:text-gray-300">Total Geral</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-                                    @foreach($orcamento->categorias as $categoria)
-                                    <tr>
-                                        <td class="px-3 py-2 text-gray-900 dark:text-white">{{ $categoria->nome }}</td>
-                                        <td class="px-3 py-2 text-right text-gray-600 dark:text-gray-400">{{ number_format($categoria->total_material, 2, ',', '.') }}</td>
-                                        <td class="px-3 py-2 text-right text-gray-600 dark:text-gray-400">{{ number_format($categoria->total_mao_de_obra, 2, ',', '.') }}</td>
-                                        <td class="px-3 py-2 text-right font-medium text-gray-900 dark:text-white">{{ number_format($categoria->total_geral, 2, ',', '.') }}</td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                                <tfoot class="bg-gray-50 dark:bg-gray-800 font-bold">
-                                    <tr>
-                                        <td class="px-3 py-2 text-gray-900 dark:text-white">TOTAL GERAL</td>
-                                        <td class="px-3 py-2 text-right text-gray-900 dark:text-white">{{ number_format($orcamento->total_material, 2, ',', '.') }}</td>
-                                        <td class="px-3 py-2 text-right text-gray-900 dark:text-white">{{ number_format($orcamento->total_mao_de_obra, 2, ',', '.') }}</td>
-                                        <td class="px-3 py-2 text-right text-gray-900 dark:text-white">{{ number_format($orcamento->total_geral, 2, ',', '.') }}</td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
+                    {{-- Filtros --}}
+                    @php $resumo = $this->getResumoDetalhe($orcamento); @endphp
+                    <div class="flex flex-wrap items-center gap-3">
+                        <select wire:model.live="filtroCategoria"
+                            class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm px-3 py-1.5 focus:ring-2 focus:ring-primary-500 focus:outline-none">
+                            <option value="">Todas as categorias</option>
+                            @foreach($orcamento->categorias as $categoria)
+                            <option value="{{ $categoria->nome }}">{{ $categoria->nome }}</option>
+                            @endforeach
+                        </select>
+                        <input type="text" wire:model.live.debounce.300ms="filtroBusca"
+                            placeholder="Buscar por código ou descrição…"
+                            class="flex-1 min-w-[180px] rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm px-3 py-1.5 focus:ring-2 focus:ring-primary-500 focus:outline-none" />
+                        @if($filtroCategoria || $filtroBusca)
+                        <button wire:click="limparFiltrosDetalhe" class="text-xs text-primary-600 dark:text-primary-400 hover:underline">
+                            Limpar filtros
+                        </button>
+                        @endif
                     </div>
 
-                    {{-- Itens por categoria --}}
-                    @foreach($orcamento->categorias as $categoria)
-                    <div>
-                        <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{{ $categoria->nome }}</h3>
-                        <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 overflow-x-auto">
+                    {{-- Orçamento + resumo --}}
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
+
+                        {{-- Tabela agrupada por categoria --}}
+                        <div class="lg:col-span-2 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 overflow-x-auto">
                             <table class="w-full text-sm">
                                 <thead class="bg-gray-50 dark:bg-gray-800">
                                     <tr>
                                         <th class="text-left px-3 py-2 font-semibold text-gray-700 dark:text-gray-300 w-20">Código</th>
-                                        <th class="text-left px-3 py-2 font-semibold text-gray-700 dark:text-gray-300">Descrição</th>
-                                        <th class="text-center px-3 py-2 font-semibold text-gray-700 dark:text-gray-300 w-16">Unid</th>
+                                        <th class="text-left px-3 py-2 font-semibold text-gray-700 dark:text-gray-300">Item</th>
+                                        <th class="text-center px-3 py-2 font-semibold text-gray-700 dark:text-gray-300 w-14">Un</th>
                                         <th class="text-right px-3 py-2 font-semibold text-gray-700 dark:text-gray-300 w-20">Qtd</th>
-                                        <th class="text-right px-3 py-2 font-semibold text-gray-700 dark:text-gray-300 w-24">Total</th>
+                                        <th class="text-right px-3 py-2 font-semibold text-gray-700 dark:text-gray-300 w-24">Mat</th>
+                                        <th class="text-right px-3 py-2 font-semibold text-gray-700 dark:text-gray-300 w-24">MO</th>
+                                        <th class="text-right px-3 py-2 font-semibold text-gray-700 dark:text-gray-300 w-24">Mat+MO</th>
+                                        <th class="text-right px-3 py-2 font-semibold text-gray-700 dark:text-gray-300 w-28">Total</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-                                    @foreach($categoria->itens as $item)
+                                    @forelse($resumo['grupos'] as $grupo)
+                                    <tr class="bg-gray-50/80 dark:bg-gray-800/60">
+                                        <td colspan="8" class="px-3 py-1.5 font-semibold text-xs uppercase tracking-wide text-gray-600 dark:text-gray-400">
+                                            {{ $grupo['categoria']->nome }}
+                                        </td>
+                                    </tr>
+                                    @foreach($grupo['itens'] as $item)
                                     <tr>
                                         <td class="px-3 py-2 text-gray-500 dark:text-gray-400">{{ $item->codigo ?: '—' }}</td>
                                         <td class="px-3 py-2 text-gray-900 dark:text-white">{{ $item->descricao }}</td>
                                         <td class="px-3 py-2 text-center text-gray-600 dark:text-gray-400">{{ $item->unidade }}</td>
                                         <td class="px-3 py-2 text-right text-gray-600 dark:text-gray-400">{{ number_format($item->quantidade, 2, ',', '.') }}</td>
+                                        <td class="px-3 py-2 text-right text-gray-600 dark:text-gray-400">{{ number_format($item->valor_mat, 2, ',', '.') }}</td>
+                                        <td class="px-3 py-2 text-right text-gray-600 dark:text-gray-400">{{ number_format($item->valor_mo, 2, ',', '.') }}</td>
+                                        <td class="px-3 py-2 text-right text-gray-600 dark:text-gray-400">{{ number_format($item->valor_mat_mo, 2, ',', '.') }}</td>
                                         <td class="px-3 py-2 text-right font-medium text-gray-900 dark:text-white">{{ number_format($item->valor_total, 2, ',', '.') }}</td>
                                     </tr>
                                     @endforeach
+                                    <tr class="bg-gray-50/60 dark:bg-gray-800/40 font-semibold">
+                                        <td colspan="7" class="px-3 py-1.5 text-right text-xs text-gray-600 dark:text-gray-400">TOTAL DA CATEGORIA</td>
+                                        <td class="px-3 py-1.5 text-right text-gray-900 dark:text-white">{{ number_format($grupo['total_geral'], 2, ',', '.') }}</td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="8" class="px-3 py-8 text-center text-gray-400 dark:text-gray-600">
+                                            Nenhum item encontrado para os filtros selecionados.
+                                        </td>
+                                    </tr>
+                                    @endforelse
                                 </tbody>
+                                @if($resumo['grupos']->isNotEmpty())
+                                <tfoot class="bg-gray-50 dark:bg-gray-800 font-bold">
+                                    <tr>
+                                        <td colspan="7" class="px-3 py-2 text-right text-gray-900 dark:text-white">TOTAL GERAL</td>
+                                        <td class="px-3 py-2 text-right text-gray-900 dark:text-white">{{ number_format($resumo['total_geral'], 2, ',', '.') }}</td>
+                                    </tr>
+                                </tfoot>
+                                @endif
                             </table>
                         </div>
+
+                        {{-- Resumo + gráfico --}}
+                        <div class="rounded-lg border border-gray-200 dark:border-gray-700 p-4 space-y-4">
+                            <div>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">
+                                    Itens: <span class="font-semibold text-gray-700 dark:text-gray-300">{{ $resumo['total_itens'] }}</span>
+                                </p>
+                                <p class="text-sm font-semibold text-gray-900 dark:text-white">
+                                    Total Geral: R$ {{ number_format($resumo['total_geral'], 2, ',', '.') }}
+                                </p>
+                            </div>
+
+                            @if($resumo['grupos']->isNotEmpty())
+                            <div>
+                                <h4 class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">
+                                    Distribuição por Categoria
+                                </h4>
+                                @php
+                                    $chartSignature = md5(json_encode($resumo['chart_labels']) . json_encode($resumo['chart_series']));
+                                @endphp
+                                <div
+                                    wire:key="orc-chart-{{ $orcamento->id }}-{{ $chartSignature }}"
+                                    wire:ignore
+                                    x-data="{
+                                        chart: null,
+                                        init() {
+                                            this.renderWhenReady();
+                                        },
+                                        renderWhenReady(retry = 0) {
+                                            if (window.ApexCharts) { this.mountChart(); return; }
+                                            const existing = document.getElementById('apexcharts-cdn-js');
+                                            if (!existing) {
+                                                const script = document.createElement('script');
+                                                script.id = 'apexcharts-cdn-js';
+                                                script.src = 'https://cdn.jsdelivr.net/npm/apexcharts';
+                                                script.async = true;
+                                                script.onload = () => this.mountChart();
+                                                document.head.appendChild(script);
+                                            }
+                                            if (retry > 25) return;
+                                            setTimeout(() => this.renderWhenReady(retry + 1), 200);
+                                        },
+                                        mountChart() {
+                                            const labels = @js($resumo['chart_labels']);
+                                            const series = @js($resumo['chart_series']);
+                                            if (!series.length || !series.some(v => v > 0)) return;
+
+                                            const isDark = document.documentElement.classList.contains('dark');
+                                            try { if (this.chart) this.chart.destroy(); } catch(e){}
+
+                                            this.chart = new ApexCharts(this.$refs.chart, {
+                                                chart: { type: 'donut', height: 220, background: 'transparent', fontFamily: 'inherit' },
+                                                series: series,
+                                                labels: labels,
+                                                colors: ['#6B7280','#3B82F6','#22C55E','#EF4444','#F59E0B','#8B5CF6','#EC4899','#14B8A6'],
+                                                legend: { position: 'bottom', fontSize: '11px', labels: { colors: isDark ? '#D1D5DB' : '#374151' },
+                                                    formatter: (name, opts) => name + ' (' + opts.w.globals.seriesPercent[opts.seriesIndex][0].toFixed(1) + '%)' },
+                                                tooltip: { theme: isDark ? 'dark' : 'light' },
+                                                plotOptions: { pie: { donut: { size: '55%' } } },
+                                                dataLabels: { enabled: false },
+                                            });
+                                            this.chart.render();
+                                        },
+                                        destroy() { try { if (this.chart) this.chart.destroy(); } catch(e){} }
+                                    }"
+                                    x-ref="chart"
+                                    style="min-height:220px;"
+                                ></div>
+                            </div>
+                            @endif
+
+                            <dl class="space-y-1.5 text-sm border-t border-gray-100 dark:border-gray-800 pt-3">
+                                <div class="flex items-center justify-between">
+                                    <dt class="text-gray-500 dark:text-gray-400">Total MAT</dt>
+                                    <dd class="font-medium text-gray-900 dark:text-white">R$ {{ number_format($resumo['total_mat'], 2, ',', '.') }}</dd>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <dt class="text-gray-500 dark:text-gray-400">Total MO</dt>
+                                    <dd class="font-medium text-gray-900 dark:text-white">R$ {{ number_format($resumo['total_mo'], 2, ',', '.') }}</dd>
+                                </div>
+                                <div class="flex items-center justify-between pt-1 border-t border-gray-100 dark:border-gray-800">
+                                    <dt class="font-semibold text-gray-700 dark:text-gray-300">Total Geral</dt>
+                                    <dd class="font-bold text-gray-900 dark:text-white">R$ {{ number_format($resumo['total_geral'], 2, ',', '.') }}</dd>
+                                </div>
+                            </dl>
+                        </div>
+
                     </div>
-                    @endforeach
 
                 </div>{{-- /body --}}
 

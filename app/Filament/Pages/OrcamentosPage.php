@@ -46,6 +46,10 @@ class OrcamentosPage extends Page
     public ?int $editandoId = null;
     public ?int $detalheId = null;
 
+    // ─── Filtros do detalhe ──────────────────────────────────────────────────
+    public ?string $filtroCategoria = null;
+    public string $filtroBusca = '';
+
     // ─── Campos do formulário ────────────────────────────────────────────────
     public ?int $formProjetoId = null;
     public string $formNome = '';
@@ -102,6 +106,46 @@ class OrcamentosPage extends Page
         return Orcamento::with(['projeto', 'categorias.itens', 'criador'])->find($this->detalheId);
     }
 
+    public function getResumoDetalhe(Orcamento $orcamento): array
+    {
+        $busca = mb_strtolower(trim($this->filtroBusca));
+
+        $grupos = $orcamento->categorias
+            ->when($this->filtroCategoria, fn (Collection $cats) => $cats->where('nome', $this->filtroCategoria))
+            ->map(function (OrcamentoCategoria $categoria) use ($busca) {
+                $itens = $categoria->itens->when($busca !== '', fn (Collection $itens) => $itens->filter(
+                    fn ($item) => str_contains(mb_strtolower($item->descricao), $busca)
+                        || str_contains(mb_strtolower((string) $item->codigo), $busca)
+                ));
+
+                return [
+                    'categoria'    => $categoria,
+                    'itens'        => $itens->values(),
+                    'total_mat'    => $itens->sum(fn ($i) => (float) $i->quantidade * (float) $i->valor_mat),
+                    'total_mo'     => $itens->sum(fn ($i) => (float) $i->quantidade * (float) $i->valor_mo),
+                    'total_geral'  => $itens->sum(fn ($i) => $i->valor_total),
+                ];
+            })
+            ->filter(fn ($grupo) => $grupo['itens']->isNotEmpty())
+            ->values();
+
+        return [
+            'grupos'       => $grupos,
+            'total_itens'  => $grupos->sum(fn ($g) => $g['itens']->count()),
+            'total_mat'    => $grupos->sum('total_mat'),
+            'total_mo'     => $grupos->sum('total_mo'),
+            'total_geral'  => $grupos->sum('total_geral'),
+            'chart_labels' => $grupos->pluck('categoria.nome')->toArray(),
+            'chart_series' => $grupos->map(fn ($g) => round($g['total_geral'], 2))->toArray(),
+        ];
+    }
+
+    public function limparFiltrosDetalhe(): void
+    {
+        $this->filtroCategoria = null;
+        $this->filtroBusca     = '';
+    }
+
     public function getCategoriasSugeridas(): array
     {
         return OrcamentoCategoria::query()
@@ -117,12 +161,14 @@ class OrcamentosPage extends Page
     {
         $this->detalheId          = $id;
         $this->modalDetalheAberto = true;
+        $this->limparFiltrosDetalhe();
     }
 
     public function fecharDetalhe(): void
     {
         $this->detalheId          = null;
         $this->modalDetalheAberto = false;
+        $this->limparFiltrosDetalhe();
     }
 
     // ─── Modal: Formulário ───────────────────────────────────────────────────
