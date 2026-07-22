@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Models\Etapa;
 use App\Models\Orcamento;
 use App\Models\OrcamentoCategoria;
 use App\Models\OrcamentoRevitItem;
@@ -155,6 +156,24 @@ class OrcamentosPage extends Page
             ->toArray();
     }
 
+    public function getArquivosRevitPendentes(): Collection
+    {
+        $vinculados = Orcamento::query()
+            ->whereNotNull('arquivo_revit')
+            ->where('arquivo_revit', '!=', '')
+            ->pluck('arquivo_revit')
+            ->map(fn ($nome) => mb_strtolower(trim($nome)))
+            ->all();
+
+        return OrcamentoRevitItem::query()
+            ->selectRaw('codigo_obra, COUNT(DISTINCT categoria) as categorias, COUNT(*) as itens, MAX(atualizado_em) as ultima_atualizacao')
+            ->groupBy('codigo_obra')
+            ->orderByDesc('ultima_atualizacao')
+            ->get()
+            ->reject(fn ($linha) => in_array(mb_strtolower(trim($linha->codigo_obra)), $vinculados))
+            ->values();
+    }
+
     // ─── Modal: Detalhe ──────────────────────────────────────────────────────
 
     public function abrirDetalhe(int $id): void
@@ -264,6 +283,15 @@ class OrcamentosPage extends Page
 
     // ─── Sincronização com o Revit ──────────────────────────────────────────
 
+    private function buscarItensRevitAgrupados(string $codigoObra): Collection
+    {
+        return OrcamentoRevitItem::where('codigo_obra', $codigoObra)
+            ->orderBy('categoria')
+            ->orderBy('ordem')
+            ->get()
+            ->groupBy('categoria');
+    }
+
     public function sincronizarRevit(): void
     {
         $codigoObra = trim($this->formArquivoRevit);
@@ -277,11 +305,7 @@ class OrcamentosPage extends Page
             return;
         }
 
-        $itensPorCategoria = OrcamentoRevitItem::where('codigo_obra', $codigoObra)
-            ->orderBy('categoria')
-            ->orderBy('ordem')
-            ->get()
-            ->groupBy('categoria');
+        $itensPorCategoria = $this->buscarItensRevitAgrupados($codigoObra);
 
         if ($itensPorCategoria->isEmpty()) {
             Notification::make()
@@ -335,6 +359,69 @@ class OrcamentosPage extends Page
             ->body("{$adicionados} itens novos, {$atualizados} atualizados. Revise e clique em Salvar para confirmar.")
             ->success()
             ->send();
+    }
+
+    public function criarProjetoAutomaticoRevit(string $codigoObra): void
+    {
+        $codigoObra = trim($codigoObra);
+
+        if (Orcamento::where('arquivo_revit', $codigoObra)->exists()) {
+            Notification::make()
+                ->title('Já existe um orçamento vinculado a este arquivo.')
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        $itensPorCategoria = $this->buscarItensRevitAgrupados($codigoObra);
+
+        if ($itensPorCategoria->isEmpty()) {
+            Notification::make()
+                ->title("Nenhum item do Revit encontrado para \"{$codigoObra}\"")
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        $projeto = Projeto::create([
+            'nome'     => $codigoObra,
+            'user_id'  => auth()->id(),
+            'etapa_id' => Etapa::where('nome', 'Prospecção')->value('id'),
+        ]);
+
+        $orcamento = Orcamento::create([
+            'projeto_id'    => $projeto->id,
+            'nome'          => "Orçamento Revit - {$codigoObra}",
+            'arquivo_revit' => $codigoObra,
+            'data'          => now()->format('Y-m-d'),
+            'criado_por'    => auth()->id(),
+        ]);
+
+        foreach ($itensPorCategoria as $nomeCategoria => $itensRevit) {
+            $categoria = $orcamento->categorias()->create(['nome' => $nomeCategoria]);
+
+            foreach ($itensRevit->values() as $ordem => $itemRevit) {
+                $categoria->itens()->create([
+                    'codigo'     => $itemRevit->codigo,
+                    'descricao'  => $itemRevit->descricao,
+                    'unidade'    => $itemRevit->unidade ?: 'un',
+                    'quantidade' => $itemRevit->quantidade,
+                    'valor_mat'  => $itemRevit->valor_mat,
+                    'valor_mo'   => $itemRevit->valor_mo,
+                    'ordem'      => $ordem,
+                ]);
+            }
+        }
+
+        Notification::make()
+            ->title('Projeto e orçamento criados')
+            ->body("\"{$projeto->nome}\" criado a partir do arquivo Revit. Complete os dados do projeto (cidade, estado, etapa) quando puder.")
+            ->success()
+            ->send();
+
+        $this->selecionarProjeto($projeto->id, $projeto->nome);
     }
 
     // ─── CRUD ────────────────────────────────────────────────────────────────

@@ -40,6 +40,44 @@
             @endif
         </div>
 
+        {{-- ── ARQUIVOS REVIT SEM PROJETO ──────────────────────────────────── --}}
+        @unless($projetoId)
+        @php $pendentesRevit = $this->getArquivosRevitPendentes(); @endphp
+        @if($pendentesRevit->isNotEmpty())
+        <div class="rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-4 space-y-3">
+            <div class="flex items-center gap-2">
+                <x-heroicon-o-exclamation-triangle class="w-5 h-5 text-amber-500 flex-shrink-0" />
+                <h3 class="text-sm font-semibold text-amber-800 dark:text-amber-300">
+                    Arquivos do Revit sincronizados sem projeto no sistema
+                </h3>
+            </div>
+            <div class="space-y-2">
+                @foreach($pendentesRevit as $pendente)
+                <div class="flex items-center justify-between gap-3 bg-white dark:bg-gray-900 rounded-lg px-3 py-2.5 border border-amber-200 dark:border-amber-800">
+                    <div class="min-w-0">
+                        <p class="font-medium text-gray-900 dark:text-white truncate">{{ $pendente->codigo_obra }}</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">
+                            {{ $pendente->categorias }} {{ \Illuminate\Support\Str::plural('categoria', $pendente->categorias) }} ·
+                            {{ $pendente->itens }} {{ \Illuminate\Support\Str::plural('item', $pendente->itens) }} ·
+                            sincronizado em {{ \Carbon\Carbon::parse($pendente->ultima_atualizacao)->format('d/m/Y H:i') }}
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        x-on:click="if(confirm('Criar um novo projeto e orçamento a partir de \'{{ $pendente->codigo_obra }}\'?')) $wire.criarProjetoAutomaticoRevit(@js($pendente->codigo_obra))"
+                        wire:loading.attr="disabled"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-primary-600 hover:bg-primary-500 text-white transition flex-shrink-0"
+                    >
+                        <x-heroicon-o-sparkles class="w-3.5 h-3.5" />
+                        Criar projeto automaticamente
+                    </button>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+        @endunless
+
         {{-- ── LISTA DE PROJETOS ───────────────────────────────────────────── --}}
         @unless($projetoId)
         <div class="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
