@@ -23,3 +23,6 @@ Schedule::command('resumo:semanal')->weeklyOn(1, '08:30');
 
 // Segurança: garante consistência entre Tasks e subitens de planejamento
 Schedule::command('tasks:limpar-orfas')->everyTenMinutes()->withoutOverlapping();
+
+// Orçamento de Obras: verifica se os arquivos do Revit vinculados foram atualizados
+Schedule::command('orcamentos:sincronizar-revit')->everyFifteenMinutes()->withoutOverlapping();

@@ -15,13 +15,21 @@ class Orcamento extends Model
         'nome',
         'nome_mkt',
         'arquivo_revit',
+        'revisao',
+        'revit_sincronizado_em',
         'data',
         'criado_por',
     ];
 
     protected $casts = [
-        'data' => 'date',
+        'data'                   => 'date',
+        'revit_sincronizado_em'  => 'datetime',
     ];
+
+    public function getRevisaoFormatadaAttribute(): string
+    {
+        return 'R' . str_pad((string) $this->revisao, 3, '0', STR_PAD_LEFT);
+    }
 
     public function projeto(): BelongsTo
     {

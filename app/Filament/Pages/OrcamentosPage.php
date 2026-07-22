@@ -7,6 +7,7 @@ use App\Models\Orcamento;
 use App\Models\OrcamentoCategoria;
 use App\Models\OrcamentoRevitItem;
 use App\Models\Projeto;
+use App\Services\OrcamentoRevitSincronizador;
 use App\Traits\HasMenuPermission;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Notifications\Notification;
@@ -58,6 +59,7 @@ class OrcamentosPage extends Page
     public string $formArquivoRevit = '';
     public string $formData = '';
     public array $formCategorias = [];
+    public bool $formRevitMudou = false;
 
     // ─── Navegação ───────────────────────────────────────────────────────────
 
@@ -178,6 +180,20 @@ class OrcamentosPage extends Page
 
     public function abrirDetalhe(int $id): void
     {
+        $orcamento = Orcamento::find($id);
+
+        if ($orcamento && filled($orcamento->arquivo_revit)) {
+            $resultado = OrcamentoRevitSincronizador::sincronizar($orcamento);
+
+            if ($resultado['mudou']) {
+                Notification::make()
+                    ->title('Orçamento atualizado a partir do Revit')
+                    ->body("{$resultado['atualizados']} item(ns) atualizados, {$resultado['novos']} novo(s). Agora na revisão {$orcamento->revisao_formatada}.")
+                    ->success()
+                    ->send();
+            }
+        }
+
         $this->detalheId          = $id;
         $this->modalDetalheAberto = true;
         $this->limparFiltrosDetalhe();
@@ -201,6 +217,7 @@ class OrcamentosPage extends Page
         $this->formArquivoRevit = '';
         $this->formData         = now()->format('Y-m-d');
         $this->formCategorias   = [];
+        $this->formRevitMudou   = false;
         $this->resetValidation();
         $this->modalFormAberto = true;
     }
@@ -215,6 +232,7 @@ class OrcamentosPage extends Page
         $this->formNomeMkt      = $orcamento->nome_mkt ?? '';
         $this->formArquivoRevit = $orcamento->arquivo_revit ?? '';
         $this->formData         = $orcamento->data?->format('Y-m-d') ?? '';
+        $this->formRevitMudou   = false;
 
         $this->formCategorias = $orcamento->categorias
             ->map(fn (OrcamentoCategoria $categoria) => [
@@ -245,6 +263,7 @@ class OrcamentosPage extends Page
     {
         $this->modalFormAberto = false;
         $this->editandoId      = null;
+        $this->formRevitMudou  = false;
     }
 
     // ─── Categorias ──────────────────────────────────────────────────────────
@@ -344,15 +363,25 @@ class OrcamentosPage extends Page
                 ];
 
                 if ($itemIndex !== false) {
-                    $idExistente = $this->formCategorias[$catIndex]['itens'][$itemIndex]['id'] ?? null;
-                    $this->formCategorias[$catIndex]['itens'][$itemIndex] = ['id' => $idExistente, ...$dadosItem];
-                    $atualizados++;
+                    $itemAtual = $this->formCategorias[$catIndex]['itens'][$itemIndex];
+                    $mudou = $itemAtual['descricao'] !== $dadosItem['descricao']
+                        || $itemAtual['unidade'] !== $dadosItem['unidade']
+                        || (string) $itemAtual['quantidade'] !== $dadosItem['quantidade']
+                        || (string) $itemAtual['valor_mat'] !== $dadosItem['valor_mat']
+                        || (string) $itemAtual['valor_mo'] !== $dadosItem['valor_mo'];
+
+                    if ($mudou) {
+                        $this->formCategorias[$catIndex]['itens'][$itemIndex] = ['id' => $itemAtual['id'] ?? null, ...$dadosItem];
+                        $atualizados++;
+                    }
                 } else {
                     $this->formCategorias[$catIndex]['itens'][] = ['id' => null, ...$dadosItem];
                     $adicionados++;
                 }
             }
         }
+
+        $this->formRevitMudou = $this->formRevitMudou || ($adicionados + $atualizados) > 0;
 
         Notification::make()
             ->title('Sincronizado com o Revit')
@@ -399,21 +428,7 @@ class OrcamentosPage extends Page
             'criado_por'    => auth()->id(),
         ]);
 
-        foreach ($itensPorCategoria as $nomeCategoria => $itensRevit) {
-            $categoria = $orcamento->categorias()->create(['nome' => $nomeCategoria]);
-
-            foreach ($itensRevit->values() as $ordem => $itemRevit) {
-                $categoria->itens()->create([
-                    'codigo'     => $itemRevit->codigo,
-                    'descricao'  => $itemRevit->descricao,
-                    'unidade'    => $itemRevit->unidade ?: 'un',
-                    'quantidade' => $itemRevit->quantidade,
-                    'valor_mat'  => $itemRevit->valor_mat,
-                    'valor_mo'   => $itemRevit->valor_mo,
-                    'ordem'      => $ordem,
-                ]);
-            }
-        }
+        OrcamentoRevitSincronizador::sincronizar($orcamento, bumpRevisao: false);
 
         Notification::make()
             ->title('Projeto e orçamento criados')
@@ -460,6 +475,12 @@ class OrcamentosPage extends Page
 
         if ($this->editandoId) {
             $orcamento = Orcamento::findOrFail($this->editandoId);
+
+            if ($this->formRevitMudou) {
+                $dados['revisao']              = $orcamento->revisao + 1;
+                $dados['revit_sincronizado_em'] = now();
+            }
+
             $orcamento->update($dados);
         } else {
             $dados['criado_por'] = auth()->id();

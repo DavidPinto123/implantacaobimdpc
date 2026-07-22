@@ -134,6 +134,7 @@
                         <th class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-gray-300 w-28">Data</th>
                         <th class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-gray-300">Nome</th>
                         <th class="text-center px-4 py-3 font-semibold text-gray-700 dark:text-gray-300 w-24">Categorias</th>
+                        <th class="text-center px-4 py-3 font-semibold text-gray-700 dark:text-gray-300 w-24">Revisão</th>
                         <th class="text-right px-4 py-3 font-semibold text-gray-700 dark:text-gray-300 w-32">Total Geral</th>
                         <th class="w-32 px-4 py-3"></th>
                     </tr>
@@ -149,6 +150,11 @@
                         </td>
                         <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ $orcamento->nome }}</td>
                         <td class="px-4 py-3 text-center text-gray-500 dark:text-gray-400">{{ $orcamento->categorias_count }}</td>
+                        <td class="px-4 py-3 text-center">
+                            <span class="inline-flex items-center justify-center px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                                {{ $orcamento->revisao_formatada }}
+                            </span>
+                        </td>
                         <td class="px-4 py-3 text-right font-semibold text-gray-900 dark:text-white whitespace-nowrap">
                             R$ {{ number_format($orcamento->total_geral, 2, ',', '.') }}
                         </td>
@@ -187,7 +193,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="5" class="px-4 py-10 text-center text-gray-400 dark:text-gray-600">
+                        <td colspan="6" class="px-4 py-10 text-center text-gray-400 dark:text-gray-600">
                             Nenhum orçamento registrado para este projeto.
                             <button wire:click="novoOrcamento" class="ml-1 text-primary-600 dark:text-primary-400 hover:underline">Criar primeiro orçamento</button>
                         </td>
@@ -211,7 +217,12 @@
                         <p class="text-xs font-medium uppercase tracking-wide text-primary-600 dark:text-primary-400 mb-0.5">
                             {{ $orcamento->projeto?->nome ?? 'Sem projeto' }}
                         </p>
-                        <h2 class="text-xl font-bold text-gray-900 dark:text-white">{{ $orcamento->nome }}</h2>
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-xl font-bold text-gray-900 dark:text-white">{{ $orcamento->nome }}</h2>
+                            <span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                                {{ $orcamento->revisao_formatada }}
+                            </span>
+                        </div>
                     </div>
                     <div class="flex items-center gap-2 ml-4">
                         <button
