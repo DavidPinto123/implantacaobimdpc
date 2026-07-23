@@ -122,19 +122,19 @@ class AmbientacaoResource extends Resource
                             ->size('sm')
                             ->grow(false)
                             ->extraAttributes(['class' => 'truncate min-w-0'])
-                            ->limit(22),
+                            ->limit(32),
                         TextColumn::make('pavimento')
                             ->searchable()
                             ->size('xs')
                             ->grow(false)
                             ->extraAttributes(['class' => 'truncate min-w-0'])
-                            ->limit(16),
+                            ->limit(22),
                         TextColumn::make('bloco_torre')
                             ->label('Bloco/Torre')
                             ->size('xs')
                             ->grow(false)
                             ->extraAttributes(['class' => 'truncate min-w-0'])
-                            ->limit(16),
+                            ->limit(22),
                     ])->extraAttributes(['class' => 'flex-nowrap gap-1 overflow-hidden']),
 
                     Split::make([
@@ -145,13 +145,13 @@ class AmbientacaoResource extends Resource
                             ->color('gray')
                             ->grow(false)
                             ->extraAttributes(['class' => 'truncate min-w-0'])
-                            ->limit(16),
+                            ->limit(22),
                         TextColumn::make('departamento')
                             ->size('xs')
                             ->color('gray')
                             ->grow(false)
                             ->extraAttributes(['class' => 'truncate min-w-0'])
-                            ->limit(16),
+                            ->limit(22),
                         TextColumn::make('codigo')
                             ->label('Código')
                             ->size('xs')
@@ -165,7 +165,7 @@ class AmbientacaoResource extends Resource
                     ViewColumn::make('preview')
                         ->label('Pré-visualização')
                         ->view('filament.components.ambientacao-pano-preview')
-                        ->viewData(fn ($record) => ['url' => $record->link_render, 'height' => 120]),
+                        ->viewData(fn ($record) => ['url' => $record->link_render, 'height' => 150]),
 
                     ViewColumn::make('imagem_destaque')
                         ->label('Imagem estática')
@@ -177,7 +177,7 @@ class AmbientacaoResource extends Resource
                                 'url' => $imagem
                                     ? Storage::disk((string) config('filesystems.media_disk', 'r2'))->url($imagem->arquivo)
                                     : null,
-                                'height' => 120,
+                                'height' => 150,
                             ];
                         }),
                 ])->from('lg')->extraAttributes(['class' => 'flex-wrap gap-1']),
@@ -192,7 +192,7 @@ class AmbientacaoResource extends Resource
             ->modifyQueryUsing(fn (Builder $query) => $query->with(['imagens.comentarios.autor']))
             ->contentGrid([
                 'sm' => 2,
-                'md' => 4,
+                'md' => 3,
             ])
             ->filters([
                 SelectFilter::make('bloco_torre')
