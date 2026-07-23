@@ -78,6 +78,23 @@ class OrcamentosPage extends Page
         $this->fecharTudo();
     }
 
+    public function excluirProjeto(int $id): void
+    {
+        $projeto = Projeto::findOrFail($id);
+        $nome    = $projeto->nome;
+
+        $projeto->delete();
+
+        if ($this->projetoId === $id) {
+            $this->voltar();
+        }
+
+        Notification::make()
+            ->title("Projeto \"{$nome}\" excluído")
+            ->success()
+            ->send();
+    }
+
     // ─── Dados ───────────────────────────────────────────────────────────────
 
     public function getProjetos(): Collection

@@ -116,8 +116,19 @@
                         <td class="px-4 py-3 text-gray-500 dark:text-gray-400">
                             {{ $projeto->orcamentos_max_data ? \Carbon\Carbon::parse($projeto->orcamentos_max_data)->format('d/m/Y') : '—' }}
                         </td>
-                        <td class="px-4 py-3 text-right pr-3">
-                            <x-heroicon-o-chevron-right class="w-4 h-4 text-gray-400" />
+                        <td class="px-4 py-3 text-right pr-3" wire:click.stop>
+                            <div class="flex items-center justify-end gap-1">
+                                <button
+                                    x-on:click="if(confirm('Excluir o projeto \'{{ $projeto->nome }}\'? Os orçamentos vinculados não serão apagados, apenas ficarão sem projeto visível nesta lista.')) $wire.excluirProjeto({{ $projeto->id }})"
+                                    title="Excluir projeto"
+                                    class="p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500"
+                                >
+                                    <x-heroicon-o-trash class="w-4 h-4" />
+                                </button>
+                                <button wire:click="selecionarProjeto({{ $projeto->id }}, @js($projeto->nome))" class="p-1">
+                                    <x-heroicon-o-chevron-right class="w-4 h-4 text-gray-400" />
+                                </button>
+                            </div>
                         </td>
                     </tr>
                     @empty
