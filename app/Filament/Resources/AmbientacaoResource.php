@@ -137,7 +137,7 @@ class AmbientacaoResource extends Resource
                     TextColumn::make('codigo')
                         ->label('Código')
                         ->grow(false),
-                ]),
+                ])->extraAttributes(['class' => 'flex-wrap']),
 
                 Split::make([
                     ViewColumn::make('preview')
@@ -157,7 +157,7 @@ class AmbientacaoResource extends Resource
                                     : null,
                             ];
                         }),
-                ]),
+                ])->from('lg')->extraAttributes(['class' => 'flex-wrap']),
 
                 ViewColumn::make('comentarios')
                     ->label('Comentários')
