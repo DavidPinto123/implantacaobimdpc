@@ -55,7 +55,14 @@
                 @foreach($pendentesRevit as $pendente)
                 <div class="flex items-center justify-between gap-3 bg-white dark:bg-gray-900 rounded-lg px-3 py-2.5 border border-amber-200 dark:border-amber-800">
                     <div class="min-w-0">
-                        <p class="font-medium text-gray-900 dark:text-white truncate">{{ $pendente->codigo_obra }}</p>
+                        <div class="flex items-center gap-2">
+                            <p class="font-medium text-gray-900 dark:text-white truncate">{{ $pendente->codigo_obra }}</p>
+                            @if($pendente->base_precos)
+                            <span class="inline-flex items-center px-1.5 py-0.5 text-[10px] font-semibold rounded bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 flex-shrink-0">
+                                {{ $pendente->base_precos }}
+                            </span>
+                            @endif
+                        </div>
                         <p class="text-xs text-gray-500 dark:text-gray-400">
                             {{ $pendente->categorias }} {{ \Illuminate\Support\Str::plural('categoria', $pendente->categorias) }} ·
                             {{ $pendente->itens }} {{ \Illuminate\Support\Str::plural('item', $pendente->itens) }} ·
@@ -64,12 +71,12 @@
                     </div>
                     <button
                         type="button"
-                        x-on:click="if(confirm('Criar um novo projeto e orçamento a partir de \'{{ $pendente->codigo_obra }}\'?')) $wire.criarProjetoAutomaticoRevit(@js($pendente->codigo_obra))"
+                        x-on:click="if(confirm('Criar um orçamento a partir de \'{{ $pendente->codigo_obra }}\'{{ $pendente->base_precos ? ' (' . $pendente->base_precos . ')' : '' }}?')) $wire.criarProjetoAutomaticoRevit(@js($pendente->codigo_obra), @js($pendente->base_precos))"
                         wire:loading.attr="disabled"
                         class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-primary-600 hover:bg-primary-500 text-white transition flex-shrink-0"
                     >
                         <x-heroicon-o-sparkles class="w-3.5 h-3.5" />
-                        Criar projeto automaticamente
+                        Criar orçamento
                     </button>
                 </div>
                 @endforeach
@@ -133,6 +140,7 @@
                     <tr>
                         <th class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-gray-300 w-28">Data</th>
                         <th class="text-left px-4 py-3 font-semibold text-gray-700 dark:text-gray-300">Nome</th>
+                        <th class="text-center px-4 py-3 font-semibold text-gray-700 dark:text-gray-300 w-20">Base</th>
                         <th class="text-center px-4 py-3 font-semibold text-gray-700 dark:text-gray-300 w-24">Categorias</th>
                         <th class="text-center px-4 py-3 font-semibold text-gray-700 dark:text-gray-300 w-24">Revisão</th>
                         <th class="text-right px-4 py-3 font-semibold text-gray-700 dark:text-gray-300 w-32">Total Geral</th>
@@ -149,6 +157,15 @@
                             {{ $orcamento->data->format('d/m/Y') }}
                         </td>
                         <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ $orcamento->nome }}</td>
+                        <td class="px-4 py-3 text-center">
+                            @if($orcamento->base_precos)
+                            <span class="inline-flex items-center justify-center px-2 py-0.5 text-xs font-semibold rounded bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                                {{ $orcamento->base_precos }}
+                            </span>
+                            @else
+                            <span class="text-gray-400 dark:text-gray-600">—</span>
+                            @endif
+                        </td>
                         <td class="px-4 py-3 text-center text-gray-500 dark:text-gray-400">{{ $orcamento->categorias_count }}</td>
                         <td class="px-4 py-3 text-center">
                             <span class="inline-flex items-center justify-center px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300">
@@ -193,7 +210,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="px-4 py-10 text-center text-gray-400 dark:text-gray-600">
+                        <td colspan="7" class="px-4 py-10 text-center text-gray-400 dark:text-gray-600">
                             Nenhum orçamento registrado para este projeto.
                             <button wire:click="novoOrcamento" class="ml-1 text-primary-600 dark:text-primary-400 hover:underline">Criar primeiro orçamento</button>
                         </td>
@@ -219,6 +236,11 @@
                         </p>
                         <div class="flex items-center gap-2">
                             <h2 class="text-xl font-bold text-gray-900 dark:text-white">{{ $orcamento->nome }}</h2>
+                            @if($orcamento->base_precos)
+                            <span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                                {{ $orcamento->base_precos }}
+                            </span>
+                            @endif
                             <span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300">
                                 {{ $orcamento->revisao_formatada }}
                             </span>
@@ -266,6 +288,30 @@
                         <div>
                             <p class="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Marca</p>
                             <p class="font-semibold text-gray-900 dark:text-white">{{ $orcamento->projeto->marca }}</p>
+                        </div>
+                        @endif
+                        @if($orcamento->uf)
+                        <div>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mb-0.5">UF (referência de preço)</p>
+                            <p class="font-semibold text-gray-900 dark:text-white">{{ $orcamento->uf }}</p>
+                        </div>
+                        @endif
+                        @if($orcamento->desoneracao)
+                        <div>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Desoneração</p>
+                            <p class="font-semibold text-gray-900 dark:text-white">{{ $orcamento->desoneracao }}</p>
+                        </div>
+                        @endif
+                        @if($orcamento->mes_referencia)
+                        <div>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Mês de referência</p>
+                            <p class="font-semibold text-gray-900 dark:text-white">{{ $orcamento->mes_referencia }}</p>
+                        </div>
+                        @endif
+                        @if($orcamento->data_emissao)
+                        <div>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Emissão</p>
+                            <p class="font-semibold text-gray-900 dark:text-white">{{ $orcamento->data_emissao->format('d/m/Y') }}</p>
                         </div>
                         @endif
                     </div>
@@ -318,7 +364,14 @@
                                     @foreach($grupo['itens'] as $item)
                                     <tr>
                                         <td class="px-3 py-2 text-gray-500 dark:text-gray-400">{{ $item->codigo ?: '—' }}</td>
-                                        <td class="px-3 py-2 text-gray-900 dark:text-white">{{ $item->descricao }}</td>
+                                        <td class="px-3 py-2 text-gray-900 dark:text-white">
+                                            {{ $item->descricao }}
+                                            @if($item->grupo_catalogo || $item->tipo)
+                                            <p class="text-xs text-gray-400 dark:text-gray-600">
+                                                {{ collect([$item->grupo_catalogo, $item->tipo])->filter()->implode(' · ') }}
+                                            </p>
+                                            @endif
+                                        </td>
                                         <td class="px-3 py-2 text-center text-gray-600 dark:text-gray-400">{{ $item->unidade }}</td>
                                         <td class="px-3 py-2 text-right text-gray-600 dark:text-gray-400">{{ number_format($item->quantidade, 2, ',', '.') }}</td>
                                         <td class="px-3 py-2 text-right text-gray-600 dark:text-gray-400">{{ number_format($item->valor_mat, 2, ',', '.') }}</td>
@@ -527,10 +580,21 @@
                             <input type="text" wire:model="formNomeMkt" class="{{ $inputCls }}" />
                         </div>
 
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome do arquivo Revit <span class="text-gray-400 font-normal">(opcional)</span></label>
-                            <input type="text" wire:model="formArquivoRevit" placeholder="Ex: Hospital" class="{{ $inputCls }}" />
-                            <p class="text-xs text-gray-400 dark:text-gray-600 mt-1">Usado para localizar os itens que a API do Revit gravou para este arquivo, ao clicar em "Sincronizar Revit".</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome do arquivo Revit <span class="text-gray-400 font-normal">(opcional)</span></label>
+                                <input type="text" wire:model="formArquivoRevit" placeholder="Ex: Hospital" class="{{ $inputCls }}" />
+                                <p class="text-xs text-gray-400 dark:text-gray-600 mt-1">Usado para localizar os itens que a API do Revit gravou para este arquivo, ao clicar em "Sincronizar Revit".</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Base de preços <span class="text-gray-400 font-normal">(opcional)</span></label>
+                                <select wire:model="formBasePrecos" class="{{ $inputCls }}">
+                                    <option value="">Nenhuma / manual</option>
+                                    <option value="LPU">LPU</option>
+                                    <option value="SINAPI">SINAPI</option>
+                                </select>
+                                <p class="text-xs text-gray-400 dark:text-gray-600 mt-1">Um mesmo projeto pode ter um orçamento LPU e outro SINAPI em paralelo.</p>
+                            </div>
                         </div>
                     </div>
 

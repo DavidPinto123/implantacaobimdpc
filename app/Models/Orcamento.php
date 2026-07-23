@@ -15,6 +15,11 @@ class Orcamento extends Model
         'nome',
         'nome_mkt',
         'arquivo_revit',
+        'base_precos',
+        'uf',
+        'desoneracao',
+        'mes_referencia',
+        'data_emissao',
         'revisao',
         'revit_sincronizado_em',
         'data',
@@ -23,6 +28,7 @@ class Orcamento extends Model
 
     protected $casts = [
         'data'                   => 'date',
+        'data_emissao'           => 'date',
         'revit_sincronizado_em'  => 'datetime',
     ];
 

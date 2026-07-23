@@ -57,6 +57,7 @@ class OrcamentosPage extends Page
     public string $formNome = '';
     public string $formNomeMkt = '';
     public string $formArquivoRevit = '';
+    public ?string $formBasePrecos = null;
     public string $formData = '';
     public array $formCategorias = [];
     public bool $formRevitMudou = false;
@@ -163,16 +164,19 @@ class OrcamentosPage extends Page
         $vinculados = Orcamento::query()
             ->whereNotNull('arquivo_revit')
             ->where('arquivo_revit', '!=', '')
-            ->pluck('arquivo_revit')
-            ->map(fn ($nome) => mb_strtolower(trim($nome)))
+            ->get(['arquivo_revit', 'base_precos'])
+            ->map(fn ($o) => mb_strtolower(trim($o->arquivo_revit)) . '|' . mb_strtolower(trim((string) $o->base_precos)))
             ->all();
 
         return OrcamentoRevitItem::query()
-            ->selectRaw('codigo_obra, COUNT(DISTINCT categoria) as categorias, COUNT(*) as itens, MAX(atualizado_em) as ultima_atualizacao')
-            ->groupBy('codigo_obra')
+            ->selectRaw('codigo_obra, base_precos, COUNT(DISTINCT categoria) as categorias, COUNT(*) as itens, MAX(atualizado_em) as ultima_atualizacao')
+            ->groupBy('codigo_obra', 'base_precos')
             ->orderByDesc('ultima_atualizacao')
             ->get()
-            ->reject(fn ($linha) => in_array(mb_strtolower(trim($linha->codigo_obra)), $vinculados))
+            ->reject(fn ($linha) => in_array(
+                mb_strtolower(trim($linha->codigo_obra)) . '|' . mb_strtolower(trim((string) $linha->base_precos)),
+                $vinculados
+            ))
             ->values();
     }
 
@@ -215,6 +219,7 @@ class OrcamentosPage extends Page
         $this->formNome         = '';
         $this->formNomeMkt      = '';
         $this->formArquivoRevit = '';
+        $this->formBasePrecos   = null;
         $this->formData         = now()->format('Y-m-d');
         $this->formCategorias   = [];
         $this->formRevitMudou   = false;
@@ -231,6 +236,7 @@ class OrcamentosPage extends Page
         $this->formNome         = $orcamento->nome;
         $this->formNomeMkt      = $orcamento->nome_mkt ?? '';
         $this->formArquivoRevit = $orcamento->arquivo_revit ?? '';
+        $this->formBasePrecos   = $orcamento->base_precos;
         $this->formData         = $orcamento->data?->format('Y-m-d') ?? '';
         $this->formRevitMudou   = false;
 
@@ -302,9 +308,14 @@ class OrcamentosPage extends Page
 
     // ─── Sincronização com o Revit ──────────────────────────────────────────
 
-    private function buscarItensRevitAgrupados(string $codigoObra): Collection
+    private function buscarItensRevitAgrupados(string $codigoObra, ?string $basePrecos = null): Collection
     {
         return OrcamentoRevitItem::where('codigo_obra', $codigoObra)
+            ->when(
+                $basePrecos !== null,
+                fn ($query) => $query->where('base_precos', $basePrecos),
+                fn ($query) => $query->whereNull('base_precos')
+            )
             ->orderBy('categoria')
             ->orderBy('ordem')
             ->get()
@@ -324,7 +335,7 @@ class OrcamentosPage extends Page
             return;
         }
 
-        $itensPorCategoria = $this->buscarItensRevitAgrupados($codigoObra);
+        $itensPorCategoria = $this->buscarItensRevitAgrupados($codigoObra, $this->formBasePrecos);
 
         if ($itensPorCategoria->isEmpty()) {
             Notification::make()
@@ -390,11 +401,19 @@ class OrcamentosPage extends Page
             ->send();
     }
 
-    public function criarProjetoAutomaticoRevit(string $codigoObra): void
+    public function criarProjetoAutomaticoRevit(string $codigoObra, ?string $basePrecos = null): void
     {
         $codigoObra = trim($codigoObra);
 
-        if (Orcamento::where('arquivo_revit', $codigoObra)->exists()) {
+        $jaExiste = Orcamento::where('arquivo_revit', $codigoObra)
+            ->when(
+                $basePrecos !== null,
+                fn ($query) => $query->where('base_precos', $basePrecos),
+                fn ($query) => $query->whereNull('base_precos')
+            )
+            ->exists();
+
+        if ($jaExiste) {
             Notification::make()
                 ->title('Já existe um orçamento vinculado a este arquivo.')
                 ->warning()
@@ -403,7 +422,7 @@ class OrcamentosPage extends Page
             return;
         }
 
-        $itensPorCategoria = $this->buscarItensRevitAgrupados($codigoObra);
+        $itensPorCategoria = $this->buscarItensRevitAgrupados($codigoObra, $basePrecos);
 
         if ($itensPorCategoria->isEmpty()) {
             Notification::make()
@@ -414,16 +433,28 @@ class OrcamentosPage extends Page
             return;
         }
 
-        $projeto = Projeto::create([
-            'nome'     => $codigoObra,
-            'user_id'  => auth()->id(),
-            'etapa_id' => Etapa::where('nome', 'Prospecção')->value('id'),
-        ]);
+        // Mesmo codigo_obra pode já ter um orçamento de outra base (LPU/SINAPI) — nesse
+        // caso reaproveita o Projeto já criado em vez de duplicar.
+        $projeto = Projeto::whereHas(
+            'orcamentos',
+            fn ($query) => $query->where('arquivo_revit', $codigoObra)
+        )->first();
+
+        if (! $projeto) {
+            $projeto = Projeto::create([
+                'nome'     => $codigoObra,
+                'user_id'  => auth()->id(),
+                'etapa_id' => Etapa::where('nome', 'Prospecção')->value('id'),
+            ]);
+        }
+
+        $nomeOrcamento = $basePrecos ? "Orçamento Revit - {$codigoObra} ({$basePrecos})" : "Orçamento Revit - {$codigoObra}";
 
         $orcamento = Orcamento::create([
             'projeto_id'    => $projeto->id,
-            'nome'          => "Orçamento Revit - {$codigoObra}",
+            'nome'          => $nomeOrcamento,
             'arquivo_revit' => $codigoObra,
+            'base_precos'   => $basePrecos,
             'data'          => now()->format('Y-m-d'),
             'criado_por'    => auth()->id(),
         ]);
@@ -431,8 +462,8 @@ class OrcamentosPage extends Page
         OrcamentoRevitSincronizador::sincronizar($orcamento, bumpRevisao: false);
 
         Notification::make()
-            ->title('Projeto e orçamento criados')
-            ->body("\"{$projeto->nome}\" criado a partir do arquivo Revit. Complete os dados do projeto (cidade, estado, etapa) quando puder.")
+            ->title('Orçamento criado')
+            ->body("\"{$nomeOrcamento}\" criado a partir do arquivo Revit, vinculado ao projeto \"{$projeto->nome}\".")
             ->success()
             ->send();
 
@@ -470,6 +501,7 @@ class OrcamentosPage extends Page
             'nome'          => $this->formNome,
             'nome_mkt'      => $this->formNomeMkt ?: null,
             'arquivo_revit' => $this->formArquivoRevit ?: null,
+            'base_precos'   => $this->formBasePrecos ?: null,
             'data'          => $this->formData,
         ];
 

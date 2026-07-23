@@ -13,6 +13,8 @@ class OrcamentoItem extends Model
         'orcamento_categoria_id',
         'codigo',
         'descricao',
+        'grupo_catalogo',
+        'tipo',
         'unidade',
         'quantidade',
         'valor_mat',

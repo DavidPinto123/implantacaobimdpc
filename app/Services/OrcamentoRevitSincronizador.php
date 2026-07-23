@@ -20,15 +20,21 @@ class OrcamentoRevitSincronizador
             return ['novos' => 0, 'atualizados' => 0, 'mudou' => false];
         }
 
-        $itensPorCategoria = OrcamentoRevitItem::where('codigo_obra', $codigoObra)
+        $itens = OrcamentoRevitItem::where('codigo_obra', $codigoObra)
+            ->when(
+                $orcamento->base_precos !== null,
+                fn ($query) => $query->where('base_precos', $orcamento->base_precos),
+                fn ($query) => $query->whereNull('base_precos')
+            )
             ->orderBy('categoria')
             ->orderBy('ordem')
-            ->get()
-            ->groupBy('categoria');
+            ->get();
 
-        if ($itensPorCategoria->isEmpty()) {
+        if ($itens->isEmpty()) {
             return ['novos' => 0, 'atualizados' => 0, 'mudou' => false];
         }
+
+        $itensPorCategoria = $itens->groupBy('categoria');
 
         $orcamento->loadMissing('categorias.itens');
 
@@ -54,11 +60,13 @@ class OrcamentoRevitSincronizador
                 );
 
                 $dados = [
-                    'descricao'  => $itemRevit->descricao,
-                    'unidade'    => $itemRevit->unidade ?: 'un',
-                    'quantidade' => $itemRevit->quantidade,
-                    'valor_mat'  => $itemRevit->valor_mat,
-                    'valor_mo'   => $itemRevit->valor_mo,
+                    'descricao'      => $itemRevit->descricao,
+                    'grupo_catalogo' => $itemRevit->grupo_catalogo,
+                    'tipo'           => $itemRevit->tipo,
+                    'unidade'        => $itemRevit->unidade ?: 'un',
+                    'quantidade'     => $itemRevit->quantidade,
+                    'valor_mat'      => $itemRevit->valor_mat,
+                    'valor_mo'       => $itemRevit->valor_mo,
                 ];
 
                 if ($itemExistente) {
@@ -66,7 +74,9 @@ class OrcamentoRevitSincronizador
                         || (string) $itemExistente->valor_mat !== (string) $dados['valor_mat']
                         || (string) $itemExistente->valor_mo !== (string) $dados['valor_mo']
                         || $itemExistente->descricao !== $dados['descricao']
-                        || $itemExistente->unidade !== $dados['unidade'];
+                        || $itemExistente->unidade !== $dados['unidade']
+                        || $itemExistente->grupo_catalogo !== $dados['grupo_catalogo']
+                        || $itemExistente->tipo !== $dados['tipo'];
 
                     if ($mudou) {
                         $itemExistente->update($dados);
@@ -89,6 +99,14 @@ class OrcamentoRevitSincronizador
         if ($mudou && $bumpRevisao) {
             $orcamento->revisao++;
         }
+
+        // Metadados de cabeçalho (UF, desoneração, mês de referência, emissão) são uniformes
+        // por lote sincronizado — usa o primeiro item para refletir o contexto atual no orçamento.
+        $referencia = $itens->first();
+        $orcamento->uf              = $referencia->uf ?? $orcamento->uf;
+        $orcamento->desoneracao     = $referencia->desoneracao ?? $orcamento->desoneracao;
+        $orcamento->mes_referencia  = $referencia->mes_referencia ?? $orcamento->mes_referencia;
+        $orcamento->data_emissao    = $referencia->data_emissao ?? $orcamento->data_emissao;
 
         $orcamento->revit_sincronizado_em = now();
         $orcamento->save();
