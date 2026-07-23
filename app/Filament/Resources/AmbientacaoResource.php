@@ -17,6 +17,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Columns\Layout\Split;
+use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ViewColumn;
 use Filament\Tables\Enums\FiltersLayout;
@@ -113,36 +114,52 @@ class AmbientacaoResource extends Resource
     {
         return $table
             ->columns([
-                Split::make([
-                    TextColumn::make('ambiente')
-                        ->searchable()
-                        ->weight(FontWeight::Bold)
-                        ->size('sm')
-                        ->grow(false)
-                        ->limit(22),
-                    TextColumn::make('pavimento')
-                        ->searchable()
-                        ->size('xs')
-                        ->grow(false)
-                        ->limit(16),
-                    TextColumn::make('nome')
-                        ->searchable()
-                        ->label('Unidade')
-                        ->size('xs')
-                        ->grow(false)
-                        ->limit(16),
-                    TextColumn::make('bloco_torre')
-                        ->label('Bloco/Torre')
-                        ->size('xs')
-                        ->grow(false),
-                    TextColumn::make('departamento')
-                        ->size('xs')
-                        ->grow(false),
-                    TextColumn::make('codigo')
-                        ->label('Código')
-                        ->size('xs')
-                        ->grow(false),
-                ])->extraAttributes(['class' => 'flex-wrap gap-1']),
+                Stack::make([
+                    Split::make([
+                        TextColumn::make('ambiente')
+                            ->searchable()
+                            ->weight(FontWeight::Bold)
+                            ->size('sm')
+                            ->grow(false)
+                            ->extraAttributes(['class' => 'truncate min-w-0'])
+                            ->limit(22),
+                        TextColumn::make('pavimento')
+                            ->searchable()
+                            ->size('xs')
+                            ->grow(false)
+                            ->extraAttributes(['class' => 'truncate min-w-0'])
+                            ->limit(16),
+                        TextColumn::make('bloco_torre')
+                            ->label('Bloco/Torre')
+                            ->size('xs')
+                            ->grow(false)
+                            ->extraAttributes(['class' => 'truncate min-w-0'])
+                            ->limit(16),
+                    ])->extraAttributes(['class' => 'flex-nowrap gap-1 overflow-hidden']),
+
+                    Split::make([
+                        TextColumn::make('nome')
+                            ->searchable()
+                            ->label('Unidade')
+                            ->size('xs')
+                            ->color('gray')
+                            ->grow(false)
+                            ->extraAttributes(['class' => 'truncate min-w-0'])
+                            ->limit(16),
+                        TextColumn::make('departamento')
+                            ->size('xs')
+                            ->color('gray')
+                            ->grow(false)
+                            ->extraAttributes(['class' => 'truncate min-w-0'])
+                            ->limit(16),
+                        TextColumn::make('codigo')
+                            ->label('Código')
+                            ->size('xs')
+                            ->color('gray')
+                            ->grow(false)
+                            ->extraAttributes(['class' => 'truncate min-w-0']),
+                    ])->extraAttributes(['class' => 'flex-nowrap gap-1 overflow-hidden']),
+                ])->space(1),
 
                 Split::make([
                     ViewColumn::make('preview')
