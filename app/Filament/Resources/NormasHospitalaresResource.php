@@ -44,6 +44,16 @@ class NormasHospitalaresResource extends Resource
     {
         return $table
             ->columns([
+                TextColumn::make('ambiente')
+                    ->label('Ambiente')
+                    ->searchable()
+                    ->sortable()
+                    ->wrap(),
+                TextInputColumn::make('nome_fiorentini')
+                    ->label('Nome Fiorentini')
+                    ->placeholder('Preencher pelo projetista')
+                    ->searchable()
+                    ->sortable(),
                 TextColumn::make('unidade_funcional')
                     ->label('Unidade Funcional')
                     ->searchable()
@@ -62,16 +72,6 @@ class NormasHospitalaresResource extends Resource
                     ->color(fn (string $state): string => $state === 'Ambiente-fim' ? 'success' : 'gray'),
                 TextColumn::make('num_atividade')
                     ->label('Nº Ativ.')
-                    ->searchable()
-                    ->sortable(),
-                TextColumn::make('ambiente')
-                    ->label('Ambiente')
-                    ->searchable()
-                    ->sortable()
-                    ->wrap(),
-                TextInputColumn::make('nome_fiorentini')
-                    ->label('Nome Fiorentini')
-                    ->placeholder('Preencher pelo projetista')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('obrigatoriedade')
@@ -158,7 +158,8 @@ class NormasHospitalaresResource extends Resource
                             ->distinct()
                             ->orderBy('obrigatoriedade')
                             ->pluck('obrigatoriedade', 'obrigatoriedade')),
-            ], layout: FiltersLayout::AboveContent)
+            ], layout: FiltersLayout::AboveContentCollapsible)
+            ->filtersFormColumns(4)
             ->groups([
                 Group::make('unidade_funcional')->label('Unidade Funcional'),
                 Group::make('subgrupo')->label('Subgrupo'),
