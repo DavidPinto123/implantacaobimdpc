@@ -48,13 +48,14 @@ class NormasHospitalaresResource extends Resource
                     ->label('Ambiente')
                     ->searchable()
                     ->sortable()
-                    ->tooltip(fn (?string $state): ?string => $state)
-                    ->extraHeaderAttributes(['style' => 'width: 50%']),
+                    ->wrap()
+                    ->extraHeaderAttributes(['style' => 'width: 18%']),
                 TextInputColumn::make('nome_fiorentini')
                     ->label('Nome Fiorentini')
                     ->placeholder('Preencher pelo projetista')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->extraHeaderAttributes(['style' => 'width: 18%']),
                 TextColumn::make('unidade_funcional')
                     ->label('Unidade Funcional')
                     ->searchable()
