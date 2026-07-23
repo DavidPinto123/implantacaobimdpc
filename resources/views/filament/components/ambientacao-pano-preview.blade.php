@@ -32,7 +32,10 @@
     </template>
 
     <template x-if="!url">
-        <div class="flex h-32 items-center justify-center rounded-lg border border-dashed border-gray-300 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+        <div
+            class="flex items-center justify-center rounded-lg border border-dashed border-gray-300 text-xs text-gray-500 dark:border-gray-700 dark:text-gray-400"
+            style="height: {{ $height ?? 480 }}px;"
+        >
             Informe o link do Render 360° para ver a pré-visualização.
         </div>
     </template>

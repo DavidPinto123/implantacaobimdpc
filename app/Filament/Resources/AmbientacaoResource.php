@@ -117,33 +117,38 @@ class AmbientacaoResource extends Resource
                     TextColumn::make('ambiente')
                         ->searchable()
                         ->weight(FontWeight::Bold)
-                        ->extraAttributes(['class' => 'text-lg'])
+                        ->size('sm')
                         ->grow(false)
-                        ->limit(30),
+                        ->limit(22),
                     TextColumn::make('pavimento')
                         ->searchable()
+                        ->size('xs')
                         ->grow(false)
-                        ->limit(20),
+                        ->limit(16),
                     TextColumn::make('nome')
                         ->searchable()
                         ->label('Unidade')
+                        ->size('xs')
                         ->grow(false)
-                        ->limit(20),
+                        ->limit(16),
                     TextColumn::make('bloco_torre')
                         ->label('Bloco/Torre')
+                        ->size('xs')
                         ->grow(false),
                     TextColumn::make('departamento')
+                        ->size('xs')
                         ->grow(false),
                     TextColumn::make('codigo')
                         ->label('Código')
+                        ->size('xs')
                         ->grow(false),
-                ])->extraAttributes(['class' => 'flex-wrap']),
+                ])->extraAttributes(['class' => 'flex-wrap gap-1']),
 
                 Split::make([
                     ViewColumn::make('preview')
                         ->label('Pré-visualização')
                         ->view('filament.components.ambientacao-pano-preview')
-                        ->viewData(fn ($record) => ['url' => $record->link_render, 'height' => 260]),
+                        ->viewData(fn ($record) => ['url' => $record->link_render, 'height' => 120]),
 
                     ViewColumn::make('imagem_destaque')
                         ->label('Imagem estática')
@@ -155,9 +160,10 @@ class AmbientacaoResource extends Resource
                                 'url' => $imagem
                                     ? Storage::disk((string) config('filesystems.media_disk', 'r2'))->url($imagem->arquivo)
                                     : null,
+                                'height' => 120,
                             ];
                         }),
-                ])->from('lg')->extraAttributes(['class' => 'flex-wrap']),
+                ])->from('lg')->extraAttributes(['class' => 'flex-wrap gap-1']),
 
                 ViewColumn::make('comentarios')
                     ->label('Comentários')
@@ -168,8 +174,8 @@ class AmbientacaoResource extends Resource
             ->recordUrl(fn () => null)
             ->modifyQueryUsing(fn (Builder $query) => $query->with(['imagens.comentarios.autor']))
             ->contentGrid([
-                'md' => 2,
-                'xl' => 3,
+                'sm' => 2,
+                'md' => 4,
             ])
             ->filters([
                 SelectFilter::make('bloco_torre')
