@@ -25,7 +25,9 @@ class DashboardPedidos extends Page implements HasTable
 
     protected static ?int $navigationSort = 1;
 
-    protected static string|null|UnitEnum $navigationGroup = 'Orçamentos';
+    protected static string|null|UnitEnum $navigationGroup = 'Outros';
+
+    protected static ?string $navigationParentItem = 'Orçamentos';
 
     protected string $view = 'filament.pages.dashboard-pedidos';
 

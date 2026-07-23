@@ -65,7 +65,6 @@ class AdminPanelProvider extends PanelProvider
                 // Planejamento, Tarefas, WhatsApp — itens únicos, direto no sidebar
                 NavigationGroup::make()->label('Registro fotográfico')->collapsed(),
                 NavigationGroup::make()->label('Mapas')->collapsed(),
-                NavigationGroup::make()->label('Orçamentos')->collapsed(),
                 NavigationGroup::make()->label('Checklist de revisão')->collapsed(),
                 // Upload de documentos, Atas, Visualizador 3D — itens únicos, direto no sidebar
                 NavigationGroup::make()->label('Downloads e Documentos')->collapsed(),

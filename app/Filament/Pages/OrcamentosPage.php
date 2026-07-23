@@ -23,11 +23,11 @@ class OrcamentosPage extends Page
 
     protected static ?string $navigationLabel = 'Orçamento de Obras';
 
-    protected static \UnitEnum|string|null $navigationGroup = 'Orçamentos';
+    protected static \UnitEnum|string|null $navigationGroup = null;
 
     protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-calculator';
 
-    protected static ?int $navigationSort = 16;
+    protected static ?int $navigationSort = 2;
 
     protected static ?string $title = 'Orçamento de Obras';
 
