@@ -4,6 +4,7 @@ namespace App\Filament\Resources\NormasHospitalaresResource\Pages;
 
 use App\Filament\Resources\NormasHospitalaresResource;
 use Filament\Resources\Pages\ListRecords;
+use Illuminate\Contracts\View\View;
 
 class ListNormasHospitalares extends ListRecords
 {
@@ -14,5 +15,10 @@ class ListNormasHospitalares extends ListRecords
         return [
             //
         ];
+    }
+
+    public function getFooter(): ?View
+    {
+        return view('filament.normas-hospitalares.table-style');
     }
 }
