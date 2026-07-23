@@ -55,6 +55,7 @@ class AmbienteRdc50Seeder extends Seeder
                 $value = trim((string) ($row[$col] ?? ''));
                 $record[$field] = $value === '' ? null : $value;
             }
+            $record['nome_fiorentini'] ??= $record['ambiente'];
             $record['created_at'] = now();
             $record['updated_at'] = now();
 
