@@ -48,7 +48,7 @@ class NormasHospitalaresResource extends Resource
                     ->label('Ambiente')
                     ->searchable()
                     ->sortable()
-                    ->wrap(),
+                    ->tooltip(fn (?string $state): ?string => $state),
                 TextInputColumn::make('nome_fiorentini')
                     ->label('Nome Fiorentini')
                     ->placeholder('Preencher pelo projetista')
@@ -58,12 +58,12 @@ class NormasHospitalaresResource extends Resource
                     ->label('Unidade Funcional')
                     ->searchable()
                     ->sortable()
-                    ->wrap(),
+                    ->tooltip(fn (?string $state): ?string => $state),
                 TextColumn::make('subgrupo')
                     ->label('Subgrupo')
                     ->searchable()
                     ->sortable()
-                    ->wrap(),
+                    ->tooltip(fn (?string $state): ?string => $state),
                 TextColumn::make('tipo')
                     ->label('Tipo')
                     ->searchable()
@@ -78,7 +78,7 @@ class NormasHospitalaresResource extends Resource
                     ->label('Obrigatoriedade')
                     ->searchable()
                     ->sortable()
-                    ->wrap(),
+                    ->tooltip(fn (?string $state): ?string => $state),
                 TextColumn::make('quantificacao_minima')
                     ->label('Quantificação (mín.)')
                     ->searchable()
@@ -90,7 +90,7 @@ class NormasHospitalaresResource extends Resource
                 TextColumn::make('area_dimensao_minima')
                     ->label('Área/Dimensão Mínima')
                     ->searchable()
-                    ->wrap()
+                    ->tooltip(fn (?string $state): ?string => $state)
                     ->toggleable(),
                 TextColumn::make('instalacoes')
                     ->label('Instalações')
@@ -158,8 +158,9 @@ class NormasHospitalaresResource extends Resource
                             ->distinct()
                             ->orderBy('obrigatoriedade')
                             ->pluck('obrigatoriedade', 'obrigatoriedade')),
-            ], layout: FiltersLayout::AboveContentCollapsible)
-            ->filtersFormColumns(4)
+            ], layout: FiltersLayout::Dropdown)
+            ->filtersFormColumns(2)
+            ->filtersFormWidth('lg')
             ->groups([
                 Group::make('unidade_funcional')->label('Unidade Funcional'),
                 Group::make('subgrupo')->label('Subgrupo'),
