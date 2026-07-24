@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Jobs\SendWhatsAppNotificationJob;
 use App\Models\Task;
+use App\Models\WhatsappSubscricao;
 use App\Models\WhatsappTemplateConfig;
 use App\Services\PosObra\WhatsAppService;
 
@@ -20,11 +21,15 @@ class TaskObserver
             ? $task->termino_programado->format('d/m/Y')
             : 'sem prazo';
 
+        $assinantes = WhatsappSubscricao::assinadosPor('nova_tarefa');
+
         $destinos = collect();
 
         if ($task->responsavel?->phone) {
             $destinos->push($task->responsavel);
         }
+
+        $destinos = $destinos->filter(fn ($usuario) => $assinantes->contains($usuario->id));
 
         foreach ($destinos as $usuario) {
             $tel = WhatsAppService::formatarTelefone($usuario->phone);
@@ -65,6 +70,8 @@ class TaskObserver
             default        => ucfirst($task->status),
         };
 
+        $assinantes = WhatsappSubscricao::assinadosPor('status_tarefa');
+
         $destinos = collect();
 
         if ($task->responsavel?->phone) {
@@ -74,6 +81,8 @@ class TaskObserver
         if ($task->solicitante?->phone && $task->solicitante->id !== $task->responsavel?->id) {
             $destinos->push($task->solicitante);
         }
+
+        $destinos = $destinos->filter(fn ($usuario) => $assinantes->contains($usuario->id));
 
         foreach ($destinos as $usuario) {
             $tel = WhatsAppService::formatarTelefone($usuario->phone);
@@ -157,6 +166,10 @@ class TaskObserver
             $task->responsavel?->id,
             $task->solicitante?->id,
         ]))) {
+            return;
+        }
+
+        if (! WhatsappSubscricao::assinadosPor('gerente_notificacao')->contains($gerente->id)) {
             return;
         }
 
