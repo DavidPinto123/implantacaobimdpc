@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Orcamento;
 use App\Models\OrcamentoRevitItem;
+use App\Models\OrcamentoRevitSinapiItem;
 
 class OrcamentoRevitSincronizador
 {
@@ -11,6 +12,10 @@ class OrcamentoRevitSincronizador
      * Busca os itens mais recentes do Revit para o arquivo vinculado ao orçamento,
      * cria categorias/itens novos e atualiza os já existentes (casados por código).
      * Nunca remove itens — o que foi adicionado manualmente na plataforma é preservado.
+     *
+     * A base de preços (LPU/SINAPI) do orçamento define de qual tabela do Revit os
+     * itens vêm — são bancos com esquemas diferentes: LPU separa mat/mo, SINAPI usa
+     * um valor unitário único e traz metadados extras (grupo, tipo, UF, desoneração...).
      */
     public static function sincronizar(Orcamento $orcamento, bool $bumpRevisao = true): array
     {
@@ -20,15 +25,9 @@ class OrcamentoRevitSincronizador
             return ['novos' => 0, 'atualizados' => 0, 'mudou' => false];
         }
 
-        $itens = OrcamentoRevitItem::where('codigo_obra', $codigoObra)
-            ->when(
-                $orcamento->base_precos !== null,
-                fn ($query) => $query->where('base_precos', $orcamento->base_precos),
-                fn ($query) => $query->whereNull('base_precos')
-            )
-            ->orderBy('categoria')
-            ->orderBy('ordem')
-            ->get();
+        $base = $orcamento->base_precos ?? 'LPU';
+
+        $itens = self::buscarItens($codigoObra, $base);
 
         if ($itens->isEmpty()) {
             return ['novos' => 0, 'atualizados' => 0, 'mudou' => false];
@@ -59,15 +58,7 @@ class OrcamentoRevitSincronizador
                     fn ($item) => filled($item->codigo) && $item->codigo === $itemRevit->codigo
                 );
 
-                $dados = [
-                    'descricao'      => $itemRevit->descricao,
-                    'grupo_catalogo' => $itemRevit->grupo_catalogo,
-                    'tipo'           => $itemRevit->tipo,
-                    'unidade'        => $itemRevit->unidade ?: 'un',
-                    'quantidade'     => $itemRevit->quantidade,
-                    'valor_mat'      => $itemRevit->valor_mat,
-                    'valor_mo'       => $itemRevit->valor_mo,
-                ];
+                $dados = self::mapearDados($itemRevit, $base);
 
                 if ($itemExistente) {
                     $mudou = (string) $itemExistente->quantidade !== (string) $dados['quantidade']
@@ -100,17 +91,59 @@ class OrcamentoRevitSincronizador
             $orcamento->revisao++;
         }
 
-        // Metadados de cabeçalho (UF, desoneração, mês de referência, emissão) são uniformes
-        // por lote sincronizado — usa o primeiro item para refletir o contexto atual no orçamento.
-        $referencia = $itens->first();
-        $orcamento->uf              = $referencia->uf ?? $orcamento->uf;
-        $orcamento->desoneracao     = $referencia->desoneracao ?? $orcamento->desoneracao;
-        $orcamento->mes_referencia  = $referencia->mes_referencia ?? $orcamento->mes_referencia;
-        $orcamento->data_emissao    = $referencia->data_emissao ?? $orcamento->data_emissao;
+        // Metadados de cabeçalho (UF, desoneração, mês de referência, emissão) só existem
+        // no lado SINAPI — são uniformes por lote sincronizado, usa o primeiro item.
+        if ($base === 'SINAPI') {
+            $referencia = $itens->first();
+            $orcamento->uf              = $referencia->uf ?? $orcamento->uf;
+            $orcamento->desoneracao     = $referencia->desoneracao ?? $orcamento->desoneracao;
+            $orcamento->mes_referencia  = $referencia->mes_referencia ?? $orcamento->mes_referencia;
+            $orcamento->data_emissao    = $referencia->data_emissao ?? $orcamento->data_emissao;
+        }
 
         $orcamento->revit_sincronizado_em = now();
         $orcamento->save();
 
         return ['novos' => $novos, 'atualizados' => $atualizados, 'mudou' => $mudou];
+    }
+
+    public static function buscarItens(string $codigoObra, string $base)
+    {
+        if ($base === 'SINAPI') {
+            return OrcamentoRevitSinapiItem::where('codigo_obra', $codigoObra)
+                ->orderBy('categoria')
+                ->orderBy('ordem')
+                ->get();
+        }
+
+        return OrcamentoRevitItem::where('codigo_obra', $codigoObra)
+            ->orderBy('categoria')
+            ->orderBy('ordem')
+            ->get();
+    }
+
+    public static function mapearDados($itemRevit, string $base): array
+    {
+        if ($base === 'SINAPI') {
+            return [
+                'descricao'      => $itemRevit->descricao,
+                'grupo_catalogo' => $itemRevit->grupo_catalogo,
+                'tipo'           => $itemRevit->tipo,
+                'unidade'        => $itemRevit->unidade ?: 'un',
+                'quantidade'     => $itemRevit->quantidade,
+                'valor_mat'      => $itemRevit->valor_unitario,
+                'valor_mo'       => 0,
+            ];
+        }
+
+        return [
+            'descricao'      => $itemRevit->descricao,
+            'grupo_catalogo' => null,
+            'tipo'           => null,
+            'unidade'        => $itemRevit->unidade ?: 'un',
+            'quantidade'     => $itemRevit->quantidade,
+            'valor_mat'      => $itemRevit->valor_mat,
+            'valor_mo'       => $itemRevit->valor_mo,
+        ];
     }
 }

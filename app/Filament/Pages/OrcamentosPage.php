@@ -6,6 +6,7 @@ use App\Models\Etapa;
 use App\Models\Orcamento;
 use App\Models\OrcamentoCategoria;
 use App\Models\OrcamentoRevitItem;
+use App\Models\OrcamentoRevitSinapiItem;
 use App\Models\Projeto;
 use App\Services\OrcamentoRevitSincronizador;
 use App\Traits\HasMenuPermission;
@@ -182,18 +183,25 @@ class OrcamentosPage extends Page
             ->whereNotNull('arquivo_revit')
             ->where('arquivo_revit', '!=', '')
             ->get(['arquivo_revit', 'base_precos'])
-            ->map(fn ($o) => mb_strtolower(trim($o->arquivo_revit)) . '|' . mb_strtolower(trim((string) $o->base_precos)))
+            ->map(fn ($o) => mb_strtolower(trim($o->arquivo_revit)) . '|' . mb_strtolower($o->base_precos ?? 'lpu'))
             ->all();
 
-        return OrcamentoRevitItem::query()
-            ->selectRaw('codigo_obra, base_precos, COUNT(DISTINCT categoria) as categorias, COUNT(*) as itens, MAX(atualizado_em) as ultima_atualizacao')
-            ->groupBy('codigo_obra', 'base_precos')
-            ->orderByDesc('ultima_atualizacao')
-            ->get()
+        $lpu = OrcamentoRevitItem::query()
+            ->selectRaw("codigo_obra, 'LPU' as base_precos, COUNT(DISTINCT categoria) as categorias, COUNT(*) as itens, MAX(atualizado_em) as ultima_atualizacao")
+            ->groupBy('codigo_obra')
+            ->get();
+
+        $sinapi = OrcamentoRevitSinapiItem::query()
+            ->selectRaw("codigo_obra, 'SINAPI' as base_precos, COUNT(DISTINCT categoria) as categorias, COUNT(*) as itens, MAX(atualizado_em) as ultima_atualizacao")
+            ->groupBy('codigo_obra')
+            ->get();
+
+        return $lpu->concat($sinapi)
             ->reject(fn ($linha) => in_array(
-                mb_strtolower(trim($linha->codigo_obra)) . '|' . mb_strtolower(trim((string) $linha->base_precos)),
+                mb_strtolower(trim($linha->codigo_obra)) . '|' . mb_strtolower($linha->base_precos),
                 $vinculados
             ))
+            ->sortByDesc('ultima_atualizacao')
             ->values();
     }
 
@@ -327,15 +335,7 @@ class OrcamentosPage extends Page
 
     private function buscarItensRevitAgrupados(string $codigoObra, ?string $basePrecos = null): Collection
     {
-        return OrcamentoRevitItem::where('codigo_obra', $codigoObra)
-            ->when(
-                $basePrecos !== null,
-                fn ($query) => $query->where('base_precos', $basePrecos),
-                fn ($query) => $query->whereNull('base_precos')
-            )
-            ->orderBy('categoria')
-            ->orderBy('ordem')
-            ->get()
+        return OrcamentoRevitSincronizador::buscarItens($codigoObra, $basePrecos ?? 'LPU')
             ->groupBy('categoria');
     }
 
@@ -381,13 +381,15 @@ class OrcamentosPage extends Page
                     fn ($item) => filled($item['codigo']) && $item['codigo'] === $itemRevit->codigo
                 );
 
+                $mapeado = OrcamentoRevitSincronizador::mapearDados($itemRevit, $this->formBasePrecos ?? 'LPU');
+
                 $dadosItem = [
-                    'codigo' => $itemRevit->codigo,
-                    'descricao' => $itemRevit->descricao,
-                    'unidade' => $itemRevit->unidade ?: 'un',
-                    'quantidade' => (string) $itemRevit->quantidade,
-                    'valor_mat' => (string) $itemRevit->valor_mat,
-                    'valor_mo' => (string) $itemRevit->valor_mo,
+                    'codigo'     => $itemRevit->codigo,
+                    'descricao'  => $mapeado['descricao'],
+                    'unidade'    => $mapeado['unidade'],
+                    'quantidade' => (string) $mapeado['quantidade'],
+                    'valor_mat'  => (string) $mapeado['valor_mat'],
+                    'valor_mo'   => (string) $mapeado['valor_mo'],
                 ];
 
                 if ($itemIndex !== false) {
