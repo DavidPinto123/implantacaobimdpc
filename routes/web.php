@@ -69,11 +69,6 @@ Route::get('/aps/hubs', [ApsDocsController::class, 'hubs']);
 Route::get('/aps/projetos/{hubId}', [ApsDocsController::class, 'projetos']);
 Route::get('/aps/pastas/{hubId}/{projetoId}', [ApsDocsController::class, 'pastas']);
 Route::get('/aps/arquivos/{projetoId}/{pastaId}', [ApsDocsController::class, 'arquivos']);
-// routes/web.php
-Route::get(
-    '/aps/docs/rvt/{projectId}/{folderId}/{prefix}',
-    [ApsDocsController::class, 'firstRvtByPrefix']
-)->name('aps.docs.rvt-by-prefix');
 Route::get('/admin/projetos/{projeto}/viewer-3d', Viewer3DProjetoController::class)
     ->name('filament.pages.viewer3d-projeto');
 
