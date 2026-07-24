@@ -12,6 +12,7 @@ class AmbienteRdc50 extends Model
         'unidade_funcional',
         'subgrupo',
         'tipo',
+        'circulacao',
         'num_atividade',
         'ambiente',
         'nome_fiorentini',

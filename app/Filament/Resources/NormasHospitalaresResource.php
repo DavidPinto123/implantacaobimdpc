@@ -8,6 +8,7 @@ use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables;
+use Filament\Tables\Columns\SelectColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\TextInputColumn;
 use Filament\Tables\Enums\FiltersLayout;
@@ -31,6 +32,14 @@ class NormasHospitalaresResource extends Resource
     protected static ?string $slug = 'normas-hospitalares';
 
     protected static string|null|UnitEnum $navigationGroup = null;
+
+    private const CIRCULACAO_OPTIONS = [
+        'Pública' => 'Pública',
+        'Interna' => 'Interna',
+        'Industrial' => 'Industrial',
+        'Séptica' => 'Séptica',
+        'Asséptica' => 'Asséptica',
+    ];
 
     public static function form(Schema $schema): Schema
     {
@@ -74,6 +83,10 @@ class NormasHospitalaresResource extends Resource
                     ->sortable()
                     ->badge()
                     ->color(fn (string $state): string => $state === 'Ambiente-fim' ? 'success' : 'gray'),
+                SelectColumn::make('circulacao')
+                    ->label('Circulação')
+                    ->options(self::CIRCULACAO_OPTIONS)
+                    ->placeholder('Selecionar'),
                 TextColumn::make('num_atividade')
                     ->label('Nº Ativ.')
                     ->searchable()
@@ -162,6 +175,11 @@ class NormasHospitalaresResource extends Resource
                             ->distinct()
                             ->orderBy('obrigatoriedade')
                             ->pluck('obrigatoriedade', 'obrigatoriedade')),
+                SelectFilter::make('circulacao')
+                    ->searchable()
+                    ->preload()
+                    ->label('Circulação')
+                    ->options(self::CIRCULACAO_OPTIONS),
             ], layout: FiltersLayout::Dropdown)
             ->filtersFormColumns(2)
             ->filtersFormWidth('lg')
@@ -170,6 +188,7 @@ class NormasHospitalaresResource extends Resource
                 Group::make('subgrupo')->label('Subgrupo'),
                 Group::make('tipo')->label('Tipo'),
                 Group::make('obrigatoriedade')->label('Obrigatoriedade'),
+                Group::make('circulacao')->label('Circulação'),
             ])
             ->defaultSort('id')
             ->actions([
